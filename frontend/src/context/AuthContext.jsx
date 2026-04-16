@@ -187,7 +187,9 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{
             user, setUser, login, logout, updateUser,
-            unreadCount, socialCount, loading, lastNotification,
+            unreadCount, setUnreadCount, fetchUnreadCount,
+            socialCount, setSocialCount, fetchSocialCount,
+            loading, lastNotification,
             onlineUserIds // Enviamos el Set para el Donut del Dashboard
         }}>
             {children}
