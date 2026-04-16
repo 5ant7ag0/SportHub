@@ -46,6 +46,9 @@ export const AuthProvider = ({ children }) => {
                         logout();
                     } else {
                         await fetchLatestUser(decoded);
+                        fetchUnreadCount();
+                        fetchSocialCount();
+
                     }
                 } catch (e) {
                     console.error("Token decoding error:", e);
@@ -91,6 +94,31 @@ export const AuthProvider = ({ children }) => {
         } catch (e) { console.error("Error social:", e); }
     };
 
+    // 🟢 NUEVO: LATIDO GLOBAL (HEARTBEAT)
+    // Mantiene al usuario Online actualizando el "last_activity" de Django cada 20 segundos
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const heartbeat = setInterval(async () => {
+            if (!localStorage.getItem('access_token')) return;
+            try {
+                // Estas peticiones ligeras le dicen a Django "Sigo aquí"
+                const [msgRes, notifRes] = await Promise.all([
+                    api.get('/messages/unread-count/'),
+                    api.get('/social/notifications/count/')
+                ]);
+                setUnreadCount(msgRes.data.unread_count);
+                setSocialCount(notifRes.data.unread_count);
+            } catch (e) {
+                console.warn("Error en Heartbeat:", e);
+            }
+        }, 20000); // 20 segundos (Menor a los 30s de expiración de Django)
+
+        // Limpiamos el intervalo al cerrar la sesión
+        return () => clearInterval(heartbeat);
+    }, [user?.id]);
+
+
     // --- Sistema de Sincronización Real (WebSockets Centralizado) ---
     useEffect(() => {
         if (!user) return;
@@ -123,9 +151,19 @@ export const AuthProvider = ({ children }) => {
                             });
                         }
 
-                        // 2. Notificaciones Generales
+                        // 2. Notificaciones Generales y Actualización de Contadores
                         if (data.type === 'new_notification' || data.type === 'feed_update') {
                             setLastNotification({ ...data.data, eventType: data.type });
+
+                            // Gestión de contadores en vivo
+                            if (data.data?.type === 'count_update' || data.data?.type === 'follow') {
+                                if (data.data.followers_count !== undefined) {
+                                    updateUser({ followers_count: data.data.followers_count });
+                                }
+                                if (data.data.following_count !== undefined) {
+                                    updateUser({ following_count: data.data.following_count });
+                                }
+                            }
 
                             // Refrescar contadores si es mensaje o social
                             if (data.data?.type === 'message') fetchUnreadCount();

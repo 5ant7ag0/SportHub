@@ -69,19 +69,21 @@ class PostCreateView(APIView):
         )
         post.save()
 
-        # Enviar notificación de nuevo post
+        # Enviar notificación de nuevo post con la data completa para fluid-feed
         try:
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
+            from core.api.serializers import PostSerializer
+            
+            serializer = PostSerializer(post, context={'request': request})
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
-                'presence',  # Enviamos al grupo global 'presence' que ya tienes en el consumer
+                'presence', 
                 {
                     'type': 'new_notification',
                     'data': {
                         'type': 'feed_update',
-                        'author_id': str(request.user.id),
-                        'author': request.user.name
+                        'post': serializer.data
                     }
                 }
             )
@@ -90,7 +92,7 @@ class PostCreateView(APIView):
 
         return Response({
             "detail": "Post creado exitósamente",
-            "post_id": str(post.id),
+            "post": serializer.data if 'serializer' in locals() else {"id": str(post.id)},
             "optimized_media_url": media_url
         }, status=201)
 

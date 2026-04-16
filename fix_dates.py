@@ -1,3 +1,4 @@
+#Script para distribuir fechas aleatorias a los usuarios
 import os
 import django
 import random

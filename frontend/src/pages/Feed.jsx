@@ -10,7 +10,7 @@ import { PostCard, ShareConfirmModal, DeleteConfirmModal } from '../components/P
 import { CreatePostBox } from '../components/CreatePostBox';
 
 export const Feed = () => {
-    const { user: authUser } = useAuth();
+    // --- ESTADOS ---
     const [posts, setPosts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -21,47 +21,77 @@ export const Feed = () => {
     const [postToDelete, setPostToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [activeSport, setActiveSport] = useState('');
+    const [hasMore, setHasMore] = useState(true);
+    const [offset, setOffset] = useState(0);
+    const limit = 20;
 
-    // --- 1. MEMOIZAMOS LA FUNCIÓN (Crucial para WebSockets) ---
-    const fetchPosts = useCallback(async (sportFilter = activeSport) => {
+    const { user: authUser, lastNotification } = useAuth();
+    
+    const observer = useRef();
+    const lastPostRef = useCallback(node => {
+        if (isLoading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setOffset(prev => prev + limit);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [isLoading, hasMore]);
+
+    // --- 1. FETCH INICIAL / CAMBIO DE DEPORTE ---
+    const fetchPosts = useCallback(async (isInitial = false) => {
+        if (isInitial) setIsLoading(true);
         try {
-            const path = sportFilter ? `/feed/?sport=${sportFilter}` : '/feed/';
+            const currentOffset = isInitial ? 0 : offset;
+            const path = activeSport 
+                ? `/feed/?sport=${activeSport}&limit=${limit}&offset=${currentOffset}` 
+                : `/feed/?limit=${limit}&offset=${currentOffset}`;
+            
             const { data } = await api.get(path);
-            setPosts(data);
+            
+            if (isInitial) {
+                setPosts(data.posts || []);
+            } else {
+                setPosts(prev => [...prev, ...(data.posts || [])]);
+            }
+            setHasMore(data.has_more);
         } catch (error) {
             console.error("Error trayendo feed:", error);
         } finally {
             setIsLoading(false);
         }
+    }, [activeSport, offset]);
+
+    // Efecto para peticiones (Inicial o por Offset)
+    useEffect(() => {
+        fetchPosts(offset === 0);
+    }, [offset, activeSport]);
+
+    // Reiniciar al cambiar de deporte
+    useEffect(() => {
+        setOffset(0);
+        setPosts([]);
+        setHasMore(true);
     }, [activeSport]);
 
-    // --- 2. WEBSOCKET CON PEQUEÑO RETRASO DE SEGURIDAD ---
+    // --- 2. GESTIÓN DE TIEMPO REAL (Centralizado) ---
     useEffect(() => {
-        fetchPosts();
+        // Buscamos eventos donde el payload interno sea de tipo 'feed_update'
+        if (lastNotification?.type === 'feed_update' && lastNotification.post) {
+            const newPost = lastNotification.post;
+            
+            // Filtro por deporte si aplica
+            if (activeSport && newPost.sport !== activeSport) return;
 
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
-
-        const socket = new WebSocket(`ws://localhost:8000/ws/notifications/?token=${token}`);
-
-        socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-
-            if (message.data?.type === 'feed_update') {
-                console.log("🚀 ¡Nuevo post detectado! Esperando sincronización...");
-
-                // Esperamos 300ms para que MongoDB Atlas / Local termine de indexar
-                setTimeout(() => {
-                    console.log("🔄 Refrescando ahora!");
-                    fetchPosts();
-                }, 300);
-            }
-        };
-
-        socket.onerror = (err) => console.error("Error WebSocket Feed:", err);
-
-        return () => socket.close();
-    }, [fetchPosts]); // fetchPosts es estable gracias a useCallback
+            console.log("🚀 Insertando post de otro usuario en tiempo real...");
+            setPosts(prev => {
+                // Verificamos si ya existe (para no duplicar el que insertamos localmente si somos el autor)
+                if (prev.some(p => p.id === newPost.id)) return prev;
+                return [newPost, ...prev];
+            });
+        }
+    }, [lastNotification, activeSport]); 
 
     const handleOpenShare = useCallback((post) => {
         if (!post?.id) return;
@@ -79,14 +109,14 @@ export const Feed = () => {
             await api.post('/posts/share/', { post_id: sharingPost.id });
             setIsShareModalOpen(false);
             setSharingPost(null);
-            fetchPosts();
+            // El propio servidor enviará el broadcast de feed_update, así que caerá en el useEffect de arriba
         } catch (e) {
             console.error("Error crítico compartiendo post:", e);
             setShareError("No se pudo compartir. Inténtalo de nuevo más tarde.");
         } finally {
             setIsSharing(false);
         }
-    }, [sharingPost, isSharing, fetchPosts]);
+    }, [sharingPost, isSharing]);
 
     const handleDeletePost = useCallback(async () => {
         if (!postToDelete) return;
@@ -109,17 +139,6 @@ export const Feed = () => {
 
     const handleCloseModal = useCallback(() => setSelectedPostId(null), []);
 
-    if (isLoading && posts.length === 0) {
-        return (
-            <main className="flex-1 p-8 flex items-center justify-center bg-sporthub-bg text-sporthub-neon font-black italic tracking-tighter uppercase">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-12 h-12 animate-spin" />
-                    <span className="animate-pulse">Cargando Muro Real-Time...</span>
-                </div>
-            </main>
-        );
-    }
-
     const SPORTS = [
         { id: 'all', name: 'Todos', value: '' },
         { id: 'futbol', name: 'Fútbol', value: 'Fútbol' },
@@ -139,7 +158,6 @@ export const Feed = () => {
                             <button
                                 key={sport.id}
                                 onClick={() => {
-                                    setIsLoading(true);
                                     setActiveSport(sport.value);
                                 }}
                                 className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeSport === sport.value
@@ -155,11 +173,17 @@ export const Feed = () => {
 
                 <CreatePostBox
                     authUser={authUser}
-                    onPostCreated={() => fetchPosts()}
+                    onPostCreated={(newPost) => {
+                        console.log("📝 Post creado localmente, prepending...");
+                        setPosts(prev => {
+                            if (prev.some(p => p.id === newPost.id)) return prev;
+                            return [newPost, ...prev];
+                        });
+                    }}
                 />
 
                 <div className="flex flex-col gap-6">
-                    {posts.length === 0 ? (
+                    {posts.length === 0 && !isLoading ? (
                         <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-[rgba(255,255,255,0.05)]">
                             <AlertTriangle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
                             <p className="text-gray-500 text-sm">No hay contenido disponible para este deporte.</p>
@@ -171,15 +195,38 @@ export const Feed = () => {
                             </button>
                         </div>
                     ) : (
-                        posts.map(post => (
-                            <PostCard
-                                key={post.id}
-                                post={post}
-                                onShare={handleOpenShare}
-                                onMediaClick={(id) => setSelectedPostId(id)}
-                                onDelete={(id) => setPostToDelete(id)}
-                            />
-                        ))
+                        <>
+                            {posts.map((post, index) => {
+                                if (posts.length === index + 1) {
+                                    return (
+                                        <div ref={lastPostRef} key={post.id}>
+                                            <PostCard
+                                                post={post}
+                                                onShare={handleOpenShare}
+                                                onMediaClick={(id) => setSelectedPostId(id)}
+                                                onDelete={(id) => setPostToDelete(id)}
+                                            />
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <PostCard
+                                            key={post.id}
+                                            post={post}
+                                            onShare={handleOpenShare}
+                                            onMediaClick={(id) => setSelectedPostId(id)}
+                                            onDelete={(id) => setPostToDelete(id)}
+                                        />
+                                    );
+                                }
+                            })}
+                            
+                            {isLoading && (
+                                <div className="flex justify-center py-4">
+                                    <Loader2 className="w-6 h-6 animate-spin text-sporthub-neon" />
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 

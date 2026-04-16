@@ -40,30 +40,22 @@ const INITIAL_STATS = {
     user_growth: [],
     city_ranking: [],
     connection_status: { online: 0, offline: 0 },
-    trends: [], // Se inicia vacío, sin mocks
+    trends: [],
     newFollowers: 0,
     totalFollowers: 0,
     totalPosts: 0,
 };
 
-const StatCard = ({ label, value, type }) => (
-    <div className={`p-6 rounded-2xl border border-sporthub-border ${type === 'neon' ? 'bg-sporthub-neon/10' : type === 'cyan' ? 'bg-sporthub-cyan/10' : 'bg-sporthub-card'}`}>
-        <p className={`text-2xl font-bold mb-1 ${type === 'neon' ? 'text-sporthub-neon' : type === 'cyan' ? 'text-sporthub-cyan' : 'text-white'}`}>{value}</p>
-        <p className="text-xs text-sporthub-muted uppercase tracking-wider">{label}</p>
-    </div>
-);
-
-// NUEVA REGLA: Colores fijos por deporte
+// Regla: Colores fijos por deporte
 const getSportColor = (sportName) => {
     const name = String(sportName || '').toUpperCase();
     if (name.includes('FUTBOL') || name.includes('FÚTBOL')) return COLORS.neon;
     if (name.includes('BASQUET') || name.includes('BÁSQUET')) return COLORS.cyan;
-    if (name.includes('ECUAVOLEY')) return '#A855F7'; // Morado brillante
-    return '#F59E0B'; // Naranja para cualquier otro que se cuele
+    if (name.includes('ECUAVOLEY')) return '#A855F7';
+    return '#F59E0B';
 };
 
 export const AnalyticsDashboard = () => {
-    // CORRECCIÓN: Importamos onlineUserIds y lastNotification del AuthContext
     const { user: authUser, onlineUserIds, lastNotification } = useAuth();
 
     const [stats, setStats] = useState(INITIAL_STATS);
@@ -73,7 +65,6 @@ export const AnalyticsDashboard = () => {
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, actionType: '' });
 
-    // Función para obtener las estadísticas globales
     const fetchAnalytics = async () => {
         try {
             setIsLoading(true);
@@ -92,8 +83,8 @@ export const AnalyticsDashboard = () => {
                 user_growth: data?.user_growth || [],
                 city_ranking: data?.city_ranking || [],
                 connection_status: data?.connection_status || { online: 0, offline: 0 },
-                trends: Array.isArray(data?.trends) ? data.trends : [], // Sin fallback a mocks
-                newFollowers: data?.new_followers || 0, // Sin fallback a mocks
+                trends: Array.isArray(data?.trends) ? data.trends : [],
+                newFollowers: data?.new_followers || 0,
                 totalFollowers: authUser?.followers_count || 0,
                 totalPosts: authUser?.posts_count || 0,
             });
@@ -128,12 +119,14 @@ export const AnalyticsDashboard = () => {
         }
     }, [stats.is_global]);
 
-    // 🟢 CORRECCIÓN: Se eliminó el new WebSocket() interno.
-    // Ahora escuchamos lastNotification del AuthContext para refrescar.
+    // 🟢 CORRECCIÓN: Ahora actualiza gráficas Y la tabla de usuarios
     useEffect(() => {
-        if (lastNotification?.type === 'feed_update' || lastNotification?.type === 'data_refresh' || lastNotification?.type === 'new_notification') {
-            console.log("Actualizando métricas globales desde contexto...");
+        if (lastNotification) {
+            console.log("WebSocket pulso recibido. Refrescando datos...");
             fetchAnalytics();
+            if (stats.is_global) {
+                fetchUsers(); // Obliga a la tabla a actualizarse
+            }
         }
     }, [lastNotification]);
 
@@ -144,26 +137,10 @@ export const AnalyticsDashboard = () => {
 
     const handleUserAction = (userId, action, userName) => {
         const config = {
-            promote: {
-                title: 'Cambiar Privilegios',
-                message: `¿Deseas modificar los permisos administrativos de ${userName}?`,
-                actionLabels: 'Cambiar Rango'
-            },
-            delete: {
-                title: 'Eliminar Cuenta',
-                message: `¿Estás seguro de desactivar definitivamente la cuenta de ${userName}? Esta acción es irreversible.`,
-                actionLabels: 'Eliminar'
-            },
-            suspend: {
-                title: 'Suspender Usuario',
-                message: `¿Deseas restringir el acceso a la plataforma para ${userName}?`,
-                actionLabels: 'Suspender'
-            },
-            reactivate: {
-                title: 'Reactivar Usuario',
-                message: `¿Restaurar el acceso completo para ${userName}?`,
-                actionLabels: 'Reactivar'
-            }
+            promote: { title: 'Cambiar Privilegios', message: `¿Deseas modificar los permisos de ${userName}?`, actionLabels: 'Cambiar Rango' },
+            delete: { title: 'Eliminar Cuenta', message: `¿Desactivar definitivamente la cuenta de ${userName}?`, actionLabels: 'Eliminar' },
+            suspend: { title: 'Suspender Usuario', message: `¿Restringir el acceso a ${userName}?`, actionLabels: 'Suspender' },
+            reactivate: { title: 'Reactivar Usuario', message: `¿Restaurar el acceso para ${userName}?`, actionLabels: 'Reactivar' }
         };
 
         const currentConfig = config[action];
@@ -177,7 +154,6 @@ export const AnalyticsDashboard = () => {
                 try {
                     const { data } = await api.patch('/admin/users/', { user_id: userId, action });
                     setUsers(prev => prev.map(u => str(u.id) === str(userId) ? data.user : u));
-
                     const resultLabels = { promote: 'Cambio de Rol', delete: 'Cuenta Desactivada', suspend: 'Cuenta Suspendida', reactivate: 'Cuenta Reactivada' };
                     showToast(`${resultLabels[action]}: ${userName}`);
                     fetchUsers();
@@ -192,25 +168,21 @@ export const AnalyticsDashboard = () => {
 
     const str = (id) => typeof id === 'object' ? id.$oid || String(id) : String(id);
 
-    // Lógica consolidada y blindada (Atomic Analytics Logic)
     const viewData = useMemo(() => {
         const d = stats || INITIAL_STATS;
 
-        // 1. Engagement & Meta
         const total_v = d.total_visits || 0;
         const total_l = d.total_likes || 0;
         const total_c = d.total_comments || 0;
         const rate = total_v > 0 ? (((total_l + total_c) / total_v) * 100).toFixed(1) : "0.0";
         const completed = Math.min((total_v / 4000) * 100, 100);
 
-        // 2. Demografía (Main Bar)
         const demo = Array.isArray(d.demographics) ? d.demographics.map(x => ({
             name: `${x.age_group_start || 0}-${(x.age_group_start || 0) + 9}`,
             percentage: x.percentage || 0,
             count: x.count || 0
         })) : [];
 
-        // 3. Tendencias de Interacción (Main Line) - Ya no usa MOCKS
         const trendRaw = Array.isArray(d.trends) ? d.trends : [];
         const trend = trendRaw.map(t => {
             const date = t?.day ? new Date(t.day) : new Date();
@@ -223,13 +195,11 @@ export const AnalyticsDashboard = () => {
             };
         });
 
-        // 4. Crecimiento de Usuarios (Area Chart)
         const growth = Array.isArray(d.user_growth) ? d.user_growth.map(g => ({
-            name: g._id, // YYYY-MM
+            name: g._id,
             usuarios: g.count || 0
         })) : [];
 
-        // 5. Deportes (Pie Chart)
         let donut = [];
         if (d.is_global && Array.isArray(d.stats_por_deporte) && d.stats_por_deporte.length > 0) {
             donut = d.stats_por_deporte.map(s => ({ name: s._id || 'Otro', value: s.count || 0 }));
@@ -239,7 +209,6 @@ export const AnalyticsDashboard = () => {
             donut = [{ name: 'Visitas', value: completed }, { name: 'Meta', value: Math.max(0, 100 - completed) }];
         }
 
-        // 6. Conectividad (Donut Chart) - CORRECCIÓN: Usa onlineUserIds del Contexto
         const currentOnline = onlineUserIds?.size || 0;
         const currentTotal = d.extra_stats?.total_users || users.length || 100;
         const connections = [
@@ -247,7 +216,6 @@ export const AnalyticsDashboard = () => {
             { name: 'Offline', value: Math.max(0, currentTotal - currentOnline), color: '#1a2130' }
         ];
 
-        // 7. Ciudades (Horizontal Bar)
         const cities = Array.isArray(d.city_ranking) ? d.city_ranking.map(c => ({
             name: c._id || 'Desconocida',
             count: c.count || 0
@@ -289,85 +257,37 @@ export const AnalyticsDashboard = () => {
                     </p>
                 </div>
 
-                {/* Top Stats */}
-                <div className="grid grid-cols-3 gap-6">
-                    {stats?.is_global ? (
-                        <>
-                            <StatCard label="Usuarios Totales" value={(stats?.extra_stats?.total_users || 0).toLocaleString()} type="neon" />
-                            <StatCard label="Contenido Global" value={(stats?.extra_stats?.total_posts || 0).toLocaleString()} type="cyan" />
-                            <StatCard label="Engagement Medio" value={`${viewData.rate}%`} type="normal" />
-                        </>
-                    ) : (
-                        <>
-                            <StatCard label="Rating" value="4.8" type="neon" />
-                            <StatCard label="Seguidores" value={(stats?.totalFollowers || 0).toLocaleString()} type="cyan" />
-                            <StatCard label="Posts" value={(stats?.totalPosts || 0).toLocaleString()} type="normal" />
-                        </>
-                    )}
-                </div>
-
-                {/* Two large summary cards */}
-                <div className="grid grid-cols-2 gap-6">
-                    <div className="p-6 bg-sporthub-card rounded-[1.5rem] border border-sporthub-border relative overflow-hidden group">
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                {/* Cambiamos el Título */}
-                                <h3 className="text-white font-bold text-lg leading-tight">
-                                    {stats.is_global ? 'Crecimiento de la Red' : 'Impacto en el Perfil'}
-                                </h3>
-                                <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest mt-1">Sincronizado vía WebSocket</p>
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-sporthub-neon" />
+                {/* Distribución por Edad (Ahora a ancho completo) */}
+                <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 className="text-white font-semibold">Distribución por Edad</h3>
+                            <p className="text-xs text-sporthub-muted">Rango demográfico de visitantes</p>
                         </div>
-                        <div className="flex justify-between items-end">
-                            <div>
-                                {/* Cambiamos el Subtítulo Izquierdo */}
-                                <p className="text-xs text-sporthub-muted mb-1 uppercase font-bold">
-                                    {stats?.is_global ? 'Usuarios Registrados' : 'Visitas Totales'}
-                                </p>
-                                <p className="text-4xl font-black text-white tracking-tighter">{(stats.total_visits || 0).toLocaleString()}</p>
-                            </div>
-                            <div className="text-right">
-                                {/* Cambiamos el Subtítulo Derecho */}
-                                <p className="text-[10px] text-sporthub-muted mb-1 uppercase font-bold">
-                                    {stats?.is_global ? 'Nuevos Hoy' : 'Nuevos Fans'}
-                                </p>
-                                <p className="text-2xl font-black text-sporthub-cyan">+{stats.new_followers || 0}</p>
-                            </div>
-                        </div>
+                        <span className="bg-sporthub-cyan/20 text-sporthub-cyan text-[10px] px-2 py-1 rounded">
+                            Promedio: {stats?.average_age ? Number(stats.average_age).toFixed(1) : '0.0'} años
+                        </span>
                     </div>
-
-                    <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="text-white font-semibold">Distribución por Edad</h3>
-                                <p className="text-xs text-sporthub-muted">Rango demográfico de visitantes</p>
-                            </div>
-                            <span className="bg-sporthub-cyan/20 text-sporthub-cyan text-[10px] px-2 py-1 rounded">
-                                Promedio: {stats?.average_age ? Number(stats.average_age).toFixed(1) : '0.0'} años
-                            </span>
-                        </div>
-                        <div className="h-40 w-full mt-4" key={`bar-${stats?.is_global ? 'admin' : 'user'}`}>
-                            {viewData.demo.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                                    <BarChart data={viewData.demo}>
-                                        <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
-                                        <YAxis tick={false} axisLine={false} width={35} domain={[0, 'auto']} stroke="rgba(255,255,255,0.1)" />
-                                        <RechartsTooltip
-                                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                            contentStyle={{ backgroundColor: COLORS.card, borderColor: '#334155', borderRadius: '12px', padding: '10px', border: '1px solid #334155' }}
-                                            itemStyle={{ color: COLORS.cyan, fontSize: '12px' }}
-                                            isAnimationActive={false}
-                                            formatter={(value, name) => [name === 'count' ? `${value} Usuarios` : `${value}%`, name === 'count' ? 'Total' : 'Porcentaje']}
-                                        />
-                                        <Bar dataKey="percentage" fill={COLORS.cyan} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="flex h-full items-center justify-center text-[10px] text-sporthub-muted uppercase tracking-widest italic">Datos demográficos en proceso</div>
-                            )}
-                        </div>
+                    <div className="h-60 w-full mt-4" key={`bar-${stats?.is_global ? 'admin' : 'user'}`}>
+                        {viewData.demo.length > 0 ? (
+                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
+                                <BarChart data={viewData.demo}>
+                                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
+                                    <YAxis tick={false} axisLine={false} width={35} domain={[0, 'auto']} stroke="rgba(255,255,255,0.1)" />
+                                    <RechartsTooltip
+                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                        contentStyle={{ backgroundColor: COLORS.card, borderColor: '#334155', borderRadius: '12px', padding: '10px', border: '1px solid #334155' }}
+                                        itemStyle={{ color: COLORS.cyan, fontSize: '12px' }}
+                                        isAnimationActive={false}
+                                        formatter={(value, name) => [name === 'count' ? `${value} Usuarios` : `${value}%`, name === 'count' ? 'Total' : 'Porcentaje']}
+                                    />
+                                    <Bar dataKey="percentage" fill={COLORS.cyan} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex h-full items-center justify-center text-[10px] text-sporthub-muted uppercase tracking-widest italic">Datos demográficos en proceso</div>
+                        )}
                     </div>
                 </div>
 
@@ -383,11 +303,10 @@ export const AnalyticsDashboard = () => {
 
                     <div className="h-60 w-full mt-4 overflow-visible" key={`line-${stats?.is_global ? 'admin' : 'user'}`}>
                         {viewData.trend.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
                                 <LineChart data={viewData.trend} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
                                     <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
                                     <XAxis dataKey="dayLabel" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
-                                    {/* 🟢 EJE Y ACTIVADO CON ESTILOS */}
                                     <YAxis
                                         axisLine={false}
                                         tickLine={false}
@@ -429,7 +348,7 @@ export const AnalyticsDashboard = () => {
 
                         <div className="h-64 w-full mt-4" key={`growth-${stats?.is_global}`}>
                             {viewData.growth.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                                <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
                                     <AreaChart data={viewData.growth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
@@ -439,7 +358,6 @@ export const AnalyticsDashboard = () => {
                                         </defs>
                                         <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
-                                        {/* 🟢 EJE Y ACTIVADO CON ESTILOS */}
                                         <YAxis
                                             axisLine={false}
                                             tickLine={false}
@@ -494,7 +412,7 @@ export const AnalyticsDashboard = () => {
 
                     <div className="h-44 w-full relative flex items-center justify-center" key={`pie-${stats?.is_global ? 'admin' : 'user'}`}>
                         {viewData.donut.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
                                 <PieChart>
                                     <Pie
                                         data={viewData.donut}
@@ -509,7 +427,6 @@ export const AnalyticsDashboard = () => {
                                         {viewData.donut.map((entry, index) => (
                                             <Cell
                                                 key={`cell-${index}`}
-                                                // USAMOS LA REGLA FIJA DE COLORES AQUÍ
                                                 fill={stats.is_global
                                                     ? getSportColor(entry.name)
                                                     : (index === 0 ? COLORS.neon : '#1a2130')}
@@ -554,7 +471,7 @@ export const AnalyticsDashboard = () => {
                         </div>
                     </div>
 
-                    {/* NUEVO: LEYENDA INFERIOR FIJA */}
+                    {/* LEYENDA INFERIOR FIJA */}
                     {stats?.is_global && (
                         <div className="flex justify-center gap-4 mt-6 w-full border-t border-sporthub-border/50 pt-4">
                             <div className="flex items-center gap-1.5">
@@ -571,6 +488,25 @@ export const AnalyticsDashboard = () => {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* Métricas Rápidas (Aquí sobrevive el Engagement Medio) */}
+                <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
+                    <h3 className="text-white font-semibold mb-4 text-sm">Resumen de Métricas</h3>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex justify-between items-center border-b border-sporthub-border pb-3">
+                            <span className="text-sm text-sporthub-muted">Engagement Medio</span>
+                            <span className="text-sm font-bold text-sporthub-neon">{viewData.rate}%</span>
+                        </div>
+                        <div className="flex justify-between items-center border-b border-sporthub-border pb-3">
+                            <span className="text-sm text-sporthub-muted">Total Clicks Corazón</span>
+                            <span className="text-sm font-bold text-sporthub-cyan">{(stats?.total_likes || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-sporthub-muted">Comentarios en comunidad</span>
+                            <span className="text-sm font-bold text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* City Ranking Widget */}
@@ -615,7 +551,7 @@ export const AnalyticsDashboard = () => {
                             <Activity className="w-4 h-4 text-sporthub-neon" />
                         </div>
                         <div className="h-32 w-full relative">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
                                 <PieChart>
                                     <Pie
                                         data={viewData.connections}
@@ -657,7 +593,7 @@ export const AnalyticsDashboard = () => {
                 <div className="xl:col-span-3 mt-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
                     <UserManagementTable
                         users={users}
-                        onlineUserIds={onlineUserIds} // 🟢 PASAMOS EL SET DEL CONTEXTO
+                        onlineUserIds={onlineUserIds}
                         onAction={handleUserAction}
                         searchQuery={searchQuery}
                         onSearch={setSearchQuery}
@@ -729,178 +665,98 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
     const str = (id) => typeof id === 'object' ? id.$oid || String(id) : String(id);
 
     return (
-        <div className="bg-sporthub-card rounded-2xl border border-sporthub-border overflow-hidden">
-            <div className="p-6 border-b border-sporthub-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="bg-sporthub-card rounded-[2rem] border border-sporthub-border overflow-hidden shadow-2xl">
+            <div className="p-8 border-b border-sporthub-border flex flex-col md:flex-row justify-between items-start md:items-center bg-[#0B0F19]/40 gap-4">
                 <div>
-                    <h3 className="text-white font-bold text-lg">Gestión de Usuarios</h3>
-                    <p className="text-xs text-sporthub-muted">Control de jerarquía y estados de cuenta ({users.length} usuarios)</p>
+                    <h3 className="text-white font-black text-xl italic uppercase tracking-tighter">Gestión de Usuarios</h3>
+                    <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest mt-1">Control de jerarquía y estados de cuenta ({users.length} usuarios)</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    {/* Filtro de Rol */}
+                <div className="relative flex flex-wrap gap-4 w-full md:w-auto">
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        className="bg-[#0B0F19] border border-sporthub-border rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-sporthub-neon transition-all"
+                    >
+                        <option value="all">Todos los Roles</option>
+                        <option value="athlete">Deportistas</option>
+                        <option value="scout">Reclutadores</option>
+                        <option value="admin">Administradores</option>
+                    </select>
+
                     <div className="relative">
-                        <select
-                            value={roleFilter}
-                            onChange={(e) => setRoleFilter(e.target.value)}
-                            className="appearance-none bg-[#0B0F19] border border-sporthub-border rounded-xl py-2 pl-4 pr-10 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        >
-                            <option value="all">Todos los Roles</option>
-                            <option value="athlete">Deportistas</option>
-                            <option value="scout">Reclutadores</option>
-                            <option value="admin">Administradores</option>
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-sporthub-muted">
-                            <TrendingUp className="w-3 h-3 rotate-90" />
-                        </div>
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sporthub-muted" />
+                        <input type="text" placeholder="Ciudad..." className="bg-[#0B0F19] border border-sporthub-border rounded-xl pl-12 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-sporthub-neon w-full md:w-32 transition-all" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} />
                     </div>
 
-                    {/* Filtro de Ciudad */}
-                    <div className="relative w-full md:w-40">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sporthub-muted" />
-                        <input
-                            type="text"
-                            placeholder="Ciudad..."
-                            className="w-full bg-[#0B0F19] border border-sporthub-border rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-sporthub-neon transition-colors"
-                            value={cityFilter}
-                            onChange={(e) => setCityFilter(e.target.value)}
-                        />
-                    </div>
-
-                    {/* Búsqueda Principal */}
                     <div className="relative flex-1 min-w-[200px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sporthub-muted" />
-                        <input
-                            type="text"
-                            placeholder="Nombre o email..."
-                            className="w-full bg-[#0B0F19] border border-sporthub-border rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-sporthub-cyan transition-colors"
-                            value={searchQuery}
-                            onChange={(e) => onSearch(e.target.value)}
-                        />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sporthub-muted" />
+                        <input type="text" placeholder="Nombre o email..." className="w-full bg-[#0B0F19] border border-sporthub-border rounded-xl pl-12 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-sporthub-cyan transition-all" value={searchQuery} onChange={(e) => onSearch(e.target.value)} />
                     </div>
                 </div>
             </div>
-
             <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-[#0B0F19]/50">
-                            <th className="px-6 py-4 text-[10px] font-black text-sporthub-muted uppercase tracking-widest">
-                                <div className="flex items-center gap-2">
-                                    <User className="w-3 h-3 text-sporthub-cyan" />
-                                    <span>Usuario</span>
-                                </div>
-                            </th>
-                            <th className="px-6 py-4 text-[10px] font-black text-sporthub-muted uppercase tracking-widest">
-                                <div className="flex items-center gap-2">
-                                    <Shield className="w-3 h-3 text-purple-400" />
-                                    <span>Rol</span>
-                                </div>
-                            </th>
-                            <th className="px-6 py-4 text-[10px] font-black text-sporthub-muted uppercase tracking-widest">
-                                <div className="flex items-center justify-center gap-2 text-center">
-                                    <Activity className="w-3 h-3 text-sporthub-neon" />
-                                    <span>Actividad</span>
-                                </div>
-                            </th>
-                            <th className="px-6 py-4 text-[10px] font-black text-sporthub-muted uppercase tracking-widest">
-                                <div className="flex items-center justify-center gap-2 text-center">
-                                    <MapPin className="w-3 h-3 text-sporthub-cyan" />
-                                    <span>Ubicación</span>
-                                </div>
-                            </th>
-                            <th className="px-6 py-4 text-[10px] font-black text-sporthub-muted uppercase tracking-widest">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-3 h-3 text-sporthub-muted" />
-                                    <span>Registro</span>
-                                </div>
-                            </th>
-                            <th className="px-6 py-4 text-[10px] font-black text-sporthub-muted uppercase tracking-widest text-right">
-                                <div className="flex items-center justify-end gap-2 text-right">
-                                    <Settings className="w-3 h-3 text-sporthub-muted" />
-                                    <span>Acciones</span>
-                                </div>
-                            </th>
+                    <thead className="text-[10px] text-sporthub-muted uppercase font-black bg-[#0B0F19]/60">
+                        <tr>
+                            <th className="px-8 py-5 flex items-center gap-2"><User className="w-3 h-3 text-sporthub-cyan" /> USUARIO</th>
+                            <th className="px-8 py-5"><div className="flex items-center gap-2"><Shield className="w-3 h-3 text-purple-400" /> ROL</div></th>
+                            <th className="px-8 py-5 text-center"><div className="flex items-center justify-center gap-2"><Activity className="w-3 h-3 text-sporthub-neon" /> ACTIVIDAD</div></th>
+                            <th className="px-8 py-5"><div className="flex items-center gap-2"><MapPin className="w-3 h-3 text-sporthub-cyan" /> UBICACIÓN</div></th>
+                            <th className="px-8 py-5"><div className="flex items-center gap-2"><Calendar className="w-3 h-3 text-sporthub-muted" /> REGISTRO</div></th>
+                            <th className="px-8 py-5 text-right"><div className="flex items-center justify-end gap-2"><Settings className="w-3 h-3 text-sporthub-muted" /> ACCIONES</div></th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-sporthub-border">
-                        {filteredUsers.map((u) => (
-                            <tr key={str(u.id)} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 relative">
-                                            <div className="w-full h-full rounded-full border-2 border-sporthub-border overflow-hidden bg-sporthub-bg">
-                                                <img src={u.avatar_url || "/test_media/sample_atleta.svg"} alt="" className="w-full h-full object-cover" />
-                                            </div>
-                                            {/* Punto verde basado en onlineUserIds del Contexto */}
-                                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-sporthub-card ${onlineUserIds?.has(str(u.id)) ? 'bg-sporthub-neon shadow-[0_0_10px_rgba(163,230,53,0.9)] animate-pulse' : 'bg-[#334155]'}`} title={onlineUserIds?.has(str(u.id)) ? "Online" : "Offline"} />
+                    <tbody className="divide-y divide-sporthub-border/50">
+                        {filteredUsers.map(u => (
+                            <tr key={str(u.id)} className="hover:bg-white/[0.03] transition-all duration-300">
+                                <td className="px-8 py-6 flex items-center gap-4">
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-full border-2 border-sporthub-border overflow-hidden bg-sporthub-bg shadow-lg">
+                                            <img src={u.avatar_url || "/test_media/sample_atleta.svg"} className="w-full h-full object-cover" />
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-sm font-semibold text-white">{u.name}</p>
-                                                <StatusBadge user={u} />
-                                            </div>
-                                            <p className="text-[11px] text-sporthub-muted">{u.email}</p>
+                                        <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-[3px] border-sporthub-card ${onlineUserIds?.has(str(u.id)) ? 'bg-sporthub-neon shadow-[0_0_12px_#A3E635] animate-pulse' : 'bg-[#334155]'}`} title={onlineUserIds?.has(str(u.id)) ? "Online" : "Offline"} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-black text-white tracking-tight">{u.name}</p>
+                                            <StatusBadge user={u} />
                                         </div>
+                                        <p className="text-[10px] text-sporthub-muted font-semibold">{u.email}</p>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-8 py-6">
                                     <RoleBadge role={u.role} />
                                 </td>
-                                <td className="px-6 py-4 text-center">
+                                <td className="px-8 py-6 text-center">
                                     <div className="flex items-center justify-center gap-4">
-                                        <div className="flex flex-col items-center" title="Publicaciones">
-                                            <span className="text-xs font-bold text-white">{u.posts_count || 0}</span>
-                                            <span className="text-[9px] text-sporthub-muted uppercase">Posts</span>
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-sm font-black text-white tracking-tighter">{u.posts_count || 0}</span>
+                                            <span className="text-[8px] text-sporthub-muted uppercase font-black tracking-widest">POSTS</span>
                                         </div>
-                                        <div className="flex flex-col items-center" title="Servicios">
-                                            <span className="text-xs font-bold text-sporthub-cyan">{u.services_count || 0}</span>
-                                            <span className="text-[9px] text-sporthub-muted uppercase">Servs</span>
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-sm font-black text-sporthub-cyan tracking-tighter">{u.services_count || 0}</span>
+                                            <span className="text-[8px] text-sporthub-muted uppercase font-black tracking-widest">SERVS</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-8 py-6">
                                     <div className="flex items-center gap-1.5 text-sporthub-muted">
                                         <MapPin className="w-3.5 h-3.5 text-sporthub-cyan" />
                                         <span className="text-[11px] font-medium truncate max-w-[100px]">{u.city || 'Quito, EC'}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-8 py-6">
                                     <p className="text-[11px] text-sporthub-muted font-medium">{formatDate(u.created_at)}</p>
                                 </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex justify-end items-center gap-1">
-                                        <button
-                                            onClick={() => onAction(str(u.id), 'promote', u.name)}
-                                            className={`p-2 rounded-lg transition-all ${u.role === 'admin' ? 'text-purple-400 hover:bg-purple-500/10' : 'text-sporthub-muted hover:text-purple-400 hover:bg-purple-500/10'}`}
-                                            title={u.role === 'admin' ? "Bajar Rango a Atleta" : "Promover a Admin"}
-                                        >
-                                            {u.role === 'admin' ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                                        </button>
+                                <td className="px-8 py-6 text-right">
+                                    <div className="flex justify-end gap-3">
+                                        <button onClick={() => onAction(str(u.id), 'promote', u.name)} className="p-3 bg-white/5 text-sporthub-muted hover:text-purple-400 hover:bg-purple-500/10 rounded-xl transition-all" title="Promover/Degradar"><ShieldCheck className="w-4 h-4" /></button>
                                         {u.is_active && !u.is_suspended ? (
-                                            <button
-                                                onClick={() => onAction(str(u.id), 'suspend', u.name)}
-                                                className="p-2 text-sporthub-muted hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
-                                                title="Suspender Cuenta"
-                                            >
-                                                <UserX className="w-4 h-4" />
-                                            </button>
-                                        ) : !u.is_active || u.is_suspended ? (
-                                            <button
-                                                onClick={() => onAction(str(u.id), 'reactivate', u.name)}
-                                                className="p-2 text-sporthub-muted hover:text-sporthub-neon hover:bg-sporthub-neon/10 rounded-lg transition-all"
-                                                title="Reactivar Cuenta"
-                                            >
-                                                <UserCheck className="w-4 h-4" />
-                                            </button>
-                                        ) : null}
-                                        {u.is_active && (
-                                            <button
-                                                onClick={() => onAction(str(u.id), 'delete', u.name)}
-                                                className="p-2 text-sporthub-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                                                title="Eliminar (Soft Delete)"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            <button onClick={() => onAction(str(u.id), 'suspend', u.name)} className="p-3 bg-white/5 text-sporthub-muted hover:text-orange-400 hover:bg-orange-500/10 rounded-xl transition-all" title="Suspender"><UserX className="w-4 h-4" /></button>
+                                        ) : (
+                                            <button onClick={() => onAction(str(u.id), 'reactivate', u.name)} className="p-3 bg-white/5 text-sporthub-muted hover:text-sporthub-neon hover:bg-sporthub-neon/10 rounded-xl transition-all" title="Reactivar"><UserCheck className="w-4 h-4" /></button>
                                         )}
+                                        <button onClick={() => onAction(str(u.id), 'delete', u.name)} className="p-3 bg-white/5 text-sporthub-muted hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </td>
                             </tr>
@@ -908,8 +764,8 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                     </tbody>
                 </table>
                 {filteredUsers.length === 0 && (
-                    <div className="p-12 text-center">
-                        <p className="text-sporthub-muted text-sm italic">No se encontraron usuarios que coincidan con la búsqueda.</p>
+                    <div className="p-12 text-center text-sporthub-muted text-sm italic">
+                        No se encontraron usuarios que coincidan con la búsqueda.
                     </div>
                 )}
             </div>

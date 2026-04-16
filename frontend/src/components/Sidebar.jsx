@@ -28,42 +28,26 @@ const SidebarItem = ({ icon: Icon, label, to, badgeCount }) => (
 );
 
 export const Sidebar = () => {
-  const { user, logout, unreadCount, socialCount, setUser } = useAuth();
+  // 🟢 Obtenemos lastNotification para reaccionar a nuevos posts
+  const { user, logout, unreadCount, socialCount, setUser, lastNotification } = useAuth();
 
+  // 🟢 Sincronizar posts usando la notificación central del Contexto
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token || !user?.id) return;
+    if (!lastNotification || !user) return;
 
-    const socket = new WebSocket(`ws://localhost:8000/ws/notifications/?token=${token}`);
+    const myId = typeof user.id === 'object' ? user.id.$oid : String(user.id);
 
-    socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-
-      // Obtenemos tu ID de forma segura (para MongoDB)
-      const myId = typeof user.id === 'object' ? user.id.$oid : String(user.id);
-
-      // Si detectamos un nuevo post y el autor eres TÚ
-      if (
-        message.data?.type === 'feed_update' &&
-        String(message.data?.author_id) === String(myId)
-      ) {
-        console.log("Sincronizando contador de posts localmente...");
-
-        if (typeof setUser === 'function') {
-          setUser(prev => ({
-            ...prev,
-            posts_count: (prev.posts_count || 0) + 1
-          }));
-        } else {
-          console.warn("⚠️ setUser no está disponible en el AuthContext");
-        }
-      }
-    };
-
-    socket.onerror = (err) => console.error("Error WebSocket Sidebar:", err);
-
-    return () => socket.close();
-  }, [user?.id, setUser]);
+    if (
+      lastNotification.eventType === 'feed_update' &&
+      String(lastNotification.author_id) === String(myId)
+    ) {
+      console.log("Actualizando contador de posts desde notificación central...");
+      setUser(prev => ({
+        ...prev,
+        posts_count: (prev.posts_count || 0) + 1
+      }));
+    }
+  }, [lastNotification]);
 
   return (
     <aside className="hidden lg:flex w-64 bg-sporthub-bg border-r border-sporthub-border h-screen flex-col pt-6 fixed left-0 top-0 z-40 shrink-0">
@@ -104,7 +88,6 @@ export const Sidebar = () => {
               <span className="text-[9px] text-sporthub-muted">Siguiendo</span>
             </div>
             <div className="flex flex-col text-center">
-              {/* El valor 'user.posts_count' ahora sube solo */}
               <span className="text-white font-bold text-sm">{user?.posts_count || 0}</span>
               <span className="text-[9px] text-sporthub-muted">Posts</span>
             </div>
@@ -118,8 +101,10 @@ export const Sidebar = () => {
         <SidebarItem icon={User} label="Perfil" to="/profile" />
         <SidebarItem icon={Search} label="Buscar" to="/search" />
         <SidebarItem icon={Users} label="Red" to="/network" />
+        {/* 🟢 BadgeCount ahora viene directamente del Contexto */}
         <SidebarItem icon={MessageSquare} label="Mensajes" to="/messages" badgeCount={unreadCount} />
         <SidebarItem icon={Bookmark} label="Guardados" to="/saved" />
+        {/* 🟢 BadgeCount para Notificaciones Sociales */}
         <SidebarItem icon={Bell} label="Notificaciones" to="/notifications" badgeCount={socialCount} />
         <SidebarItem icon={Settings} label="Configuración" to="/settings" />
 

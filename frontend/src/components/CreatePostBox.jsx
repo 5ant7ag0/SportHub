@@ -43,7 +43,7 @@ export const CreatePostBox = ({ authUser, onPostCreated }) => {
                 formData.append('file', newPostFile);
             }
             
-            await api.post('/posts/create/', formData, {
+            const { data } = await api.post('/posts/create/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             
@@ -53,7 +53,7 @@ export const CreatePostBox = ({ authUser, onPostCreated }) => {
             setPostType('post');
             setNewPostFile(null);
             setNewPostPreview(null);
-            if (onPostCreated) onPostCreated();
+            if (onPostCreated && data.post) onPostCreated(data.post);
         } catch (error) {
             console.error("Error creando post:", error);
         } finally {

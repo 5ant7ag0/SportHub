@@ -200,15 +200,53 @@ class FollowView(APIView):
 
         is_following = target_user in user.following
         
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+
         if is_following:
             User.objects(id=user.id).update_one(pull__following=target_user)
             User.objects(id=target_user.id).update_one(pull__followers=user)
             detail = f"Has dejado de seguir a {target_user.name}"
+            # Notificar ambos para que actualicen contadores
+            try:
+                # Al seguido
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{target_user.id}',
+                    {'type': 'new_notification', 'data': {'type': 'count_update', 'followers_count': len(target_user.followers) - 1}}
+                )
+                # Al seguidor (yo)
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{user.id}',
+                    {'type': 'new_notification', 'data': {'type': 'count_update', 'following_count': len(user.following) - 1}}
+                )
+            except: pass
         else:
             User.objects(id=user.id).update_one(add_to_set__following=target_user)
             User.objects(id=target_user.id).update_one(add_to_set__followers=user)
             Notification(actor=user, recipient=target_user, action_type='follow').save()
             detail = f"Ahora sigues a {target_user.name}"
+            
+            try:
+                # Al seguido (nueva notificación + followers +1)
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{target_user.id}',
+                    {
+                        'type': 'new_notification',
+                        'data': {
+                            'type': 'follow',
+                            'actor_name': user.name,
+                            'actor_id': str(user.id),
+                            'followers_count': len(target_user.followers) + 1
+                        }
+                    }
+                )
+                # Al seguidor (yo) (following +1)
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{user.id}',
+                    {'type': 'new_notification', 'data': {'type': 'count_update', 'following_count': len(user.following) + 1}}
+                )
+            except: pass
 
         user.reload()
         return Response({
@@ -238,6 +276,26 @@ class LikeView(APIView):
             Post.objects(id=post_id).update_one(add_to_set__likes=user)
             if str(post.author.id) != str(user.id):
                 Notification(actor=user, recipient=post.author, action_type='like', post_id=post).save()
+                
+                # 🟢 SEÑAL REAL-TIME: Notificar al autor del post
+                try:
+                    from channels.layers import get_channel_layer
+                    from asgiref.sync import async_to_sync
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f'user_{post.author.id}',
+                        {
+                            'type': 'new_notification',
+                            'data': {
+                                'type': 'like',
+                                'actor_name': user.name,
+                                'post_id': str(post.id)
+                            }
+                        }
+                    )
+                except Exception as e:
+                    print(f"WS Like Error: {e}")
+                    
             return Response({"detail": "Like agregado."}, status=200)
 
 class SendMessageView(APIView):
@@ -527,19 +585,29 @@ class FeedView(APIView):
             matching_users = User.objects(sport=sport)
             filter_q = Q(author__in=matching_users)
 
-        posts = Post.objects(filter_q).order_by('-timestamp')
+        # --- PAGINACIÓN ---
+        try:
+            limit = int(request.query_params.get('limit', 20))
+            offset = int(request.query_params.get('offset', 0))
+        except:
+            limit, offset = 20, 0
+
+        posts = Post.objects(filter_q).order_by('-timestamp')[offset : offset + limit]
         
         try:
             serializer = PostSerializer(posts, many=True, context={'request': request})
-            return Response(serializer.data, status=200)
+            return Response({
+                "posts": serializer.data,
+                "has_more": len(serializer.data) == limit
+            }, status=200)
         except Exception as e:
             print(f"CRITICAL SERIALIZATION ERROR IN FEED: {e}")
             fallback_data = []
-            for post in posts[:50]: 
+            for post in posts[:limit]: 
                 try:
                     fallback_data.append(PostSerializer(post, context={'request': request}).data)
                 except: continue
-            return Response(fallback_data, status=200)
+            return Response({"posts": fallback_data, "has_more": len(fallback_data) == limit}, status=200)
 
 class PostDetailView(APIView):
     authentication_classes = [MongoJWTAuthentication]
@@ -632,6 +700,26 @@ class CommentView(APIView):
         
         if str(post.author.id) != str(user.id):
             Notification(actor=user, recipient=post.author, action_type='comment', post_id=post).save()
+            
+            # 🟢 SEÑAL REAL-TIME: Notificar al autor del post
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{post.author.id}',
+                    {
+                        'type': 'new_notification',
+                        'data': {
+                            'type': 'comment',
+                            'actor_name': user.name,
+                            'post_id': str(post.id),
+                            'text_preview': text[:50]
+                        }
+                    }
+                )
+            except Exception as e:
+                print(f"WS Comment Error: {e}")
             
         return Response({"message": "Comentario agregado exitosamente."}, status=201)
 
