@@ -97,7 +97,7 @@ export const AnalyticsDashboard = () => {
                 community_pulse: data?.community_pulse || [],
                 talent_growth: data?.talent_growth || [],
             });
-            
+
             if (data?.community_pulse?.some(d => d.count > 0)) {
                 console.log("🔥 PULSO DETECTADO:", data.community_pulse.filter(d => d.count > 0));
             }
@@ -266,7 +266,7 @@ export const AnalyticsDashboard = () => {
                         <h2 className="text-xl font-bold text-white">
                             {stats.is_global ? 'Analítica Global' : 'Analítica de Rendimiento'}
                         </h2>
-                        <span 
+                        <span
                             onClick={() => setStats(prev => ({ ...prev, is_global: !prev.is_global }))}
                             className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest cursor-pointer transition-all hover:scale-105 active:scale-95 ${stats.is_global ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-sporthub-neon/10 text-sporthub-neon border border-sporthub-neon/20'}`}
                         >
@@ -297,12 +297,12 @@ export const AnalyticsDashboard = () => {
                                 <BarChart data={viewData.demo}>
                                     <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
-                                    <YAxis 
-                                        tick={{ fill: COLORS.muted, fontSize: 10 }} 
-                                        axisLine={false} 
+                                    <YAxis
+                                        tick={{ fill: COLORS.muted, fontSize: 10 }}
+                                        axisLine={false}
                                         tickLine={false}
-                                        width={40} 
-                                        domain={[0, 'auto']} 
+                                        width={40}
+                                        domain={[0, 'auto']}
                                         tickFormatter={(value) => `${value}%`}
                                     />
                                     <RechartsTooltip
@@ -535,15 +535,24 @@ export const AnalyticsDashboard = () => {
                     <h3 className="text-white font-semibold mb-4 text-sm">Resumen de Métricas</h3>
                     <div className="flex flex-col gap-4">
                         <div className="flex justify-between items-center border-b border-sporthub-border pb-3">
-                            <span className="text-sm text-sporthub-muted">Engagement Medio</span>
+                            <div className="flex items-center gap-2">
+                                <Activity className="w-3.5 h-3.5 text-sporthub-neon font-bold" />
+                                <span className="text-sm text-sporthub-muted">Engagement Medio</span>
+                            </div>
                             <span className="text-sm font-bold text-sporthub-neon">{viewData.rate}%</span>
                         </div>
                         <div className="flex justify-between items-center border-b border-sporthub-border pb-3">
-                            <span className="text-sm text-sporthub-muted">Total Clicks Corazón</span>
+                            <div className="flex items-center gap-2">
+                                <Heart className="w-3.5 h-3.5 text-sporthub-cyan fill-sporthub-cyan/20" />
+                                <span className="text-sm text-sporthub-muted">Total Likes</span>
+                            </div>
                             <span className="text-sm font-bold text-sporthub-cyan">{(stats?.total_likes || 0).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-sporthub-muted">Comentarios en comunidad</span>
+                            <div className="flex items-center gap-2">
+                                <MessageCircle className="w-3.5 h-3.5 text-purple-400" />
+                                <span className="text-sm text-sporthub-muted">Comentarios en comunidad</span>
+                            </div>
                             <span className="text-sm font-bold text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
                         </div>
                     </div>
@@ -674,32 +683,32 @@ const TalentGrowthScatter = ({ data }) => (
                 <ResponsiveContainer width="99%" height="99%">
                     <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis 
-                            type="number" 
-                            dataKey="posts" 
-                            name="Posts" 
-                            stroke={COLORS.muted} 
+                        <XAxis
+                            type="number"
+                            dataKey="posts"
+                            name="Posts"
+                            stroke={COLORS.muted}
                             fontSize={10}
                             tickLine={false}
                             axisLine={false}
                             tick={{ fill: COLORS.muted, fontWeight: 'bold' }}
                             domain={[0, dataMax => Math.ceil(dataMax * 1.1 + 1)]}
                         >
-                            <Label 
-                                value="TOTAL DE PUBLICACIONES" 
-                                position="bottom" 
-                                offset={-5} 
-                                fill={COLORS.muted} 
-                                fontSize={9} 
-                                fontWeight="bold" 
+                            <Label
+                                value="TOTAL DE PUBLICACIONES"
+                                position="bottom"
+                                offset={-5}
+                                fill={COLORS.muted}
+                                fontSize={9}
+                                fontWeight="bold"
                                 style={{ letterSpacing: '0.1em' }}
                             />
                         </XAxis>
-                        <YAxis 
-                            type="number" 
-                            dataKey="followers" 
-                            name="Seguidores" 
-                            stroke={COLORS.muted} 
+                        <YAxis
+                            type="number"
+                            dataKey="followers"
+                            name="Seguidores"
+                            stroke={COLORS.muted}
                             fontSize={10}
                             tickLine={false}
                             axisLine={false}
@@ -707,16 +716,16 @@ const TalentGrowthScatter = ({ data }) => (
                             tick={{ fill: COLORS.muted, fontWeight: 'bold' }}
                             domain={[0, dataMax => Math.ceil(dataMax * 1.1 + 1)]}
                         >
-                            <Label 
-                                value="NÚMERO DE SEGUIDORES" 
-                                angle={-90} 
-                                position="insideLeft" 
+                            <Label
+                                value="NÚMERO DE SEGUIDORES"
+                                angle={-90}
+                                position="insideLeft"
                                 style={{ textAnchor: 'middle', fill: COLORS.muted, fontSize: 9, fontWeight: 'bold', letterSpacing: '0.1em' }}
                                 offset={10}
                             />
                         </YAxis>
                         <ZAxis type="number" range={[100, 100]} />
-                        <RechartsTooltip 
+                        <RechartsTooltip
                             cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }}
                             content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
@@ -740,15 +749,15 @@ const TalentGrowthScatter = ({ data }) => (
                                 return null;
                             }}
                         />
-                        <Scatter 
-                            name="Talentos" 
-                            data={data} 
+                        <Scatter
+                            name="Talentos"
+                            data={data}
                             fill={COLORS.neon}
                             fillOpacity={0.7}
                         >
                             {data.map((entry, index) => (
-                                <Cell 
-                                    key={`cell-${index}`} 
+                                <Cell
+                                    key={`cell-${index}`}
                                     fill={COLORS.neon}
                                     className="drop-shadow-[0_0_10px_rgba(163,230,53,0.6)] cursor-pointer transition-all duration-300 hover:opacity-100"
                                 />
@@ -776,7 +785,7 @@ const CommunityPulse = ({ data }) => {
     const getIntensityColor = (count) => {
         if (count === 0) return '#1A2130'; // Fondo base tenue
         const ratio = count / maxCount;
-        
+
         // VISUAL FIX: Escala más agresiva para que 1 sola interacción brille
         if (ratio < 0.2) return 'rgba(34, 211, 238, 0.45)'; // Cyan visible al 45% (Subida de 0.2 a 0.45)
         if (ratio < 0.5) return 'rgba(34, 211, 238, 0.7)';  // Cyan fuerte
@@ -847,11 +856,11 @@ const CommunityPulse = ({ data }) => {
                     </div>
                 </div>
             </div>
-            
+
             <div className="mt-6 p-4 bg-[#0B0F19]/50 rounded-xl border border-dashed border-sporthub-border flex items-center gap-3">
                 <Activity className="w-4 h-4 text-sporthub-neon animate-pulse" />
                 <p className="text-[10px] text-sporthub-muted font-medium uppercase tracking-widest leading-relaxed">
-                    Visualización basada en <span className="text-white">Engagement Orgánico</span> (Likes + Mensajes + Comentarios). 
+                    Visualización basada en <span className="text-white">Engagement Orgánico</span> (Likes + Mensajes + Comentarios).
                     Los datos se sincronizan cada vez que el <span className="text-sporthub-cyan">WebSocket</span> detecta un pulso activo.
                 </p>
             </div>
@@ -875,6 +884,14 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
             return matchesSearch && matchesRole && matchesCity;
         });
     }, [users, searchQuery, roleFilter, cityFilter]);
+
+    const isFiltered = roleFilter !== 'all' || cityFilter !== '' || searchQuery !== '';
+
+    const handleClearFilters = () => {
+        setRoleFilter('all');
+        setCityFilter('');
+        onSearch('');
+    };
 
     const formatDate = (dateStr) => {
         if (!dateStr) return 'N/A';
@@ -932,6 +949,15 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sporthub-muted" />
                         <input type="text" placeholder="Nombre o email..." className="w-full bg-[#0B0F19] border border-sporthub-border rounded-xl pl-12 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-sporthub-cyan transition-all" value={searchQuery} onChange={(e) => onSearch(e.target.value)} />
                     </div>
+
+                    {isFiltered && (
+                        <button
+                            onClick={handleClearFilters}
+                            className="text-[10px] text-sporthub-cyan font-bold uppercase tracking-wider hover:opacity-80 transition-all flex items-center gap-1 md:ml-2"
+                        >
+                            <X className="w-3.5 h-3.5" /> Limpiar Filtros
+                        </button>
+                    )}
                 </div>
             </div>
             <div className="overflow-x-auto custom-scrollbar">
@@ -953,9 +979,9 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                                 <td className="px-8 py-6 flex items-center gap-4">
                                     <Link to={`/profile?id=${str(u.id)}`} className="relative group/avatar">
                                         <div className="w-12 h-12 rounded-full border-2 border-sporthub-border overflow-hidden bg-sporthub-bg shadow-lg transition-all group-hover/avatar:border-sporthub-neon/50">
-                                            <img 
-                                                src={getMediaUrl(u.avatar_url)} 
-                                                className="w-full h-full object-cover" 
+                                            <img
+                                                src={getMediaUrl(u.avatar_url)}
+                                                className="w-full h-full object-cover"
                                                 onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                                                 alt={u.name}
                                             />
@@ -970,7 +996,7 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                                             <StatusBadge user={u} />
                                         </div>
                                         <p className="text-[10px] text-sporthub-muted font-semibold truncate max-w-[150px]">
-                                            {u.role === 'athlete' 
+                                            {u.role === 'athlete'
                                                 ? (u.sport ? `${u.sport}${u.position ? ` - ${u.position}` : ''}` : u.email)
                                                 : (u.company || u.job_title ? `${u.company || ''}${u.company && u.job_title ? ' - ' : ''}${u.job_title || ''}` : u.email)
                                             }
