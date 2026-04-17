@@ -175,7 +175,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
         if (onUpdate) onUpdate(updatedPost);
 
         try {
-            await api.post('/social/follow/', { user_id: post.shared_profile.id });
+            await api.post('/social/follow/', { target_id: post.shared_profile.id });
         } catch(e) {
             const revertedPost = { ...post, shared_profile: { ...post.shared_profile, is_following: previousState } };
             setPost(revertedPost);
