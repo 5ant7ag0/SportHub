@@ -128,6 +128,9 @@ export const Profile = () => {
     const [previewAvatar, setPreviewAvatar] = useState(null);
     const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
     const avatarInputRef = useRef(null);
+    const [isSharingProfile, setIsSharingProfile] = useState(false);
+    const [shareProfileModalOpen, setShareProfileModalOpen] = useState(false);
+    const [shareProfileMessage, setShareProfileMessage] = useState('');
 
     useEffect(() => {
         followStatusRef.current = isProcessingFollow;
@@ -167,6 +170,47 @@ export const Profile = () => {
         setPreviewAvatar(null);
         setSelectedAvatarFile(null);
         if (avatarInputRef.current) avatarInputRef.current.value = "";
+    };
+
+    const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+    const [previewBanner, setPreviewBanner] = useState(null);
+    const [selectedBannerFile, setSelectedBannerFile] = useState(null);
+    const bannerInputRef = useRef(null);
+
+    const handleBannerChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (previewBanner) URL.revokeObjectURL(previewBanner);
+        const url = URL.createObjectURL(file);
+        setPreviewBanner(url);
+        setSelectedBannerFile(file);
+    };
+
+    const handleSaveBanner = async () => {
+        if (!selectedBannerFile) return;
+        setIsUploadingBanner(true);
+        const formData = new FormData();
+        formData.append('banner', selectedBannerFile);
+        try {
+            const { data } = await api.post('/settings/update/', formData);
+            updateUser(data.user);
+            setProfile(prev => ({ ...prev, banner_url: data.user.banner_url }));
+            if (previewBanner) URL.revokeObjectURL(previewBanner);
+            setPreviewBanner(null);
+            setSelectedBannerFile(null);
+        } catch (err) {
+            console.error("Error saving banner:", err);
+            setError("No se pudo guardar la imagen del banner. Reintenta.");
+        } finally {
+            setIsUploadingBanner(false);
+        }
+    };
+
+    const handleCancelBanner = () => {
+        if (previewBanner) URL.revokeObjectURL(previewBanner);
+        setPreviewBanner(null);
+        setSelectedBannerFile(null);
+        if (bannerInputRef.current) bannerInputRef.current.value = "";
     };
     
     const targetId = searchParams.get('id');
@@ -222,7 +266,7 @@ export const Profile = () => {
         const originallyFollowing = profile.is_following;
         const originalFollowersCount = profile.followers_count;
         
-        // 1. Acción Instantánea
+        // 1. Acción Instantánea (UI Optimista)
         setProfile(prev => ({
             ...prev,
             is_following: !originallyFollowing,
@@ -233,12 +277,19 @@ export const Profile = () => {
             following_count: (authUser.following_count || 0) + (originallyFollowing ? -1 : 1)
         });
 
-        // 2. Estado de procesamiento (Background)
+        // 2. Estado de procesamiento y Bloqueo de Polling
         setIsProcessingFollow(true);
-        followStatusRef.current = true;
+        followStatusRef.current = true; // Previene que el GET periódico sobreescriba esta data fresca
 
         try {
             await api.post('/social/follow/', { target_id: profile.id });
+            
+            // 3. Forzar sincronización final pura antes de soltar el bloqueo
+            const tid = targetId;
+            const path = tid ? `/profile/?id=${tid}` : '/profile/';
+            const { data } = await api.get(path);
+            setProfile(data); // Inyectamos la verdad absoluta del backend ya libre de latencia
+            
         } catch (err) {
             // Revertir solo en caso de error real
             setProfile(prev => ({
@@ -251,11 +302,37 @@ export const Profile = () => {
             });
         } finally {
             setIsProcessingFollow(false);
-            followStatusRef.current = false;
+            followStatusRef.current = false; // Liberamos para próximos pollings
         }
     };
 
     const handleMessage = () => navigate(`/messages?contactId=${profile.id}`);
+
+    const handleOpenShareProfile = () => {
+        setShareProfileMessage(`¡Les recomiendo echar un vistazo al perfil de ${profile.name}!`);
+        setShareProfileModalOpen(true);
+    };
+
+    const handleConfirmShareProfile = async () => {
+        setIsSharingProfile(true);
+        try {
+            const formData = new FormData();
+            formData.append('content', shareProfileMessage || `¡Les recomiendo echar un vistazo al perfil de ${profile.name}!`);
+            formData.append('post_type', 'profile_share');
+            formData.append('shared_profile_id', profile.id);
+            
+            await api.post('/posts/create/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            alert('🎉 Perfil compartido exitosamente en tu Muro.');
+            setShareProfileModalOpen(false);
+        } catch (e) {
+            console.error(e);
+            alert('Error al compartir el perfil.');
+        } finally {
+            setIsSharingProfile(false);
+        }
+    };
 
     const handleOpenShare = (post) => {
         if (!post?.id) return;
@@ -437,17 +514,25 @@ export const Profile = () => {
                 <>
                     <button 
                         onClick={handleFollow} 
-                        className={`flex-none min-w-[130px] text-sm font-bold px-8 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg ${profile.is_following ? 'bg-white/5 text-white border border-white/10' : 'bg-sporthub-neon text-black hover:scale-105 shadow-sporthub-neon/10'}`}
+                        className={`flex-none min-w-[110px] text-sm font-bold px-5 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg ${profile.is_following ? 'bg-white/5 text-white border border-white/10' : 'bg-sporthub-neon text-black hover:scale-105 shadow-sporthub-neon/10'}`}
                     >
                         {profile.is_following ? <UserMinus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                         {profile.is_following ? 'Siguiendo' : 'Seguir'}
                     </button>
                     <button 
                         onClick={handleMessage} 
-                        className="flex-none min-w-[130px] bg-sporthub-cyan text-black text-sm font-bold px-8 py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sporthub-cyan/10"
+                        className="flex-none min-w-[110px] bg-sporthub-cyan text-black text-sm font-bold px-5 py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sporthub-cyan/10"
                     >
                         <MessageSquare className="w-4 h-4" /> 
                         Mensaje
+                    </button>
+                    <button 
+                        onClick={handleOpenShareProfile} 
+                        disabled={isSharingProfile}
+                        className="bg-white/5 text-white p-3 rounded-2xl border border-white/10 hover:bg-white/10 hover:scale-105 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 group/share"
+                        title="Compartir perfil en el Muro"
+                    >
+                        <Share2 className="w-5 h-5 group-hover/share:text-sporthub-neon transition-colors" />
                     </button>
                 </>
             )}
@@ -456,39 +541,118 @@ export const Profile = () => {
 
     return (
         <div className="bg-[#0B0F19] p-4 md:p-8">
-            <div className="flex flex-col md:flex-row gap-6 max-w-4xl mx-auto items-start">
-                <div className="flex-1 flex flex-col gap-6 w-full">
+            <div className="flex flex-col xl:flex-row gap-6 max-w-6xl mx-auto items-start">
+                <div className="flex-1 flex flex-col gap-6 w-full min-w-0">
                     {/* HEADER CARD */}
                     <div className="bg-sporthub-card rounded-3xl border border-sporthub-border overflow-hidden w-full">
-                        <div className="h-48 md:h-60 w-full relative">
-                            <img src="https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop" className="w-full h-full object-cover opacity-60" alt="Banner"/>
+                        <div 
+                            className={`h-48 md:h-60 w-full relative group ${isOwner && !previewBanner ? 'cursor-pointer' : ''}`}
+                            onClick={() => { if(isOwner && !isUploadingBanner && !previewBanner) bannerInputRef.current?.click(); }}
+                        >
+                            <img 
+                                src={previewBanner || (profile.banner_url && profile.banner_url !== 'None' ? getMediaUrl(profile.banner_url) : "https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop")} 
+                                className={`w-full h-full object-cover transition-all ${isUploadingBanner ? 'opacity-30 grayscale' : 'opacity-60'}`} 
+                                alt="Banner"
+                            />
                             <div className="absolute inset-0 bg-gradient-to-t from-sporthub-card via-transparent to-transparent"></div>
+                            
+                            {isOwner && (
+                                <>
+                                    <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerChange} />
+                                    
+                                    {!previewBanner && !isUploadingBanner && (
+                                        <div className="absolute top-4 right-4 bg-black/40 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md border border-white/10 z-20">
+                                            <Camera className="w-5 h-5 text-white" />
+                                        </div>
+                                    )}
+
+                                    {isUploadingBanner && (
+                                        <div className="absolute inset-0 flex items-center justify-center z-20">
+                                            <Loader2 className="w-10 h-10 text-sporthub-neon animate-spin" />
+                                        </div>
+                                    )}
+                                    
+                                    {previewBanner && !isUploadingBanner && (
+                                        <div className="absolute top-4 right-4 flex items-center gap-3 z-30">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleCancelBanner(); }}
+                                                className="bg-red-600 hover:bg-red-500 text-white p-2.5 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95"
+                                                title="Cancelar"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleSaveBanner(); }}
+                                                className="bg-green-500 hover:bg-green-400 text-white p-2.5 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-transform hover:scale-110 active:scale-95"
+                                                title="Guardar Banner"
+                                            >
+                                                <CheckCircle2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                         
                         <div className="px-5 md:px-8 pb-8 flex flex-col gap-6 relative -mt-12 md:-mt-16">
                             {/* TOP LAYER: Identity Row */}
                             <div className="flex flex-row items-center gap-4 md:gap-7 w-full md:w-auto">
-                                {/* Avatar */}
-                                <div className={`relative group ${isOwner ? 'cursor-pointer' : ''} shrink-0`} onClick={() => isOwner && !isUploadingAvatar && avatarInputRef.current?.click()}>
-                                    <div className={`w-28 h-28 md:w-44 md:h-44 rounded-full border-4 border-sporthub-card overflow-hidden bg-[#0B0F19] shadow-2xl transition-all ${isUploadingAvatar ? 'opacity-50 grayscale' : (isOwner ? 'group-hover:ring-4 group-hover:ring-sporthub-neon/30' : '')}`}>
-                                        <img src={previewAvatar || getMediaUrl(profile.avatar_url)} className="w-full h-full object-cover" onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }} alt="Avatar" />
-                                    </div>
-                                    
-                                    {/* Role Badge Overlay */}
-                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-sporthub-cyan text-black text-[9px] md:text-[10px] font-black px-4 py-1 rounded-full border-2 border-[#0B0F19] uppercase tracking-widest shadow-xl whitespace-nowrap z-10">
-                                        {profile.role === 'athlete' ? 'Deportista' : profile.role === 'scout' ? 'Reclutador' : profile.role === 'admin' ? 'Administrador' : 'Usuario'}
+                                {/* Avatar and Role Label - STACKED with subtle overlap */}
+                                <div className="flex flex-col items-center gap-0 shrink-0 -mt-4 md:-mt-10 relative">
+                                    <div 
+                                        className={`relative group ${isOwner && !previewAvatar ? 'cursor-pointer' : ''} ring-4 ring-[#0B0F19] rounded-full`} 
+                                        onClick={() => { if(isOwner && !isUploadingAvatar && !previewAvatar) avatarInputRef.current?.click(); }}
+                                    >
+                                        <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-sporthub-card overflow-hidden bg-[#0B0F19] shadow-2xl transition-all ${isUploadingAvatar ? 'opacity-50 grayscale' : (isOwner ? 'group-hover:ring-4 group-hover:ring-sporthub-neon/30' : '')}`}>
+                                            <img src={previewAvatar || getMediaUrl(profile.avatar_url)} className="w-full h-full object-cover" onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }} alt="Avatar" />
+                                        </div>
+
+                                        {isOwner && (
+                                            <>
+                                                <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                                                
+                                                {!previewAvatar && !isUploadingAvatar && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm">
+                                                        <Camera className="w-8 h-8 text-white/90" />
+                                                    </div>
+                                                )}
+
+                                                {isUploadingAvatar && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full z-20">
+                                                        <Loader2 className="w-10 h-10 text-sporthub-neon animate-spin" />
+                                                    </div>
+                                                )}
+                                                
+                                                {previewAvatar && !isUploadingAvatar && (
+                                                    <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleCancelAvatar(); }}
+                                                            className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95"
+                                                            title="Cancelar"
+                                                        >
+                                                            <X className="w-5 h-5" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleSaveAvatar(); }}
+                                                            className="bg-green-500 hover:bg-green-400 text-white p-2 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-transform hover:scale-110 active:scale-95"
+                                                            title="Guardar Foto"
+                                                        >
+                                                            <CheckCircle2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
 
-                                    {isOwner && (
-                                        <>
-                                            <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                                            {(isUploadingAvatar || (previewAvatar && !isUploadingAvatar)) && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full z-20">
-                                                    {isUploadingAvatar ? <Loader2 className="w-8 h-8 text-sporthub-neon animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
+                                    {/* Role Badge - Glassmorphism TOUCHING bottom edge */}
+                                    <div className={`-mt-5 md:-mt-6 z-10 px-5 py-1.5 rounded-full border shadow-[0_5px_15px_rgba(0,0,0,0.3)] backdrop-blur-md ${profile.role === 'admin' ? 'bg-purple-500/10 border-purple-500/30' : profile.role === 'athlete' ? 'bg-sporthub-neon/10 border-sporthub-neon/30' : 'bg-sporthub-cyan/10 border-sporthub-cyan/30'}`}>
+                                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${profile.role === 'admin' ? 'text-purple-400' : profile.role === 'athlete' ? 'text-sporthub-neon' : 'text-sporthub-cyan'}`}>
+                                            {profile.role === 'admin' ? 'Admin' : profile.role === 'athlete' ? 'Deportista' : 'Reclutador'}
+                                        </p>
+                                    </div>
+
+
                                 </div>
 
                                 {/* Identity Block */}
@@ -498,12 +662,21 @@ export const Profile = () => {
                                     </h1>
                                     
                                     {/* Metadata */}
-                                    <div className="flex flex-row items-center justify-start gap-4 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-bold uppercase tracking-[0.2em] opacity-60">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-start gap-2 sm:gap-4 md:gap-5 text-[10px] text-gray-500 uppercase font-bold tracking-widest">
+                                        {(profile?.sport || profile?.company || profile?.job_title) && (
+                                            <div className="flex items-center gap-1.5 break-words">
+                                                <Briefcase className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-neon" /> 
+                                                <span className="truncate">
+                                                    {profile?.role === 'athlete' 
+                                                        ? (profile?.sport ? `${profile.sport}${profile.position ? ` - ${profile.position}` : ''}` : '')
+                                                        : (profile?.company || profile?.job_title ? `${profile?.company || ''}${profile?.company && profile?.job_title ? ' - ' : ''}${profile?.job_title || ''}` : '')
+                                                    }
+                                                </span>
+                                            </div>
+                                        )}
                                         <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                            <MapPin className="w-3.5 h-3.5 text-sporthub-cyan" /> {profile.city || 'Quito'}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                            <Calendar className="w-3.5 h-3.5" /> {profile.date_joined ? `Miembro ${new Date(profile.date_joined).getFullYear()}` : 'Miembro 2022'}
+                                            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-cyan" /> 
+                                            <span className="truncate">{profile.city || 'Quito'}</span>
                                         </div>
                                     </div>
 
@@ -538,11 +711,11 @@ export const Profile = () => {
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Siguiendo</span>
                         </div>
                         <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-5 flex flex-col items-center justify-center">
-                            <div className="flex items-center gap-2 mb-1"><span className="text-2xl font-bold text-red-500">124</span><Heart className="w-4 h-4 text-red-500 fill-red-500" /></div>
+                            <div className="flex items-center gap-2 mb-1"><span className="text-2xl font-bold text-red-500">{profile.total_likes || "0"}</span><Heart className="w-4 h-4 text-red-500 fill-red-500" /></div>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Likes</span>
                         </div>
                         <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-5 flex flex-col items-center justify-center">
-                            <div className="flex items-center gap-2 mb-1"><span className="text-2xl font-bold text-[#c084fc]">4.8</span><Star className="w-4 h-4 text-[#c084fc] fill-[#c084fc]" /></div>
+                            <div className="flex items-center gap-2 mb-1"><span className="text-2xl font-bold text-[#c084fc]">{profile.average_rating ? profile.average_rating.toFixed(1) : "0.0"}</span><Star className="w-4 h-4 text-[#c084fc] fill-[#c084fc]" /></div>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Rating</span>
                         </div>
                     </div>
@@ -555,8 +728,8 @@ export const Profile = () => {
                         <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 mt-6">
                             <h3 className="text-white font-bold mb-5 flex items-center gap-2"><Briefcase className="w-5 h-5 text-sporthub-cyan" /> Información Profesional</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-[#0B0F19] p-4 rounded-2xl border border-white/5 text-xs"><p className="text-gray-500 font-bold mb-1 uppercase tracking-widest">Empresa / Club</p><p className="text-white font-semibold">{profile.empresa_club || 'Independiente'}</p></div>
-                                <div className="bg-[#0B0F19] p-4 rounded-2xl border border-white/5 text-xs"><p className="text-gray-500 font-bold mb-1 uppercase tracking-widest">Cargo Actual</p><p className="text-white font-semibold">{profile.cargo || 'Investigador de Talentos'}</p></div>
+                                <div className="bg-[#0B0F19] p-4 rounded-2xl border border-white/5 text-xs"><p className="text-gray-500 font-bold mb-1 uppercase tracking-widest">Empresa / Club</p><p className="text-white font-semibold">{profile.company || 'No especificado'}</p></div>
+                                <div className="bg-[#0B0F19] p-4 rounded-2xl border border-white/5 text-xs"><p className="text-gray-500 font-bold mb-1 uppercase tracking-widest">Cargo Actual</p><p className="text-white font-semibold">{profile.job_title || 'No especificado'}</p></div>
                             </div>
                         </div>
                     )}
@@ -636,6 +809,47 @@ export const Profile = () => {
             />
             <ShareConfirmModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} onConfirm={handleConfirmShare} postAuthor={sharingPost?.author?.name} isLoading={isSharing} error={shareError} />
             <DeleteConfirmModal isOpen={!!postToDelete} onClose={() => setPostToDelete(null)} onConfirm={handleDeletePost} isDeleting={isDeleting} />
+
+            {/* Share Profile Modal */}
+            {shareProfileModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-[#0B0F19]/80 backdrop-blur-sm transition-opacity" onClick={isSharingProfile ? null : () => setShareProfileModalOpen(false)} />
+                    <div className="bg-sporthub-card border border-sporthub-neon/30 w-full max-w-sm rounded-[2rem] p-8 relative z-10 shadow-[0_20px_50px_rgba(163,230,53,0.1)] transform transition-all scale-100 animate-in fade-in zoom-in duration-300">
+                        <div className="w-16 h-16 bg-sporthub-neon/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                            <Share2 className="w-8 h-8 text-sporthub-neon" />
+                        </div>
+                        <h3 className="text-white text-xl font-black text-center mb-2 uppercase tracking-tight">Recomendar Atleta</h3>
+                        <p className="text-gray-400 text-center text-sm mb-6 px-2">
+                            Escribe una observación para tu Muro de Feed.
+                        </p>
+                        
+                        <textarea
+                            value={shareProfileMessage}
+                            onChange={(e) => setShareProfileMessage(e.target.value)}
+                            disabled={isSharingProfile}
+                            className="bg-[#0B0F19] text-sm text-white rounded-xl p-4 border border-sporthub-border focus:border-sporthub-neon outline-none resize-none w-full min-h-[100px] mb-6 shadow-inner disabled:opacity-50"
+                            placeholder="Escribe algo sobre este perfil..."
+                        />
+
+                        <div className="flex flex-col gap-3">
+                            <button 
+                                onClick={handleConfirmShareProfile}
+                                disabled={isSharingProfile}
+                                className="w-full bg-sporthub-neon text-black font-black py-4 rounded-2xl hover:shadow-[0_0_20px_rgba(163,230,53,0.4)] active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isSharingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publicar y Compartir"}
+                            </button>
+                            <button 
+                                onClick={() => setShareProfileModalOpen(false)}
+                                disabled={isSharingProfile}
+                                className="w-full bg-white/5 text-gray-400 font-bold py-4 rounded-2xl hover:bg-white/10 transition-colors uppercase tracking-widest text-xs disabled:opacity-30"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

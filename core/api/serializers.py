@@ -19,6 +19,8 @@ class AnalyticsSerializer(serializers.Serializer):
     user_growth = serializers.ListField(child=serializers.DictField(), required=False)
     city_ranking = serializers.ListField(child=serializers.DictField(), required=False)
     connection_status = serializers.DictField(required=False)
+    community_pulse = serializers.ListField(child=serializers.DictField(), required=False)
+    talent_growth = serializers.ListField(child=serializers.DictField(), required=False)
 
 class MessageSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
@@ -58,6 +60,7 @@ class UserSerializer(serializers.Serializer):
     position = serializers.CharField(required=False, allow_null=True)
     city = serializers.CharField(required=False, allow_null=True)
     avatar_url = serializers.CharField(required=False, allow_null=True)
+    banner_url = serializers.CharField(required=False, allow_null=True)
     bio = serializers.CharField(required=False, allow_null=True)
     role = serializers.CharField(required=False, allow_null=True)
     company = serializers.CharField(required=False, allow_null=True)
@@ -74,6 +77,8 @@ class UserSerializer(serializers.Serializer):
     is_online = serializers.BooleanField(read_only=True)
     posts_count = serializers.SerializerMethodField()
     services_count = serializers.SerializerMethodField()
+    total_likes = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(required=False, allow_null=True)
     is_following = serializers.SerializerMethodField()
 
@@ -94,6 +99,26 @@ class UserSerializer(serializers.Serializer):
             from core.models import Post
             return Post.objects(author=obj, post_type='post').count()
         except: return 0
+
+    def get_total_likes(self, obj):
+        try:
+            from core.models import Post
+            posts = Post.objects(author=obj)
+            return sum(len(post.likes) for post in posts if post.likes)
+        except: return 0
+
+    def get_average_rating(self, obj):
+        try:
+            from core.models import Post
+            services = Post.objects(author=obj, post_type='service', ratings_count__gt=0)
+            if not services:
+                return 0.0
+            
+            total_score = sum(s.average_rating * s.ratings_count for s in services)
+            total_ratings = sum(s.ratings_count for s in services)
+            
+            return round(total_score / total_ratings, 1) if total_ratings > 0 else 0.0
+        except: return 0.0
 
     def get_services_count(self, obj):
         try:
@@ -117,19 +142,21 @@ class PostSerializer(serializers.Serializer):
     is_edited = serializers.BooleanField(required=False)
     is_repost = serializers.BooleanField(required=False)
     original_post = serializers.SerializerMethodField()
+    shared_profile = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     shares_count = serializers.SerializerMethodField()
     is_liked_by_user = serializers.SerializerMethodField()
     is_saved_by_user = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
     post_type = serializers.CharField(required=False)
     service_title = serializers.CharField(required=False, allow_null=True)
     service_price = serializers.FloatField(required=False, allow_null=True)
     average_rating = serializers.FloatField(read_only=True)
     ratings_count = serializers.IntegerField(read_only=True)
     user_has_rated = serializers.SerializerMethodField()
+    sport = serializers.SerializerMethodField()
     timestamp = serializers.DateTimeField()
-
     def get_original_post(self, obj):
         if obj.is_repost and obj.original_post:
             return {
@@ -137,15 +164,25 @@ class PostSerializer(serializers.Serializer):
                 "author": UserSerializer(obj.original_post.author).data,
                 "content": obj.original_post.content,
                 "media_url": obj.original_post.media_url,
-                "timestamp": obj.original_post.timestamp
+                "timestamp": obj.original_post.timestamp.isoformat() + "Z" if obj.original_post.timestamp else None,
+                "sport": getattr(obj.original_post.author, 'sport', None)
             }
         return None
+
+    def get_shared_profile(self, obj):
+        if getattr(obj, 'post_type', 'post') == 'profile_share' and getattr(obj, 'shared_profile', None):
+            return UserSerializer(obj.shared_profile, context=self.context).data
+        return None
+
+    def get_sport(self, obj):
+        return getattr(obj.author, 'sport', None)
 
     def get_likes_count(self, obj):
         return len(obj.likes) if getattr(obj, 'likes', None) else 0
 
     def get_shares_count(self, obj):
-        try: return Post.objects(original_post=obj, is_repost=True).count()
+        try:
+            return Post.objects(original_post=obj.id, is_repost=True).count()
         except: return 0
 
     def get_is_liked_by_user(self, obj):
@@ -166,11 +203,13 @@ class PostSerializer(serializers.Serializer):
         
     def get_comments(self, obj):
         try:
-            if self.context.get('full_comments', False):
-                return CommentSerializer(obj.comments or [], many=True).data
-            recent_comments = obj.comments[-3:] if obj.comments else []
-            return CommentSerializer(recent_comments, many=True).data
+            return CommentSerializer(obj.comments or [], many=True).data
         except: return []
+
+    def get_comments_count(self, obj):
+        try:
+            return len(obj.comments) if getattr(obj, 'comments', None) else 0
+        except: return 0
 
     def get_user_has_rated(self, obj):
         try:

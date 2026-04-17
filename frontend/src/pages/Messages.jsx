@@ -352,7 +352,7 @@ const Messages = () => {
             fetchInitialData(true);
 
             // Si la notificación pertenece a nuestro chat activo, traemos el nuevo mensaje
-            if (activeChatRef.current && lastNotification.type === 'message') {
+            if (activeChatRef.current && (lastNotification.type === 'message' || lastNotification.type === 'message_update')) {
                 const senderId = String(lastNotification.message?.sender_id);
                 if (activeChatRef.current.contactId === senderId) {
                     api.get(`/messages/conversation/${activeChatRef.current.contactId}/`)

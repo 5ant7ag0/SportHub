@@ -64,19 +64,29 @@ export const Sidebar = () => {
 
       <div className="px-6 mb-8">
         <div className="flex flex-col items-center text-center p-4 bg-sporthub-card rounded-2xl border border-sporthub-border">
-          <div className="relative">
-            <img
-              src={getMediaUrl(user?.avatar_url)}
-              className="w-16 h-16 rounded-full border-2 border-sporthub-neon mb-3 object-cover bg-[#151b28]"
-              alt="Profile"
-              onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
-            />
-            <span className="absolute -bottom-1 -right-2 bg-sporthub-cyan text-black text-[8px] uppercase font-black px-2 py-0.5 rounded-full border border-sporthub-card tracking-tighter shadow-lg">
-              {user?.role === 'admin' ? 'Administrador' : user?.role === 'athlete' ? 'Deportista' : 'Usuario'}
-            </span>
+          <div className="flex flex-col items-center mb-3">
+            <div className="relative p-1">
+              <img 
+                src={getMediaUrl(user?.avatar_url)} 
+                className="w-16 h-16 rounded-full border-2 border-sporthub-border shadow-lg" 
+                onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
+                alt="Profile"
+              />
+            </div>
+            {/* Role Badge - Glassmorphism TOUCHING bottom edge */}
+            <div className="-mt-2.5 z-10">
+              <span className={`backdrop-blur-md text-[8px] uppercase font-black px-2.5 py-0.5 rounded-full border shadow-sm tracking-tighter ${user?.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' : user?.role === 'athlete' ? 'bg-sporthub-neon/10 text-sporthub-neon border-sporthub-neon/30' : 'bg-sporthub-cyan/10 text-sporthub-cyan border-sporthub-cyan/30'}`}>
+                {user?.role === 'admin' ? 'Admin' : user?.role === 'athlete' ? 'Deportista' : 'Reclutador'}
+              </span>
+            </div>
           </div>
           <h3 className="text-sm font-semibold text-white mb-1">{user?.name || "Cargando..."}</h3>
-          <p className="text-[10px] text-sporthub-muted mb-4">{user?.email}</p>
+          <p className="text-[10px] text-sporthub-muted mb-4 truncate max-w-[150px]">
+            {user?.role === 'athlete' 
+              ? (user?.sport ? `${user.sport}${user.position ? ` - ${user.position}` : ''}` : user?.email)
+              : (user?.company || user?.job_title ? `${user?.company || ''}${user?.company && user?.job_title ? ' - ' : ''}${user?.job_title || ''}` : user?.email)
+            }
+          </p>
 
           <div className="flex justify-between w-full px-2">
             <div className="flex flex-col text-center">

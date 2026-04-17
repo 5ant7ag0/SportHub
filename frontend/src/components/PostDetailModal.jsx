@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LikesListModal } from './LikesListModal';
 
 export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
-    const { user: authUser, updateUser } = useAuth();
+    const { user: authUser, updateUser, lastNotification } = useAuth();
     const navigate = useNavigate();
     const [post, setPost] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -66,14 +66,29 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
             fetchPostDetail();
             document.body.style.overflow = 'hidden';
             
-            // Polling cada 5s para comentarios y likes
-            const pollId = setInterval(() => fetchPostDetail(true), 5000);
             return () => {
-                clearInterval(pollId);
                 document.body.style.overflow = 'unset';
             };
         }
     }, [postId]);
+
+    // Escucha de WebSockets para actualización Real-Time sin polling
+    useEffect(() => {
+        if (lastNotification?.type === 'post_update' && lastNotification.post?.id === postId) {
+            const updatedPost = lastNotification.post;
+            setPost(prev => {
+                if (!prev) return updatedPost;
+                return {
+                    ...prev, // Preservar estado local
+                    ...updatedPost,
+                    // Protecciones para no perder el estado privado del usuario (Liked/Saved/Rated)
+                    is_liked_by_user: prev.is_liked_by_user,
+                    is_saved_by_user: prev.is_saved_by_user,
+                    user_has_rated: prev.user_has_rated
+                };
+            });
+        }
+    }, [lastNotification, postId]);
 
     // Manejar cierre con Esc fuera del polling para estabilidad
     useEffect(() => {
@@ -156,10 +171,26 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
         if (!editContent.trim()) return;
         try {
             await api.put(`/posts/edit/${post.id}/`, { content: editContent });
-            setPost(prev => ({ ...prev, content: editContent, is_edited: true }));
+            const updated = { ...post, content: editContent, is_edited: true };
+            setPost(updated);
+            if (onUpdatePost) onUpdatePost(updated);
             setIsEditing(false);
         } catch (e) {
             console.error("Error editando post", e);
+        }
+    };
+
+    const handleSave = async () => {
+        const originallySaved = post.is_saved_by_user;
+        const updated = { ...post, is_saved_by_user: !originallySaved };
+        setPost(updated);
+        if (onUpdatePost) onUpdatePost(updated);
+        try {
+            await api.post('/posts/save/', { post_id: post.id });
+        } catch (err) {
+            const reverted = { ...post, is_saved_by_user: originallySaved };
+            setPost(reverted);
+            if (onUpdatePost) onUpdatePost(reverted);
         }
     };
 
@@ -443,10 +474,16 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
                                         </button>
                                         <div className="flex items-center gap-2.5 text-gray-400">
                                             <MessageCircle className="w-5 h-5" />
-                                            <span className="text-xs font-black">{post.comments?.length || 0}</span>
+                                            <span className="text-xs font-black">{post.comments_count || 0}</span>
                                         </div>
                                         <button onClick={() => setShowShareConfirm(true)} className="text-gray-400 hover:text-sporthub-neon transition-all">
                                             <Share2 className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={handleSave}
+                                            className={`transition-all ${post.is_saved_by_user ? 'text-sporthub-neon' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            <Bookmark className={`w-5 h-5 ${post.is_saved_by_user ? 'fill-current' : ''}`} />
                                         </button>
                                     </div>
                                     <button 
@@ -477,10 +514,14 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
                                         {post.comments?.length > 0 ? (
                                             post.comments.map((comment, i) => (
                                                 <div key={i} className="flex gap-4 group/comm animate-in slide-in-from-bottom-2 duration-300">
-                                                    <img src={getMediaUrl(comment.author.avatar_url)} className="w-10 h-10 rounded-full object-cover border border-white/5 bg-[#0B0F19]" alt={comment.author.name} />
+                                                    <Link to={`/profile/${comment.author.id}`} className="shrink-0">
+                                                        <img src={getMediaUrl(comment.author.avatar_url)} className="w-10 h-10 rounded-full object-cover border border-white/5 bg-[#0B0F19] hover:border-sporthub-neon transition-all" alt={comment.author.name} />
+                                                    </Link>
                                                     <div className="flex-1 bg-white/[0.03] rounded-2xl p-4 border border-white/5 group-hover/comm:bg-white/5 transition-all">
                                                         <div className="flex justify-between items-center mb-1">
-                                                            <span className="text-[11px] font-black text-white">{comment.author.name}</span>
+                                                            <Link to={`/profile/${comment.author.id}`} className="text-[11px] font-black text-white hover:text-sporthub-neon transition-colors">
+                                                                {comment.author.name}
+                                                            </Link>
                                                             <span className="text-[9px] text-gray-500 font-bold uppercase">{new Date(comment.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                         </div>
                                                         <p className="text-sm text-gray-400 leading-tight">{comment.text}</p>

@@ -9,7 +9,7 @@ const getBaseURL = () => {
             return 'http://localhost:8000/api';
         }
     }
-    return 'http://192.168.70.5:8000/api';
+    return 'http://192.168.68.60:8000/api';
 };
 
 export const api = axios.create({

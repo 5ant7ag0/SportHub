@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { MoreVertical, Check, X, TrendingUp } from 'lucide-react';
 
 const ChatOptionsMenu = ({ 
@@ -10,17 +10,39 @@ const ChatOptionsMenu = ({
     onToggle, 
     variant = 'sidebar' 
 }) => {
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isOpen && menuRef.current && !menuRef.current.contains(event.target)) {
+                onToggle();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('touchstart', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isOpen, onToggle]);
+
     if (!chat) return null;
 
     return (
-        <div className="relative ml-auto shrink-0 self-center">
+        <div className="relative ml-auto shrink-0 self-center" ref={menuRef}>
             <button 
                 onClick={(e) => { 
                     e.stopPropagation(); 
+                    e.preventDefault();
                     onToggle(); 
                 }}
                 className={`p-3 lg:p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all ${
-                    isOpen ? 'bg-white/10 text-white' : 'opacity-100 lg:opacity-0 group-hover:opacity-100 focus:opacity-100'
+                    isOpen ? 'bg-white/10 text-white' : 
+                    (variant === 'header' ? 'opacity-100' : 'opacity-100 lg:opacity-0 group-hover:opacity-100 focus:opacity-100')
                 }`}
                 aria-label="Opciones de chat"
             >
@@ -29,14 +51,6 @@ const ChatOptionsMenu = ({
 
             {isOpen && (
                 <>
-                    <div 
-                        className="fixed inset-0 z-[9998] bg-black/5 lg:bg-transparent" 
-                        onClick={(e) => { 
-                            e.preventDefault();
-                            e.stopPropagation(); 
-                            onToggle(); 
-                        }} 
-                    />
                     <div className={`absolute right-4 ${variant === 'header' ? 'top-full mt-2' : 'top-1/2 -translate-y-1/2 mt-8'} w-52 bg-[#1a2130] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[9999] py-2 overflow-hidden animate-in fade-in zoom-in duration-200`}>
                         {variant === 'sidebar' && onMarkAsUnread && (
                             <>

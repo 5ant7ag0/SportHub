@@ -11,6 +11,9 @@ from rest_framework.permissions import IsAuthenticated
 from bson import ObjectId
 from bson.errors import InvalidId
 from rest_framework.exceptions import NotFound
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from core.api.serializers import PostSerializer
 
 class PostCreateView(APIView):
     authentication_classes = [MongoJWTAuthentication]
@@ -51,12 +54,22 @@ class PostCreateView(APIView):
         p_type = request.data.get('post_type', 'post')
         s_title = request.data.get('service_title')
         s_price = request.data.get('service_price')
+        sp_id = request.data.get('shared_profile_id')
         
         try:
             if s_price: s_price = float(s_price)
             else: s_price = None
         except (ValueError, TypeError):
             s_price = None
+
+        shared_profile_obj = None
+        if p_type == 'profile_share' and sp_id:
+            from core.models import User
+            from bson import ObjectId
+            try:
+                shared_profile_obj = User.objects.get(id=ObjectId(sp_id))
+            except:
+                pass
 
         # Procedemos a persistir de forma ultrarrápida el documento subyacente en NoSQL
         post = Post(
@@ -65,7 +78,8 @@ class PostCreateView(APIView):
             media_url=media_url,
             post_type=p_type,
             service_title=s_title,
-            service_price=s_price
+            service_price=s_price,
+            shared_profile=shared_profile_obj
         )
         post.save()
 
@@ -201,10 +215,31 @@ class CommentWithMediaView(APIView):
         new_comment = Comment(author=request.user, text=text, media_url=media_url)
         post.update(push__comments=new_comment)
         
-        # Trigger de Notificación Social
+        # Trigger de Notificación Social (Privado)
         if str(post.author.id) != str(request.user.id):
             Notification(actor=request.user, recipient=post.author, action_type='comment', post_id=post).save()
         
+        # 🌐 BROADCAST MUNDIAL: Notificar a todos en el feed
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            from core.api.serializers import PostSerializer
+            post.reload()
+            serializer = PostSerializer(post)
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'presence',
+                {
+                    'type': 'new_notification',
+                    'data': {
+                        'type': 'post_update',
+                        'post': serializer.data
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"WS upload broadcast error: {e}")
+
         return Response({"message": "Comentario agregado.", "media_url": media_url}, status=201)
 
 class PostShareView(APIView):
@@ -232,18 +267,56 @@ class PostShareView(APIView):
         )
         repost.save()
         
-        # Notificar al autor original (Aislado para evitar bloqueos del flujo principal)
+        # --- BLOQUE DE DIFUSIÓN EN TIEMPO REAL (HARDENED) ---
         try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            from core.api.serializers import PostSerializer
+            channel_layer = get_channel_layer()
+
+            # 1. 🟢 SEÑAL PRIVADA: Notificar al autor original
             author_id = getattr(original_post.author, 'id', None)
             if author_id and str(author_id) != str(request.user.id):
-                Notification(
-                    actor=request.user, 
-                    recipient=original_post.author, 
-                    action_type='repost', 
-                    post_id=repost
-                ).save()
+                Notification(actor=request.user, recipient=original_post.author, action_type='repost', post_id=repost).save()
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{author_id}',
+                    {'type': 'new_notification', 'data': {'type': 'repost', 'actor_name': request.user.name, 'post_id': str(repost.id)}}
+                )
+
+            # 2. 🌐 BROADCAST MUNDIAL: Notificar acción de compartir (Atómica)
+            # Forzamos recarga y serialización con contexto completo
+            original_post.reload()
+            repost.reload()
+            
+            orig_data = PostSerializer(original_post, context={'request': request}).data
+            repost_data = PostSerializer(repost, context={'request': request}).data
+            
+            async_to_sync(channel_layer.group_send)(
+                'presence',
+                {
+                    'type': 'new_notification',
+                    'data': {
+                        'type': 'share_action',
+                        'original_post': orig_data,
+                        'new_repost': repost_data
+                    }
+                }
+            )
         except Exception as e:
-            # Fallo de señalización no debe romper la experiencia de compartir
-            pass
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"⚠️ Error en difusión Share Action:\n{error_trace}")
+            with open("/tmp/share_debug.log", "a") as f:
+                f.write(error_trace + "\n")
+            
+            try:
+                # Intento desesperado: Al menos enviar la señal de nuevo post
+                async_to_sync(channel_layer.group_send)(
+                    'presence',
+                    {'type': 'new_notification', 'data': {'type': 'feed_update', 'post': PostSerializer(repost, context={'request': request}).data}}
+                )
+            except Exception as inner_e:
+                error_trace += f"\nInner error: {inner_e}"
+            return Response({"detail": "Post compartido pero con errores", "repost_id": str(repost.id), "debug_error": error_trace}, status=201)
 
         return Response({"detail": "Post compartido con éxito", "repost_id": str(repost.id)}, status=201)

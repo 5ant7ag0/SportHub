@@ -33,6 +33,12 @@ class ProfileUpdateView(APIView):
             user.city = data.get('city')
         if 'birth_date' in data and data.get('birth_date'):
             user.birth_date = data.get('birth_date')
+        if 'position' in data:
+            user.position = data.get('position')
+        if 'company' in data:
+            user.company = data.get('company')
+        if 'job_title' in data:
+            user.job_title = data.get('job_title')
         
         # Nuevos campos de configuración
         if 'is_private' in data:
@@ -99,6 +105,27 @@ class ProfileUpdateView(APIView):
                 except Exception as e:
                     return Response({'error': f"Error al subir imagen: {str(e)}"}, status=500)
 
+        # Proceso de carga de Banner
+        banner_obj = request.FILES.get('banner')
+        if banner_obj:
+            c_url = os.environ.get('CLOUDINARY_URL', '')
+            if 'dummy' in c_url.lower() or not c_url:
+                from django.core.files.storage import default_storage
+                from django.conf import settings
+                safe_name = "".join([c for c in banner_obj.name if c.isalnum() or c in '._-']).strip()
+                filename = default_storage.save(f"banners/{safe_name}", banner_obj)
+                user.banner_url = f"{settings.MEDIA_URL}{filename}"
+            else:
+                try:
+                    upload_data = cloudinary.uploader.upload(
+                        banner_obj, 
+                        folder="sporthub_banners",
+                        resource_type="auto"
+                    )
+                    user.banner_url = upload_data.get('secure_url', '')
+                except Exception as e:
+                    return Response({'error': f"Error al subir banner: {str(e)}"}, status=500)
+
         try:
             # Forzamos actualización atómica directa a MongoDB para evitar problemas de dirty fields
             update_data = {
@@ -110,8 +137,12 @@ class ProfileUpdateView(APIView):
                 'set__city': user.city,
                 'set__birth_date': user.birth_date,
                 'set__avatar_url': user.avatar_url,
+                'set__banner_url': user.banner_url,
                 'set__is_private': user.is_private,
                 'set__notifications_enabled': user.notifications_enabled,
+                'set__position': user.position,
+                'set__company': user.company,
+                'set__job_title': user.job_title,
                 'set__skills': user.skills,
                 'set__achievements': user.achievements,
                 'set__social_links': user.social_links

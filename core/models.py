@@ -16,6 +16,7 @@ class User(Document):
     position = StringField()
     city = StringField()
     avatar_url = StringField(default='/test_media/sample_atleta.svg')
+    banner_url = StringField(default='https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop')
 
     # Perfil Profesional (Reclutadores)
     company = StringField()
@@ -146,9 +147,51 @@ class User(Document):
         ]
         res = list(cls.objects.aggregate(pipeline))[0]
         return {
-            "online": res["online"][0]["count"] if res["online"] else 0,
             "offline": res["offline"][0]["count"] if res["offline"] else 0
         }
+
+    @classmethod
+    def get_talent_correlation_stats(cls):
+        """
+        Cruza datos de todos los usuarios activos con sus publicaciones para el gráfico de dispersión.
+        Se eliminan restricciones de rol y cantidad para reflejar la base total.
+        """
+        pipeline = [
+            # Todos los usuarios activos o por defecto
+            {"$match": {"is_active": {"$ne": False}}},
+            # Contar seguidores
+            {
+                "$project": {
+                    "name": 1,
+                    "followers_count": {"$size": {"$ifNull": ["$followers", []]}}
+                }
+            },
+            # Unir con posts para contar actividad
+            {
+                "$lookup": {
+                    "from": "post",
+                    "localField": "_id",
+                    "foreignField": "author",
+                    "as": "user_posts"
+                }
+            },
+            {
+                "$project": {
+                    "id": {"$toString": "$_id"},
+                    "_id": 0,
+                    "name": 1,
+                    "followers": "$followers_count",
+                    "posts": {"$size": "$user_posts"}
+                }
+            },
+            {"$sort": {"followers": -1, "posts": -1}}
+        ]
+        try:
+            results = list(cls.objects.aggregate(pipeline))
+            return results
+        except Exception as e:
+            print(f"Error Agregación Talento: {e}")
+            return []
 
     meta = {
         'indexes': ['birth_date', 'sport']
@@ -172,8 +215,11 @@ class Post(Document):
     likes = ListField(ReferenceField('User'))
     comments = ListField(EmbeddedDocumentField(Comment))
     
+    # Profile Share Fields
+    shared_profile = ReferenceField('User', reverse_delete_rule=1)
+
     # Marketplace Fields
-    post_type = StringField(default='post') # post, service
+    post_type = StringField(default='post') # post, service, profile_share
     service_title = StringField()
     service_price = FloatField()
     average_rating = FloatField(default=0.0)

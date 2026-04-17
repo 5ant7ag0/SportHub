@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
-import { Camera, Save, Loader2, CheckCircle2, User, MapPin, Trophy, Shield, Bell, X, Globe, Link, Share2, LogOut, ShieldCheck, Trash2, AlertTriangle } from 'lucide-react';
+import { Camera, Save, Loader2, CheckCircle2, User, MapPin, Trophy, Shield, Bell, X, Globe, Link, Share2, LogOut, ShieldCheck, Trash2, AlertTriangle, Pencil, Briefcase } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
 
 const SOCIAL_SVGS = {
@@ -39,15 +39,26 @@ const SOCIAL_SVGS = {
     )
 };
 
+const SPORTS_DATA = {
+    'Fútbol': ['Arquero', 'Defensa', 'Mediocampista', 'Delantero'],
+    'Básquet': ['Base', 'Escolta', 'Alero', 'Ala-Pívot', 'Pívot'],
+    'Ecuavoley': ['Colocador', 'Servidor', 'Volador']
+};
+
 export const Settings = () => {
     const { user, updateUser, logout } = useAuth();
     const [name, setName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [sport, setSport] = useState(user?.sport || '');
+    const [position, setPosition] = useState(user?.position || '');
+    const [company, setCompany] = useState(user?.company || '');
+    const [jobTitle, setJobTitle] = useState(user?.job_title || '');
     const [city, setCity] = useState(user?.city || '');
     const [birthDate, setBirthDate] = useState(user?.birth_date ? user.birth_date.split('T')[0] : '');
     const [isPrivate, setIsPrivate] = useState(user?.is_private || false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(user?.notifications_enabled || false);
+    const [isEditingBasic, setIsEditingBasic] = useState(false);
+    const [isEditingSocials, setIsEditingSocials] = useState(false);
     
     // Redes Sociales
     const [github, setGithub] = useState(user?.social_links?.github || '');
@@ -70,29 +81,6 @@ export const Settings = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState(user?.avatar_url || null);
-    const fileInputRef = useRef(null);
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Limpieza de preview anterior si existe
-            if (previewUrl && previewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(previewUrl);
-            }
-            const url = URL.createObjectURL(file);
-            setPreviewUrl(url);
-        }
-    };
-
-    // Limpieza de memoria al desmontar
-    useEffect(() => {
-        return () => {
-            if (previewUrl && previewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(previewUrl);
-            }
-        };
-    }, [previewUrl]);
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
@@ -116,6 +104,9 @@ export const Settings = () => {
         formData.append('name', name);
         formData.append('bio', bio);
         formData.append('sport', sport);
+        formData.append('position', position);
+        formData.append('company', company);
+        formData.append('job_title', jobTitle);
         formData.append('city', city);
         formData.append('birth_date', birthDate);
         formData.append('is_private', isPrivate);
@@ -136,20 +127,13 @@ export const Settings = () => {
         };
         formData.append('social_links', JSON.stringify(socialLinksData));
 
-        if (fileInputRef.current?.files[0]) {
-            formData.append('file', fileInputRef.current.files[0]);
-        }
-
         try {
             const { data } = await api.post('/settings/update/', formData);
-            
-            const freshAvatarUrl = data.user?.avatar_url ? `${data.user.avatar_url}?t=${Date.now()}` : data.user?.avatar_url;
-            const updatedUserData = { ...data.user, avatar_url: freshAvatarUrl };
-            updateUser(updatedUserData);
-            
-            if (freshAvatarUrl) setPreviewUrl(freshAvatarUrl);
+            updateUser(data.user);
             
             setSuccess(true);
+            setIsEditingBasic(false);
+            setIsEditingSocials(false);
             // Limpiar campos de seguridad tras éxito
             setCurrentPassword('');
             setNewPassword('');
@@ -190,154 +174,149 @@ export const Settings = () => {
                 </header>
 
                 <form onSubmit={handleSubmit} className="space-y-8 pb-10">
-                    {/* AVATAR SECTION */}
-                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl">
-                        <div className="flex flex-col md:flex-row items-center gap-8">
-                            <div className="relative group">
-                                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-sporthub-neon/30 group-hover:border-sporthub-neon transition-colors bg-[#0B0F19]">
-                                    <img 
-                                        src={getMediaUrl(previewUrl)} 
-                                        alt="Avatar Preview" 
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
-                                    />
-                                </div>
-                                <button 
-                                    type="button"
-                                    onClick={() => fileInputRef.current.click()}
-                                    className="absolute bottom-0 right-0 p-2.5 bg-sporthub-neon text-black rounded-full shadow-lg hover:scale-110 transition-transform"
-                                >
-                                    <Camera className="w-5 h-5" />
-                                </button>
-                                <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    className="hidden" 
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                />
-                            </div>
-                            <div className="flex-1 text-center md:text-left">
-                                <h3 className="text-xl font-bold text-white mb-2">Foto de Perfil</h3>
-                                <p className="text-sm text-sporthub-muted mb-4">Haz que los scouts y entrenadores te reconozcan. Recomenadado: 400x400px.</p>
-                                <button 
-                                    type="button"
-                                    onClick={() => fileInputRef.current.click()}
-                                    className="text-xs font-semibold text-sporthub-neon hover:text-white transition-colors"
-                                >
-                                    Actualizar Imagen
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* BASIC INFO */}
-                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <User className="w-5 h-5 text-sporthub-cyan" />
-                            <h3 className="text-xl font-bold text-white">Información Básica</h3>
+                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6 relative group/section">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <User className="w-5 h-5 text-sporthub-cyan" />
+                                <h3 className="text-xl font-bold text-white">Información Básica</h3>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setIsEditingBasic(!isEditingBasic)}
+                                className={`p-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isEditingBasic ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Pencil className="w-4 h-4" />
+                                {isEditingBasic ? 'Editando...' : 'Editar'}
+                            </button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-sporthub-muted mb-2">Nombre Completo</label>
+                                <label className="block text-white font-bold text-sm mb-2">Nombre Completo</label>
                                 <input 
                                     type="text" 
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors"
+                                    disabled={!isEditingBasic}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-sporthub-muted mb-2">Fecha de nacimiento</label>
+                                <label className="block text-white font-bold text-sm mb-2">Fecha de nacimiento</label>
                                 <input 
                                     type="date" 
                                     value={birthDate}
                                     onChange={(e) => setBirthDate(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors"
+                                    disabled={!isEditingBasic}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-sporthub-muted mb-2">Biografía Profesional</label>
+                            <label className="block text-white font-bold text-sm mb-2">Biografía Profesional</label>
                             <textarea 
-                                rows="4"
+                                rows="3"
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
-                                className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors resize-none"
+                                disabled={!isEditingBasic}
+                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all resize-none ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                 placeholder="Cuéntanos sobre tu trayectoria y objetivos..."
                             ></textarea>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="relative">
-                                <label className="block text-sm font-medium text-sporthub-muted mb-2">Deporte Principal</label>
-                                <div className="absolute left-4 top-10 pointer-events-none">
-                                    <Trophy className="w-4 h-4 text-sporthub-muted" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    value={sport}
-                                    onChange={(e) => setSport(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors"
-                                />
+                            {user?.role === 'athlete' ? (
+                                <>
+                                    <div className="relative">
+                                        <label className="block text-white font-bold text-sm mb-2">Deporte Principal</label>
+                                        <select 
+                                            value={sport}
+                                            onChange={(e) => setSport(e.target.value)}
+                                            disabled={!isEditingBasic}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all appearance-none ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                        >
+                                            <option value="">Seleccionar deporte</option>
+                                            {Object.keys(SPORTS_DATA).map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="relative">
+                                        <label className="block text-white font-bold text-sm mb-2">Posición / Especialidad</label>
+                                        <select 
+                                            value={position}
+                                            onChange={(e) => setPosition(e.target.value)}
+                                            disabled={!isEditingBasic || !sport}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all appearance-none ${(!isEditingBasic || !sport) && 'opacity-80 cursor-default'}`}
+                                        >
+                                            <option value="">Seleccionar posición</option>
+                                            {sport && SPORTS_DATA[sport].map(p => (
+                                                <option key={p} value={p}>{p}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="relative">
+                                        <label className="block text-white font-bold text-sm mb-2">Empresa / Club</label>
+                                        <div className="absolute left-4 top-10 pointer-events-none">
+                                            <Briefcase className="w-4 h-4 text-sporthub-muted" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            value={company}
+                                            onChange={(e) => setCompany(e.target.value)}
+                                            disabled={!isEditingBasic}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                            placeholder="Ej. Independiente del Valle"
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <label className="block text-white font-bold text-sm mb-2">Cargo Actual</label>
+                                        <div className="absolute left-4 top-10 pointer-events-none">
+                                            <Shield className="w-4 h-4 text-sporthub-muted" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            value={jobTitle}
+                                            onChange={(e) => setJobTitle(e.target.value)}
+                                            disabled={!isEditingBasic}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                            placeholder="Ej. Entrenador Principal"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="relative">
+                            <label className="block text-white font-bold text-sm mb-2">Ciudad / Ubicación</label>
+                            <div className="absolute left-4 top-10 pointer-events-none">
+                                <MapPin className="w-4 h-4 text-sporthub-muted" />
                             </div>
-                            <div className="relative">
-                                <label className="block text-sm font-medium text-sporthub-muted mb-2">Ciudad / Ubicación</label>
-                                <div className="absolute left-4 top-10 pointer-events-none">
-                                    <MapPin className="w-4 h-4 text-sporthub-muted" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    value={city}
-                                    onChange={(e) => setCity(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors"
-                                />
-                            </div>
+                            <input 
+                                type="text" 
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                disabled={!isEditingBasic}
+                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                            />
                         </div>
                     </div>
 
                     {/* PRIVACY & NOTIFICATIONS */}
                     <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-4">
                             <Shield className="w-5 h-5 text-sporthub-neon" />
-                            <h3 className="text-xl font-bold text-white">Privacidad y Alertas</h3>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-[#0B0F19] rounded-2xl border border-sporthub-border/50">
-                            <div>
-                                <h4 className="text-white font-bold text-sm">Perfil Privado</h4>
-                                <p className="text-xs text-sporthub-muted">Solo tus conexiones aprobadas podrán ver tus estadísticas.</p>
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={() => setIsPrivate(!isPrivate)}
-                                className={`w-12 h-6 rounded-full transition-colors relative ${isPrivate ? 'bg-sporthub-neon' : 'bg-gray-700'}`}
-                            >
-                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isPrivate ? 'left-7' : 'left-1'}`}></div>
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-[#0B0F19] rounded-2xl border border-sporthub-border/50">
-                            <div className="flex items-center gap-3">
-                                <Bell className="w-4 h-4 text-sporthub-cyan" />
-                                <div>
-                                    <h4 className="text-white font-bold text-sm">Notificaciones de Red</h4>
-                                    <p className="text-xs text-sporthub-muted">Recibe alertas sobre nuevos seguidores y mensajes.</p>
-                                </div>
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-                                className={`w-12 h-6 rounded-full transition-colors relative ${notificationsEnabled ? 'bg-sporthub-cyan' : 'bg-gray-700'}`}
-                            >
-                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${notificationsEnabled ? 'left-7' : 'left-1'}`}></div>
-                            </button>
+                            <h3 className="text-xl font-bold text-white">Privacidad</h3>
                         </div>
 
                         {/* SECURITY TOGGLE */}
-                        <div className="pt-4 border-t border-sporthub-border/30">
+                        <div>
                             <button 
                                 type="button"
                                 onClick={() => setShowSecurity(!showSecurity)}
@@ -426,16 +405,26 @@ export const Settings = () => {
                     </div>
 
                     {/* SOCIAL NETWORKS */}
-                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <SOCIAL_SVGS.linkedin className="w-5 h-5 text-sporthub-neon" />
-                            <h3 className="text-xl font-bold text-white">Redes Sociales</h3>
+                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6 group/section">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <SOCIAL_SVGS.linkedin className="w-5 h-5 text-sporthub-neon" />
+                                <h3 className="text-xl font-bold text-white">Redes Sociales</h3>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setIsEditingSocials(!isEditingSocials)}
+                                className={`p-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isEditingSocials ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Pencil className="w-4 h-4" />
+                                {isEditingSocials ? 'Editando...' : 'Editar'}
+                            </button>
                         </div>
                         <p className="text-sm text-sporthub-muted mb-6">Vincula tus perfiles externos para validar tu identidad profesional.</p>
 
                         <div className="space-y-4">
                             <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#333] transition-colors">
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-gray-400 group-focus-within:text-[#333]' : 'text-gray-600'}`}>
                                     <SOCIAL_SVGS.github className="w-5 h-5" />
                                 </div>
                                 <input 
@@ -443,11 +432,12 @@ export const Settings = () => {
                                     placeholder="URL de Github (ej: https://github.com/...)"
                                     value={github}
                                     onChange={(e) => setGithub(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-white focus:outline-none transition-colors text-sm"
+                                    disabled={!isEditingSocials}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-white' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                             <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-[#0077b5] transition-colors">
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-400 group-focus-within:text-[#0077b5]' : 'text-blue-400/50'}`}>
                                     <SOCIAL_SVGS.linkedin className="w-5 h-5" />
                                 </div>
                                 <input 
@@ -455,11 +445,12 @@ export const Settings = () => {
                                     placeholder="URL de LinkedIn"
                                     value={linkedin}
                                     onChange={(e) => setLinkedin(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-blue-500 focus:outline-none transition-colors text-sm"
+                                    disabled={!isEditingSocials}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-blue-500' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                             <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white group-focus-within:text-[#000000] transition-colors">
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-white group-focus-within:text-[#000000]' : 'text-white/50'}`}>
                                     <SOCIAL_SVGS.twitter className="w-5 h-5" />
                                 </div>
                                 <input 
@@ -467,11 +458,12 @@ export const Settings = () => {
                                     placeholder="URL de X (Twitter)"
                                     value={twitter}
                                     onChange={(e) => setTwitter(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-white focus:outline-none transition-colors text-sm"
+                                    disabled={!isEditingSocials}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-white' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                             <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500 group-focus-within:text-[#e4405f] transition-colors">
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-pink-500 group-focus-within:text-[#e4405f]' : 'text-pink-500/50'}`}>
                                     <SOCIAL_SVGS.instagram className="w-5 h-5" />
                                 </div>
                                 <input 
@@ -479,11 +471,12 @@ export const Settings = () => {
                                     placeholder="URL de Instagram"
                                     value={instagram}
                                     onChange={(e) => setInstagram(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-pink-500 focus:outline-none transition-colors text-sm"
+                                    disabled={!isEditingSocials}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-pink-500' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                             <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 group-focus-within:text-[#1877f2] transition-colors">
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-600 group-focus-within:text-[#1877f2]' : 'text-blue-600/50'}`}>
                                     <SOCIAL_SVGS.facebook className="w-5 h-5" />
                                 </div>
                                 <input 
@@ -491,7 +484,8 @@ export const Settings = () => {
                                     placeholder="URL de Facebook"
                                     value={facebook}
                                     onChange={(e) => setFacebook(e.target.value)}
-                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl pl-12 pr-4 py-3 focus:border-blue-600 focus:outline-none transition-colors text-sm"
+                                    disabled={!isEditingSocials}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-blue-600' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                         </div>

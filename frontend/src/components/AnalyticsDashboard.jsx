@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area, ScatterChart, Scatter, ZAxis, Label } from 'recharts';
 import { TrendingUp, Users, Heart, MessageCircle, Loader2, ShieldCheck, ShieldAlert, Trash2, UserX, Search, CheckCircle2, UserCheck, X, MapPin, User, Shield, Activity, Calendar, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
@@ -44,6 +44,8 @@ const INITIAL_STATS = {
     newFollowers: 0,
     totalFollowers: 0,
     totalPosts: 0,
+    community_pulse: [],
+    talent_growth: []
 };
 
 // Regla: Colores fijos por deporte
@@ -65,9 +67,10 @@ export const AnalyticsDashboard = () => {
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, actionType: '' });
 
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = async (options = {}) => {
+        const { silent = false } = options;
         try {
-            setIsLoading(true);
+            if (!silent) setIsLoading(true);
             const { data } = await api.get('/analytics/summary/');
 
             setStats({
@@ -87,7 +90,13 @@ export const AnalyticsDashboard = () => {
                 newFollowers: data?.new_followers || 0,
                 totalFollowers: authUser?.followers_count || 0,
                 totalPosts: authUser?.posts_count || 0,
+                community_pulse: data?.community_pulse || [],
+                talent_growth: data?.talent_growth || [],
             });
+            
+            if (data?.community_pulse?.some(d => d.count > 0)) {
+                console.log("🔥 PULSO DETECTADO:", data.community_pulse.filter(d => d.count > 0));
+            }
         } catch (error) {
             console.error("Error en analítica:", error);
             setStats({
@@ -122,8 +131,8 @@ export const AnalyticsDashboard = () => {
     // 🟢 CORRECCIÓN: Ahora actualiza gráficas Y la tabla de usuarios
     useEffect(() => {
         if (lastNotification) {
-            console.log("WebSocket pulso recibido. Refrescando datos...");
-            fetchAnalytics();
+            console.log("WebSocket pulso recibido. Refrescando datos (Silent)...");
+            fetchAnalytics({ silent: true });
             if (stats.is_global) {
                 fetchUsers(); // Obliga a la tabla a actualizarse
             }
@@ -221,7 +230,14 @@ export const AnalyticsDashboard = () => {
             count: c.count || 0
         })) : [];
 
-        return { rate, completed, demo, trend, growth, donut, connections, cities, currentOnline };
+        const talent = Array.isArray(d.talent_growth) ? d.talent_growth.map(t => ({
+            name: t.name || 'Anónimo',
+            posts: t.posts || 0,
+            followers: t.followers || 0,
+            z: 100 // Tamaño constante para los puntos
+        })) : [];
+
+        return { rate, completed, demo, trend, growth, donut, connections, cities, currentOnline, talent };
     }, [stats, onlineUserIds, users.length]);
 
     if (isLoading || !stats) {
@@ -246,7 +262,10 @@ export const AnalyticsDashboard = () => {
                         <h2 className="text-xl font-bold text-white">
                             {stats.is_global ? 'Analítica Global' : 'Analítica de Rendimiento'}
                         </h2>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${stats.is_global ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-sporthub-neon/10 text-sporthub-neon border border-sporthub-neon/20'}`}>
+                        <span 
+                            onClick={() => setStats(prev => ({ ...prev, is_global: !prev.is_global }))}
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest cursor-pointer transition-all hover:scale-105 active:scale-95 ${stats.is_global ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-sporthub-neon/10 text-sporthub-neon border border-sporthub-neon/20'}`}
+                        >
                             {stats.is_global ? 'Modo Administrador' : 'Modo Personal'}
                         </span>
                     </div>
@@ -274,7 +293,14 @@ export const AnalyticsDashboard = () => {
                                 <BarChart data={viewData.demo}>
                                     <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
-                                    <YAxis tick={false} axisLine={false} width={35} domain={[0, 'auto']} stroke="rgba(255,255,255,0.1)" />
+                                    <YAxis 
+                                        tick={{ fill: COLORS.muted, fontSize: 10 }} 
+                                        axisLine={false} 
+                                        tickLine={false}
+                                        width={40} 
+                                        domain={[0, 'auto']} 
+                                        tickFormatter={(value) => `${value}%`}
+                                    />
                                     <RechartsTooltip
                                         cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                         contentStyle={{ backgroundColor: COLORS.card, borderColor: '#334155', borderRadius: '12px', padding: '10px', border: '1px solid #334155' }}
@@ -391,6 +417,16 @@ export const AnalyticsDashboard = () => {
                             )}
                         </div>
                     </div>
+                )}
+
+                {/* --- ANALISIS DE CRECIMIENTO DE TALENTO (Scatter Plot) --- */}
+                {stats.is_global && (
+                    <TalentGrowthScatter data={viewData.talent} />
+                )}
+
+                {/* --- PULSO DE LA COMUNIDAD (Heatmap) --- */}
+                {stats.is_global && (
+                    <CommunityPulse data={stats.community_pulse} />
                 )}
             </div>
 
@@ -619,6 +655,206 @@ export const AnalyticsDashboard = () => {
     );
 };
 
+const TalentGrowthScatter = ({ data }) => (
+    <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
+        <div className="flex justify-between items-start mb-6">
+            <div>
+                <h3 className="text-white font-semibold italic uppercase tracking-tighter">Análisis de Crecimiento de Talento</h3>
+                <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest mt-1">Correlación estratégica: Posts vs Seguidores</p>
+            </div>
+            <TrendingUp className="w-5 h-5 text-sporthub-neon" />
+        </div>
+
+        <div className="h-80 w-full mt-4">
+            {data.length > 0 ? (
+                <ResponsiveContainer width="99%" height="99%">
+                    <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis 
+                            type="number" 
+                            dataKey="posts" 
+                            name="Posts" 
+                            stroke={COLORS.muted} 
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: COLORS.muted, fontWeight: 'bold' }}
+                            domain={[0, dataMax => Math.ceil(dataMax * 1.1 + 1)]}
+                        >
+                            <Label 
+                                value="TOTAL DE PUBLICACIONES" 
+                                position="bottom" 
+                                offset={-5} 
+                                fill={COLORS.muted} 
+                                fontSize={9} 
+                                fontWeight="bold" 
+                                style={{ letterSpacing: '0.1em' }}
+                            />
+                        </XAxis>
+                        <YAxis 
+                            type="number" 
+                            dataKey="followers" 
+                            name="Seguidores" 
+                            stroke={COLORS.muted} 
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            width={50}
+                            tick={{ fill: COLORS.muted, fontWeight: 'bold' }}
+                            domain={[0, dataMax => Math.ceil(dataMax * 1.1 + 1)]}
+                        >
+                            <Label 
+                                value="NÚMERO DE SEGUIDORES" 
+                                angle={-90} 
+                                position="insideLeft" 
+                                style={{ textAnchor: 'middle', fill: COLORS.muted, fontSize: 9, fontWeight: 'bold', letterSpacing: '0.1em' }}
+                                offset={10}
+                            />
+                        </YAxis>
+                        <ZAxis type="number" range={[100, 100]} />
+                        <RechartsTooltip 
+                            cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }}
+                            content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                    const info = payload[0].payload;
+                                    return (
+                                        <div className="bg-[#151A23] border border-sporthub-neon/30 p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                                            <p className="text-white font-black text-xs uppercase tracking-tight mb-2 italic border-b border-white/10 pb-2">{info.name}</p>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex justify-between gap-6 items-center">
+                                                    <span className="text-[9px] text-sporthub-muted uppercase font-black tracking-widest">Total Posts:</span>
+                                                    <span className="text-xs text-sporthub-neon font-black">{info.posts}</span>
+                                                </div>
+                                                <div className="flex justify-between gap-6 items-center">
+                                                    <span className="text-[9px] text-sporthub-muted uppercase font-black tracking-widest">Seguidores:</span>
+                                                    <span className="text-xs text-sporthub-cyan font-black">{info.followers}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
+                        />
+                        <Scatter 
+                            name="Talentos" 
+                            data={data} 
+                            fill={COLORS.neon}
+                            fillOpacity={0.7}
+                        >
+                            {data.map((entry, index) => (
+                                <Cell 
+                                    key={`cell-${index}`} 
+                                    fill={COLORS.neon}
+                                    className="drop-shadow-[0_0_10px_rgba(163,230,53,0.6)] cursor-pointer transition-all duration-300 hover:opacity-100"
+                                />
+                            ))}
+                        </Scatter>
+                    </ScatterChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 border border-dashed border-sporthub-border rounded-xl bg-white/[0.02]">
+                    <Activity className="w-5 h-5 text-sporthub-muted animate-pulse" />
+                    <span className="text-[10px] text-sporthub-muted uppercase tracking-[0.2em] font-black italic">Recolectando correlaciones...</span>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
+const CommunityPulse = ({ data }) => {
+    const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+
+    // Encontrar el máximo para normalizar la intensidad
+    const maxCount = Math.max(...(data?.map(d => d.count) || [1]), 1);
+
+    const getIntensityColor = (count) => {
+        if (count === 0) return '#1A2130'; // Fondo base tenue
+        const ratio = count / maxCount;
+        
+        // VISUAL FIX: Escala más agresiva para que 1 sola interacción brille
+        if (ratio < 0.2) return 'rgba(34, 211, 238, 0.45)'; // Cyan visible al 45% (Subida de 0.2 a 0.45)
+        if (ratio < 0.5) return 'rgba(34, 211, 238, 0.7)';  // Cyan fuerte
+        if (ratio < 0.8) return '#22D3EE';                 // Cyan sólido
+        return '#A3E635';                                  // Neón (Pico máximo)
+    };
+
+    return (
+        <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h3 className="text-white font-black italic uppercase tracking-tighter text-lg">Pulso de la Comunidad</h3>
+                    <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest">Intensidad de actividad por horario estructural</p>
+                </div>
+                <div className="flex items-center gap-4 bg-[#0B0F19] px-4 py-2 rounded-xl border border-sporthub-border">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[#1A2130]" />
+                        <span className="text-[9px] text-sporthub-muted font-bold uppercase">Base</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-sporthub-neon shadow-[0_0_8px_#A3E635]" />
+                        <span className="text-[9px] text-sporthub-neon font-bold uppercase">Pico</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="relative overflow-x-auto custom-scrollbar pb-4">
+                <div className="min-w-[700px]">
+                    {/* Header de horas */}
+                    <div className="flex mb-2 ml-10">
+                        {hours.map(h => (
+                            <div key={h} className="flex-1 text-center text-[8px] text-sporthub-muted font-black">
+                                {h.toString().padStart(2, '0')}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Grid principal */}
+                    <div className="space-y-1">
+                        {days.map((dayName, dayIdx) => (
+                            <div key={dayName} className="flex items-center gap-1">
+                                <div className="w-10 text-[9px] text-sporthub-muted font-bold uppercase">{dayName}</div>
+                                <div className="flex-1 flex gap-1">
+                                    {hours.map(hour => {
+                                        const cell = data?.find(d => d.day === (dayIdx + 1) && d.hour === hour);
+                                        const count = cell?.count || 0;
+                                        return (
+                                            <div
+                                                key={`${dayIdx}-${hour}`}
+                                                className="flex-1 aspect-square rounded-sm transition-all duration-500 hover:scale-125 hover:z-10 group relative"
+                                                style={{ backgroundColor: getIntensityColor(count) }}
+                                            >
+                                                {/* Tooltip personalizado CSS */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-sporthub-card border border-sporthub-border rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-2xl">
+                                                    <p className="text-[10px] font-black text-white uppercase tracking-tighter">
+                                                        {dayName} - {hour}:00
+                                                    </p>
+                                                    <p className="text-xs font-bold text-sporthub-cyan">
+                                                        {count} {count === 1 ? 'Interacción' : 'Interacciones'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            
+            <div className="mt-6 p-4 bg-[#0B0F19]/50 rounded-xl border border-dashed border-sporthub-border flex items-center gap-3">
+                <Activity className="w-4 h-4 text-sporthub-neon animate-pulse" />
+                <p className="text-[10px] text-sporthub-muted font-medium uppercase tracking-widest leading-relaxed">
+                    Visualización basada en <span className="text-white">Engagement Orgánico</span> (Likes + Mensajes + Comentarios). 
+                    Los datos se sincronizan cada vez que el <span className="text-sporthub-cyan">WebSocket</span> detecta un pulso activo.
+                </p>
+            </div>
+        </div>
+    );
+};
+
 // --- Subcomponentes de UI ---
 
 const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSearch }) => {
@@ -644,13 +880,13 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
 
     const RoleBadge = ({ role }) => {
         const styles = {
-            admin: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-            scout: 'bg-sporthub-cyan/10 text-sporthub-cyan border-sporthub-cyan/20',
-            athlete: 'bg-sporthub-neon/10 text-sporthub-neon border-sporthub-neon/20'
+            admin: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+            recruiter: 'bg-sporthub-cyan/10 text-sporthub-cyan border-sporthub-cyan/30',
+            athlete: 'bg-sporthub-neon/10 text-sporthub-neon border-sporthub-neon/30'
         };
-        const labels = { admin: 'Administrador', scout: 'Reclutador', athlete: 'Deportista' };
+        const labels = { admin: 'Admin', recruiter: 'Reclutador', athlete: 'Deportista' };
         return (
-            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${styles[role] || styles.athlete}`}>
+            <span className={`backdrop-blur-md text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm ${styles[role] || styles.athlete}`}>
                 {labels[role] || role}
             </span>
         );
@@ -679,7 +915,7 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                     >
                         <option value="all">Todos los Roles</option>
                         <option value="athlete">Deportistas</option>
-                        <option value="scout">Reclutadores</option>
+                        <option value="recruiter">Reclutadores</option>
                         <option value="admin">Administradores</option>
                     </select>
 
@@ -721,7 +957,12 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                                             <p className="text-sm font-black text-white tracking-tight">{u.name}</p>
                                             <StatusBadge user={u} />
                                         </div>
-                                        <p className="text-[10px] text-sporthub-muted font-semibold">{u.email}</p>
+                                        <p className="text-[10px] text-sporthub-muted font-semibold truncate max-w-[150px]">
+                                            {u.role === 'athlete' 
+                                                ? (u.sport ? `${u.sport}${u.position ? ` - ${u.position}` : ''}` : u.email)
+                                                : (u.company || u.job_title ? `${u.company || ''}${u.company && u.job_title ? ' - ' : ''}${u.job_title || ''}` : u.email)
+                                            }
+                                        </p>
                                     </div>
                                 </td>
                                 <td className="px-8 py-6">

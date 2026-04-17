@@ -139,7 +139,7 @@ export const Search = () => {
                         >
                             <option value="">Cualquier Rol</option>
                             <option value="athlete">Deportista</option>
-                            <option value="scout">Reclutador</option>
+                            <option value="recruiter">Reclutador</option>
                         </select>
                         <div className="relative sm:col-span-1">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-sporthub-muted" />
@@ -183,22 +183,29 @@ export const Search = () => {
                         {results.map(user => (
                             <div key={user.id} className="bg-sporthub-card border border-[rgba(255,255,255,0.05)] rounded-3xl p-6 flex flex-col items-center text-center transition-transform hover:-translate-y-1">
                                 <Link to={`/profile?id=${user.id}`}>
-                                    <div className="relative mb-4 cursor-pointer">
-                                        <img 
-                                            src={getMediaUrl(user.avatar_url)} 
-                                            className="w-20 h-20 rounded-full border-2 border-sporthub-bg bg-[#151b28] object-cover" 
-                                            alt={user.name} 
-                                            onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
-                                        />
-                                        <span className="absolute -bottom-2 -right-2 bg-sporthub-cyan text-black px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                                            {user.role === 'scout' ? 'Reclutador' : user.role === 'athlete' ? 'Deportista' : user.role}
+                                    <div className="flex flex-col items-center gap-0">
+                                        <div className="relative p-1">
+                                            <img 
+                                                src={getMediaUrl(user.avatar_url)} 
+                                                className="w-20 h-20 rounded-full border-2 border-sporthub-border shadow-lg object-cover" 
+                                                alt={user.name}
+                                                onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
+                                            />
+                                        </div>
+                                        <span className={`-mt-3 z-10 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm backdrop-blur-md ${user.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' : user.role === 'athlete' ? 'bg-sporthub-neon/10 text-sporthub-neon border-sporthub-neon/30' : 'bg-sporthub-cyan/10 text-sporthub-cyan border-sporthub-cyan/30'}`}>
+                                            {user.role === 'admin' ? 'Admin' : user.role === 'athlete' ? 'Deportista' : 'Reclutador'}
                                         </span>
                                     </div>
                                 </Link>
                                 <Link to={`/profile?id=${user.id}`} className="hover:underline text-white font-bold mb-1">
                                     {user.name}
                                 </Link>
-                                <p className="text-xs text-sporthub-muted mb-4">{user.sport}</p>
+                                <p className="text-xs text-sporthub-muted mb-4 truncate w-full px-2">
+                                    {user.role === 'athlete' 
+                                        ? (user.sport ? `${user.sport}${user.position ? ` - ${user.position}` : ''}` : 'Sin deporte')
+                                        : (user.company || user.job_title ? `${user.company || ''}${user.company && user.job_title ? ' - ' : ''}${user.job_title || ''}` : 'Reclutador Profesional')
+                                    }
+                                </p>
                                 
                                 <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-6">
                                     <MapPin className="w-3 h-3 text-sporthub-cyan" /> {user.city}

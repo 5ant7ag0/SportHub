@@ -1,9 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Loader2, Heart, MessageCircle, Share2, Send, Bookmark, Paperclip, Edit2, Trash2, AlertTriangle, Play, Tag, DollarSign, Star, StarHalf } from 'lucide-react';
+import { Loader2, Heart, MessageCircle, Share2, Send, Bookmark, Paperclip, Edit2, Trash2, AlertTriangle, Play, Tag, DollarSign, Star, StarHalf, MapPin, Briefcase, UserPlus, UserMinus, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getMediaUrl, isVideo } from '../utils/media';
+
+const SOCIAL_SVGS = {
+    github: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.28 1.15-.28 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+            <path d="M9 18c-4.51 2-5-2-7-2" />
+        </svg>
+    ),
+    linkedin: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+            <rect width="4" height="12" x="2" y="9" />
+            <circle cx="4" cy="4" r="2" />
+        </svg>
+    ),
+    twitter: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
+            <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
+        </svg>
+    ),
+    instagram: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+        </svg>
+    ),
+    facebook: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+        </svg>
+    )
+};
 
 /**
  * Modal de confirmación para repostear
@@ -90,7 +124,7 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, isDeleting }) =
 /**
  * Componente principal PostCard (anteriormente FeedPost)
  */
-export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete }) => {
+export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, onUpdate }) => {
     const { user: authUser } = useAuth();
     const navigate = useNavigate();
     const [post, setPost] = useState(initialPost);
@@ -124,33 +158,66 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete })
     }, [initialPost]);
 
     const [isMediaLoading, setIsMediaLoading] = useState(true);
+    const [isFollowProcessing, setIsFollowProcessing] = useState(false);
+
+    const handleFollowSharedProfile = async () => {
+        if (!post.shared_profile || isFollowProcessing) return;
+        setIsFollowProcessing(true);
+        const previousState = post.shared_profile.is_following;
+        
+        const updatedProfile = { 
+            ...post.shared_profile, 
+            is_following: !previousState,
+            followers_count: (post.shared_profile.followers_count || 0) + (previousState ? -1 : 1)
+        };
+        const updatedPost = { ...post, shared_profile: updatedProfile };
+        setPost(updatedPost);
+        if (onUpdate) onUpdate(updatedPost);
+
+        try {
+            await api.post('/social/follow/', { user_id: post.shared_profile.id });
+        } catch(e) {
+            const revertedPost = { ...post, shared_profile: { ...post.shared_profile, is_following: previousState } };
+            setPost(revertedPost);
+            if (onUpdate) onUpdate(revertedPost);
+            console.error(e);
+        } finally {
+            setIsFollowProcessing(false);
+        }
+    };
 
     const handleLike = async () => {
         const isLiked = post.is_liked_by_user;
-        setPost(prev => ({
-            ...prev,
+        const updated = {
+            ...post,
             is_liked_by_user: !isLiked,
-            likes_count: prev.likes_count + (isLiked ? -1 : 1)
-        }));
+            likes_count: post.likes_count + (isLiked ? -1 : 1)
+        };
+        setPost(updated);
+        if (onUpdate) onUpdate(updated);
 
         try {
             await api.post('/social/like/', { post_id: post.id });
         } catch (error) {
-            setPost(prev => ({
-                ...prev,
+            const reverted = {
+                ...post,
                 is_liked_by_user: isLiked,
-                likes_count: prev.likes_count + (isLiked ? 1 : -1)
-            }));
+                likes_count: post.likes_count
+            };
+            setPost(reverted);
+            if (onUpdate) onUpdate(reverted);
             console.error("Error al dar like:", error);
         }
     };
 
     const handleSave = async () => {
         const isSaved = post.is_saved_by_user;
-        setPost(prev => ({
-            ...prev,
+        const updated = {
+            ...post,
             is_saved_by_user: !isSaved
-        }));
+        };
+        setPost(updated);
+        if (onUpdate) onUpdate(updated);
         try {
             await api.post('/posts/save/', { post_id: post.id });
         } catch (err) {
@@ -188,10 +255,12 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete })
                 media_url: res.data?.comment?.media_url || null
             };
 
-            setPost(prev => ({
-                ...prev,
-                comments: [...(prev.comments || []), newComment]
-            }));
+            const updated = {
+                ...post,
+                comments: [...(post.comments || []), newComment]
+            };
+            setPost(updated);
+            if (onUpdate) onUpdate(updated);
             
             setCommentText('');
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -228,12 +297,14 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete })
         setIsSubmittingRating(true);
         try {
             const { data } = await api.post(`/posts/rate/${post.id}/`, { score });
-            setPost(prev => ({
-                ...prev,
+            const updated = {
+                ...post,
                 average_rating: data.average_rating,
                 ratings_count: data.ratings_count,
                 user_has_rated: true
-            }));
+            };
+            setPost(updated);
+            if (onUpdate) onUpdate(updated);
             setIsRatingModalOpen(false);
         } catch (error) {
             console.error("Error calificado servicio:", error);
@@ -464,6 +535,100 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete })
                 )}
             </div>
 
+            {post.post_type === 'profile_share' && post.shared_profile && (
+                <div className="border border-sporthub-border rounded-3xl overflow-hidden bg-sporthub-card mx-4 mb-4 shadow-xl transition-all group/sharecard">
+                    {/* BANNER REPLICA */}
+                    <div 
+                        className="h-28 md:h-36 w-full relative cursor-pointer"
+                        onClick={() => navigate(`/profile?id=${post.shared_profile.id}`)}
+                    >
+                        <img 
+                            src={post.shared_profile.banner_url && post.shared_profile.banner_url !== 'None' ? getMediaUrl(post.shared_profile.banner_url) : "https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop"} 
+                            className="w-full h-full object-cover opacity-80 group-hover/sharecard:opacity-100 transition-opacity" 
+                            alt="Banner"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-sporthub-card via-transparent to-transparent"></div>
+                    </div>
+                    
+                    <div className="px-4 md:px-5 pb-5 flex flex-col gap-4 relative -mt-8 md:-mt-10">
+                        {/* Avatar & Role stacked */}
+                        <div className="flex flex-row items-center gap-3">
+                            <div className="flex flex-col items-center shrink-0 -mt-2">
+                                <div 
+                                    className="relative ring-4 ring-[#0B0F19] rounded-full cursor-pointer" 
+                                    onClick={() => navigate(`/profile?id=${post.shared_profile.id}`)}
+                                >
+                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-sporthub-card overflow-hidden bg-[#0B0F19] shadow-2xl transition-transform hover:scale-105">
+                                        <img src={getMediaUrl(post.shared_profile.avatar_url)} className="w-full h-full object-cover" onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }} alt="Avatar" />
+                                    </div>
+                                </div>
+                                <div className={`-mt-4 z-10 px-3 py-1 rounded-full border shadow-[0_5px_15px_rgba(0,0,0,0.3)] backdrop-blur-md ${post.shared_profile.role === 'admin' ? 'bg-purple-500/10 border-purple-500/30' : post.shared_profile.role === 'athlete' ? 'bg-sporthub-neon/10 border-sporthub-neon/30' : 'bg-sporthub-cyan/10 border-sporthub-cyan/30'}`}>
+                                    <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${post.shared_profile.role === 'admin' ? 'text-purple-400' : post.shared_profile.role === 'athlete' ? 'text-sporthub-neon' : 'text-sporthub-cyan'}`}>
+                                        {post.shared_profile.role === 'admin' ? 'Admin' : post.shared_profile.role === 'athlete' ? 'Deportista' : 'Reclutador'}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {/* Identity Block */}
+                            <div className="flex-1 flex flex-col items-start text-left pt-6">
+                                <h4 
+                                    className="text-xl md:text-2xl font-bold text-white tracking-tight leading-none cursor-pointer hover:text-sporthub-neon transition-colors"
+                                    onClick={() => navigate(`/profile?id=${post.shared_profile.id}`)}
+                                >
+                                    {post.shared_profile.name}
+                                </h4>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-2 overflow-hidden w-full">
+                                    <div className="flex items-center gap-1 truncate w-full sm:w-auto">
+                                        <Briefcase className="w-3 h-3 text-sporthub-neon shrink-0" /> 
+                                        <span className="truncate">
+                                            {post.shared_profile.role === 'recruiter' 
+                                                ? <>{post.shared_profile.position} en <span className="text-sporthub-cyan">{post.shared_profile.company}</span></>
+                                                : <>{post.shared_profile.sport} - <span className="text-gray-300">{post.shared_profile.position}</span></>
+                                            }
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <MapPin className="w-3 h-3 text-sporthub-cyan shrink-0" /> 
+                                        <span className="truncate">{post.shared_profile.city ? `${post.shared_profile.city}, ${post.shared_profile.country || ''}` : 'Ubicación global'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Redes y Botones en Flexbox Bottom */}
+                        <div className="flex flex-col xl:flex-row items-center xl:items-end justify-between gap-4 w-full border-t border-white/5 pt-4">
+                            <div className="flex items-center justify-center xl:justify-start gap-4">
+                                {post.shared_profile.social_links?.github && <a href={post.shared_profile.social_links.github} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-white transition-colors" title="GitHub"><SOCIAL_SVGS.github className="w-4 h-4 md:w-5 md:h-5" /></a>}
+                                {post.shared_profile.social_links?.linkedin && <a href={post.shared_profile.social_links.linkedin} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-[#0a66c2] transition-colors" title="LinkedIn"><SOCIAL_SVGS.linkedin className="w-4 h-4 md:w-5 md:h-5" /></a>}
+                                {post.shared_profile.social_links?.twitter && <a href={post.shared_profile.social_links.twitter} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-white transition-colors" title="X"><SOCIAL_SVGS.twitter className="w-4 h-4 md:w-5 md:h-5" /></a>}
+                                {post.shared_profile.social_links?.instagram && <a href={post.shared_profile.social_links.instagram} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-[#e1306c] transition-colors" title="Instagram"><SOCIAL_SVGS.instagram className="w-4 h-4 md:w-5 md:h-5" /></a>}
+                                {post.shared_profile.social_links?.facebook && <a href={post.shared_profile.social_links.facebook} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-[#1877f2] transition-colors" title="Facebook"><SOCIAL_SVGS.facebook className="w-4 h-4 md:w-5 md:h-5" /></a>}
+                                {post.shared_profile.social_links?.portfolio && <a href={post.shared_profile.social_links.portfolio} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-sporthub-neon transition-colors" title="Portfolio"><Globe className="w-4 h-4 md:w-5 md:h-5" /></a>}
+                            </div>
+                            
+                            {authUser?.id !== post.shared_profile.id && (
+                                <div className="flex items-center justify-center xl:justify-end gap-2 w-full xl:w-auto">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleFollowSharedProfile(); }}
+                                        disabled={isFollowProcessing}
+                                        className={`flex-1 xl:flex-none min-w-[110px] text-sm font-bold px-4 py-2.5 rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-lg ${post.shared_profile.is_following ? 'bg-white/5 text-white border border-white/10' : 'bg-sporthub-neon text-black hover:scale-105 shadow-sporthub-neon/10'} disabled:opacity-50`}
+                                    >
+                                        {post.shared_profile.is_following ? <UserMinus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                                        {post.shared_profile.is_following ? 'Siguiendo' : 'Seguir'}
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/messages?contactId=${post.shared_profile.id}`); }}
+                                        className="flex-1 xl:flex-none min-w-[110px] bg-sporthub-cyan text-black text-sm font-bold px-4 py-2.5 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-sporthub-cyan/10"
+                                    >
+                                        <MessageCircle className="w-4 h-4" /> Mensaje
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {post.media_url && post.media_url !== 'None' && post.media_url !== '' && (
                 <div 
                     onClick={() => onMediaClick(post.id)}
@@ -544,7 +709,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete })
                     className="flex items-center gap-2 text-sporthub-muted hover:text-sporthub-cyan transition-colors"
                 >
                     <MessageCircle className="w-5 h-5" /> 
-                    <span className="text-xs font-bold">{post.comments?.length || 0}</span>
+                    <span className="text-xs font-bold">{post.comments_count || 0}</span>
                 </button>
                 <div className="flex items-center gap-4 ml-auto">
                     <button 
@@ -565,16 +730,30 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete })
 
             {showComments && (
                 <div className="bg-[#0B0F19] p-4 border-t border-sporthub-border">
-                    <div className="flex flex-col gap-3 mb-4 max-h-32 overflow-y-auto custom-scrollbar">
-                        {post.comments?.length === 0 && <p className="text-xs text-sporthub-muted italic">Sé el primero en comentar.</p>}
+                    <div className="flex flex-col gap-3 mb-4 max-h-48 overflow-y-auto custom-scrollbar">
+                        {post.comments_count === 0 && <p className="text-xs text-sporthub-muted italic">Sé el primero en comentar.</p>}
                         {post.comments?.map((comment, idx) => (
-                            <div key={idx} className="flex gap-2 text-sm bg-sporthub-card p-2 rounded-xl flex-col">
-                                <div className="flex gap-2">
-                                    <span className="font-semibold text-sporthub-cyan shrink-0 text-xs">{comment.author.name}:</span>
-                                    <span className="text-gray-300 text-xs">{comment.text}</span>
+                            <div key={idx} className="flex gap-3 text-sm bg-sporthub-card p-3 rounded-2xl flex-col hover:bg-white/[0.02] transition-all group/comm">
+                                <div className="flex gap-3">
+                                    <Link to={`/profile/${comment.author.id}`} className="shrink-0">
+                                        <img 
+                                            src={getMediaUrl(comment.author.avatar_url)} 
+                                            className="w-8 h-8 rounded-full object-cover border border-white/10 group-hover/comm:border-sporthub-cyan transition-all" 
+                                            alt={comment.author.name} 
+                                        />
+                                    </Link>
+                                    <div className="flex flex-col flex-1">
+                                        <Link 
+                                            to={`/profile/${comment.author.id}`} 
+                                            className="font-black text-white hover:text-sporthub-cyan transition-colors text-[10px] uppercase tracking-tighter"
+                                        >
+                                            {comment.author.name}
+                                        </Link>
+                                        <p className="text-gray-300 text-[11px] leading-tight">{comment.text}</p>
+                                    </div>
                                 </div>
                                 {comment.media_url && (
-                                    <img src={getMediaUrl(comment.media_url)} className="w-32 h-32 object-cover rounded mt-1 border border-sporthub-border" alt="adjunto" />
+                                    <img src={getMediaUrl(comment.media_url)} className="w-full max-h-40 object-cover rounded-xl mt-1 border border-sporthub-border" alt="adjunto" />
                                 )}
                             </div>
                         ))}

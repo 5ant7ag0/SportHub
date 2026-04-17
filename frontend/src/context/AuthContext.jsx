@@ -139,6 +139,7 @@ export const AuthProvider = ({ children }) => {
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
+                        console.log("📥 WS RECEIVED:", { type: data.type, payload: data.data });
 
                         // 1. Gestión de Presencia (Donut y Tabla)
                         if (data.type === 'presence_update') {

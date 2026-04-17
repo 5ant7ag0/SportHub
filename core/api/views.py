@@ -108,13 +108,93 @@ class AnalyticsView(APIView):
                     user_growth = User.get_user_growth_stats()
                     city_ranking = User.get_city_distribution()
                     connection_status = User.get_connection_metrics()
+                    talent_growth = User.get_talent_correlation_stats()
                 except Exception as e:
                     print(f"Error Global Stats: {e}")
                     stats = {}
                     percentages = []
                     total_likes = total_comments = total_users = total_posts = 0
-                    user_growth = city_ranking = []
+                    user_growth = city_ranking = talent_growth = []
                     connection_status = {"online": 0, "offline": 0}
+
+                # --- 3. PULSO DE LA COMUNIDAD (Heatmap) ---
+                start_date_pulse = end_date - timedelta(days=7)
+                
+                pipeline_pulse_notif = [
+                    {"$match": {
+                        "timestamp": {"$gte": start_date_pulse},
+                        "action_type": {"$in": ["like", "comment", "repost"]}
+                    }},
+                    {"$project": {
+                        "day": {"$isoDayOfWeek": "$timestamp"},
+                        "hour": {"$hour": "$timestamp"}
+                    }},
+                    {"$group": {
+                        "_id": {"day": "$day", "hour": "$hour"},
+                        "count": {"$sum": 1}
+                    }}
+                ]
+
+                pipeline_pulse_msg = [
+                    {"$match": {"timestamp": {"$gte": start_date_pulse}}},
+                    {"$project": {
+                        "day": {"$isoDayOfWeek": "$timestamp"},
+                        "hour": {"$hour": "$timestamp"}
+                    }},
+                    {"$group": {
+                        "_id": {"day": "$day", "hour": "$hour"},
+                        "count": {"$sum": 1}
+                    }}
+                ]
+                
+                try:
+                    # Usamos .objects().aggregate() para que MongoEngine maneje correctamente los objetos datetime
+                    raw_pulse_notif = list(Notification.objects(
+                        timestamp__gte=start_date_pulse,
+                        action_type__in=["like", "comment", "repost"]
+                    ).aggregate(
+                        {"$project": {
+                            "day": {"$isoDayOfWeek": "$timestamp"},
+                            "hour": {"$hour": "$timestamp"}
+                        }},
+                        {"$group": {
+                            "_id": {"day": "$day", "hour": "$hour"},
+                            "count": {"$sum": 1}
+                        }}
+                    ))
+
+                    raw_pulse_msg = list(Message.objects(
+                        timestamp__gte=start_date_pulse
+                    ).aggregate(
+                        {"$project": {
+                            "day": {"$isoDayOfWeek": "$timestamp"},
+                            "hour": {"$hour": "$timestamp"}
+                        }},
+                        {"$group": {
+                            "_id": {"day": "$day", "hour": "$hour"},
+                            "count": {"$sum": 1}
+                        }}
+                    ))
+                    
+                    print(f"DEBUG PULSO: Notif={len(raw_pulse_notif)}, Msg={len(raw_pulse_msg)}")
+                    
+                    pulse_map = {}
+                    for r in raw_pulse_notif + raw_pulse_msg:
+                        key = f"{r['_id']['day']}-{r['_id']['hour']}"
+                        pulse_map[key] = pulse_map.get(key, 0) + r["count"]
+                    
+                    pulse_data = []
+                    for d in range(1, 8):
+                        for h in range(24):
+                            key = f"{d}-{h}"
+                            pulse_data.append({
+                                "day": d,
+                                "hour": h,
+                                "count": pulse_map.get(key, 0)
+                            })
+                except Exception as e:
+                    print(f"Error Pulso: {e}")
+                    pulse_data = [{"error": str(e), "day": 1, "hour": 0, "count": 0}]
                 
                 data = {
                     "total_visits": total_visitas_reales, 
@@ -129,7 +209,9 @@ class AnalyticsView(APIView):
                     "trends": formatted_trends,
                     "user_growth": user_growth,
                     "city_ranking": city_ranking,
-                    "connection_status": connection_status
+                    "connection_status": connection_status,
+                    "community_pulse": pulse_data,
+                    "talent_growth": talent_growth
                 }
             else:
                 target_profile_id = request.query_params.get('profile_id') or str(user.id)
@@ -271,13 +353,14 @@ class LikeView(APIView):
 
         if user in post.likes:
             Post.objects(id=post_id).update_one(pull__likes=user)
-            return Response({"detail": "Like removido."}, status=200)
+            like_removed = True
         else:
             Post.objects(id=post_id).update_one(add_to_set__likes=user)
+            like_removed = False
             if str(post.author.id) != str(user.id):
                 Notification(actor=user, recipient=post.author, action_type='like', post_id=post).save()
                 
-                # 🟢 SEÑAL REAL-TIME: Notificar al autor del post
+                # 🟢 SEÑAL REAL-TIME: Notificar al autor del post (Privado)
                 try:
                     from channels.layers import get_channel_layer
                     from asgiref.sync import async_to_sync
@@ -293,10 +376,29 @@ class LikeView(APIView):
                             }
                         }
                     )
-                except Exception as e:
-                    print(f"WS Like Error: {e}")
+                except Exception: pass
+        
+        # 🌐 BROADCAST MUNDIAL: Notificar a todos en el feed (Tanto en like como en unlike)
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            post.reload()
+            serializer = PostSerializer(post)
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'presence',
+                {
+                    'type': 'new_notification',
+                    'data': {
+                        'type': 'post_update',
+                        'post': serializer.data
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"WS broadcast like/unlike error: {e}")
                     
-            return Response({"detail": "Like agregado."}, status=200)
+        return Response({"detail": "Like removido." if like_removed else "Like agregado."}, status=200)
 
 class SendMessageView(APIView):
     authentication_classes = [MongoJWTAuthentication]
@@ -578,12 +680,16 @@ class FeedView(APIView):
 
     def get(self, request):
         sport = request.query_params.get('sport')
+        post_type = request.query_params.get('post_type')
         filter_q = Q()
         
         if sport:
             from core.models import User
             matching_users = User.objects(sport=sport)
-            filter_q = Q(author__in=matching_users)
+            filter_q &= Q(author__in=matching_users)
+
+        if post_type:
+            filter_q &= Q(post_type=post_type)
 
         # --- PAGINACIÓN ---
         try:
@@ -701,7 +807,7 @@ class CommentView(APIView):
         if str(post.author.id) != str(user.id):
             Notification(actor=user, recipient=post.author, action_type='comment', post_id=post).save()
             
-            # 🟢 SEÑAL REAL-TIME: Notificar al autor del post
+            # 🟢 SEÑAL REAL-TIME: Notificar al autor del post (Privado)
             try:
                 from channels.layers import get_channel_layer
                 from asgiref.sync import async_to_sync
@@ -718,8 +824,27 @@ class CommentView(APIView):
                         }
                     }
                 )
-            except Exception as e:
-                print(f"WS Comment Error: {e}")
+            except Exception: pass
+
+        # 🌐 BROADCAST MUNDIAL: Notificar a todos en el feed
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            post.reload() # Importante para traer el nuevo comentario
+            serializer = PostSerializer(post)
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'presence',
+                {
+                    'type': 'new_notification',
+                    'data': {
+                        'type': 'post_update',
+                        'post': serializer.data
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"WS broadcast comment error: {e}")
             
         return Response({"message": "Comentario agregado exitosamente."}, status=201)
 
@@ -881,8 +1006,30 @@ class EditMessageView(APIView):
         try:
             msg = Message.objects.get(id=ObjectId(message_id), sender=request.user)
             msg.update(set__body=body, set__is_edited=True)
+            
+            # --- DIFUSIÓN EN TIEMPO REAL AL RECEPTOR ---
+            try:
+                msg.reload()
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                from core.api.serializers import MessageSerializer
+                serializer = MessageSerializer(msg, context={'request': request})
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{msg.receiver.id}',
+                    {
+                        'type': 'new_notification',
+                        'data': {
+                            'type': 'message_update',
+                            'message': serializer.data
+                        }
+                    }
+                )
+            except Exception as e:
+                print(f"Error WS al editar mensaje: {e}")
+
             return Response({"detail": "Mensaje editado"}, status=200)
-        except:
+        except Exception as e:
              return Response({"error": "No tienes permiso o no existe"}, status=404)
 
 class EditPostView(APIView):
@@ -914,6 +1061,26 @@ class EditPostView(APIView):
                     pass
 
             post.update(**update_fields)
+
+            # 🌐 BROADCAST MUNDIAL: Notificar edición
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                post.reload()
+                serializer = PostSerializer(post)
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'presence',
+                    {
+                        'type': 'new_notification',
+                        'data': {
+                            'type': 'post_update',
+                            'post': serializer.data
+                        }
+                    }
+                )
+            except Exception: pass
+
             return Response({"detail": "Post editado con éxito"}, status=200)
         except Exception as e:
             return Response({"error": "No tienes permiso o el post no existe"}, status=404)
@@ -953,6 +1120,25 @@ class RatePostView(APIView):
             
             post.update(set__average_rating=new_avg, set__ratings_count=new_count)
             
+            # 🌐 BROADCAST MUNDIAL: Notificar nueva calificación
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                post.reload()
+                serializer = PostSerializer(post)
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'presence',
+                    {
+                        'type': 'new_notification',
+                        'data': {
+                            'type': 'post_update',
+                            'post': serializer.data
+                        }
+                    }
+                )
+            except Exception: pass
+
             return Response({
                 "detail": "Calificación registrada con éxito",
                 "average_rating": round(new_avg, 1),
