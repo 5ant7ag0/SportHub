@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area, ScatterChart, Scatter, ZAxis, Label } from 'recharts';
-import { TrendingUp, Users, Heart, MessageCircle, Loader2, ShieldCheck, ShieldAlert, Trash2, UserX, Search, CheckCircle2, UserCheck, X, MapPin, User, Shield, Activity, Calendar, Settings } from 'lucide-react';
+import { TrendingUp, Users, Heart, MessageCircle, Loader2, ShieldCheck, ShieldAlert, Trash2, UserX, Search, CheckCircle2, UserCheck, X, MapPin, User, Shield, Activity, Calendar, Settings, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
+import { Link } from 'react-router-dom';
+import { getMediaUrl } from '../utils/media';
+
+const str = (id) => typeof id === 'object' ? id.$oid || String(id) : String(id);
 
 // Configuración de colores segura y constante
 const COLORS = {
@@ -175,7 +179,7 @@ export const AnalyticsDashboard = () => {
         });
     };
 
-    const str = (id) => typeof id === 'object' ? id.$oid || String(id) : String(id);
+    const str_local = (id) => typeof id === 'object' ? id.$oid || String(id) : String(id);
 
     const viewData = useMemo(() => {
         const d = stats || INITIAL_STATS;
@@ -659,8 +663,8 @@ const TalentGrowthScatter = ({ data }) => (
     <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
         <div className="flex justify-between items-start mb-6">
             <div>
-                <h3 className="text-white font-semibold italic uppercase tracking-tighter">Análisis de Crecimiento de Talento</h3>
-                <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest mt-1">Correlación estratégica: Posts vs Seguidores</p>
+                <h3 className="text-white font-semibold">Análisis de Crecimiento de Talento</h3>
+                <p className="text-xs text-sporthub-muted">Correlación estratégica: Posts vs Seguidores</p>
             </div>
             <TrendingUp className="w-5 h-5 text-sporthub-neon" />
         </div>
@@ -784,8 +788,8 @@ const CommunityPulse = ({ data }) => {
         <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h3 className="text-white font-black italic uppercase tracking-tighter text-lg">Pulso de la Comunidad</h3>
-                    <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest">Intensidad de actividad por horario estructural</p>
+                    <h3 className="text-white font-semibold">Pulso de la Comunidad</h3>
+                    <p className="text-xs text-sporthub-muted">Intensidad de actividad por horario estructural</p>
                 </div>
                 <div className="flex items-center gap-4 bg-[#0B0F19] px-4 py-2 rounded-xl border border-sporthub-border">
                     <div className="flex items-center gap-2">
@@ -904,8 +908,8 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
         <div className="bg-sporthub-card rounded-[2rem] border border-sporthub-border overflow-hidden shadow-2xl">
             <div className="p-8 border-b border-sporthub-border flex flex-col md:flex-row justify-between items-start md:items-center bg-[#0B0F19]/40 gap-4">
                 <div>
-                    <h3 className="text-white font-black text-xl italic uppercase tracking-tighter">Gestión de Usuarios</h3>
-                    <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-widest mt-1">Control de jerarquía y estados de cuenta ({users.length} usuarios)</p>
+                    <h3 className="text-white font-semibold">Gestión de Usuarios</h3>
+                    <p className="text-xs text-sporthub-muted">Control de jerarquía y estados de cuenta ({users.length} usuarios)</p>
                 </div>
                 <div className="relative flex flex-wrap gap-4 w-full md:w-auto">
                     <select
@@ -935,26 +939,34 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                     <thead className="text-[10px] text-sporthub-muted uppercase font-black bg-[#0B0F19]/60">
                         <tr>
                             <th className="px-8 py-5 flex items-center gap-2"><User className="w-3 h-3 text-sporthub-cyan" /> USUARIO</th>
+                            <th className="px-8 py-5"><div className="flex items-center gap-2"><Mail className="w-3 h-3 text-sporthub-neon" /> CORREO</div></th>
                             <th className="px-8 py-5"><div className="flex items-center gap-2"><Shield className="w-3 h-3 text-purple-400" /> ROL</div></th>
                             <th className="px-8 py-5 text-center"><div className="flex items-center justify-center gap-2"><Activity className="w-3 h-3 text-sporthub-neon" /> ACTIVIDAD</div></th>
                             <th className="px-8 py-5"><div className="flex items-center gap-2"><MapPin className="w-3 h-3 text-sporthub-cyan" /> UBICACIÓN</div></th>
                             <th className="px-8 py-5"><div className="flex items-center gap-2"><Calendar className="w-3 h-3 text-sporthub-muted" /> REGISTRO</div></th>
-                            <th className="px-8 py-5 text-right"><div className="flex items-center justify-end gap-2"><Settings className="w-3 h-3 text-sporthub-muted" /> ACCIONES</div></th>
+                            <th className="px-8 py-5 text-center"><div className="flex items-center justify-center gap-2"><Settings className="w-3 h-3 text-sporthub-muted" /> ACCIONES</div></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-sporthub-border/50">
                         {filteredUsers.map(u => (
                             <tr key={str(u.id)} className="hover:bg-white/[0.03] transition-all duration-300">
                                 <td className="px-8 py-6 flex items-center gap-4">
-                                    <div className="relative">
-                                        <div className="w-12 h-12 rounded-full border-2 border-sporthub-border overflow-hidden bg-sporthub-bg shadow-lg">
-                                            <img src={u.avatar_url || "/test_media/sample_atleta.svg"} className="w-full h-full object-cover" />
+                                    <Link to={`/profile?id=${str(u.id)}`} className="relative group/avatar">
+                                        <div className="w-12 h-12 rounded-full border-2 border-sporthub-border overflow-hidden bg-sporthub-bg shadow-lg transition-all group-hover/avatar:border-sporthub-neon/50">
+                                            <img 
+                                                src={getMediaUrl(u.avatar_url)} 
+                                                className="w-full h-full object-cover" 
+                                                onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
+                                                alt={u.name}
+                                            />
                                         </div>
                                         <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-[3px] border-sporthub-card ${onlineUserIds?.has(str(u.id)) ? 'bg-sporthub-neon shadow-[0_0_12px_#A3E635] animate-pulse' : 'bg-[#334155]'}`} title={onlineUserIds?.has(str(u.id)) ? "Online" : "Offline"} />
-                                    </div>
+                                    </Link>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-sm font-black text-white tracking-tight">{u.name}</p>
+                                            <Link to={`/profile?id=${str(u.id)}`} className="text-sm font-black text-white tracking-tight hover:text-sporthub-neon transition-colors">
+                                                {u.name}
+                                            </Link>
                                             <StatusBadge user={u} />
                                         </div>
                                         <p className="text-[10px] text-sporthub-muted font-semibold truncate max-w-[150px]">
@@ -963,6 +975,12 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                                                 : (u.company || u.job_title ? `${u.company || ''}${u.company && u.job_title ? ' - ' : ''}${u.job_title || ''}` : u.email)
                                             }
                                         </p>
+                                    </div>
+                                </td>
+                                <td className="px-8 py-6">
+                                    <div className="flex items-center gap-2 text-sporthub-muted">
+                                        <Mail className="w-3.5 h-3.5 text-sporthub-neon/50" />
+                                        <span className="text-[11px] font-medium truncate max-w-[150px] lowercase">{u.email}</span>
                                     </div>
                                 </td>
                                 <td className="px-8 py-6">
@@ -989,8 +1007,8 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
                                 <td className="px-8 py-6">
                                     <p className="text-[11px] text-sporthub-muted font-medium">{formatDate(u.created_at)}</p>
                                 </td>
-                                <td className="px-8 py-6 text-right">
-                                    <div className="flex justify-end gap-3">
+                                <td className="px-8 py-6 text-center">
+                                    <div className="flex justify-center gap-3">
                                         <button onClick={() => onAction(str(u.id), 'promote', u.name)} className="p-3 bg-white/5 text-sporthub-muted hover:text-purple-400 hover:bg-purple-500/10 rounded-xl transition-all" title="Promover/Degradar"><ShieldCheck className="w-4 h-4" /></button>
                                         {u.is_active && !u.is_suspended ? (
                                             <button onClick={() => onAction(str(u.id), 'suspend', u.name)} className="p-3 bg-white/5 text-sporthub-muted hover:text-orange-400 hover:bg-orange-500/10 rounded-xl transition-all" title="Suspender"><UserX className="w-4 h-4" /></button>
