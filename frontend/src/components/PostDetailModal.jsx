@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { getMediaUrl, isVideo } from '../utils/media';
 import { Link, useNavigate } from 'react-router-dom';
 import { LikesListModal } from './LikesListModal';
+import { formatAuthorMetadata } from './PostCard';
 
 export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
     const { user: authUser, updateUser, lastNotification } = useAuth();
@@ -351,7 +352,7 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
                                         />
                                         <div>
                                             <h3 className="text-white font-black text-base leading-tight group-hover/author:text-sporthub-neon transition-colors tracking-tight">{post.author?.name || 'Cargando...'}</h3>
-                                            <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-[0.2em] mt-0.5">{post.author?.sport || 'Atleta Profesional'}</p>
+                                            <p className="text-[10px] text-sporthub-muted uppercase font-bold tracking-[0.2em] mt-0.5">{formatAuthorMetadata(post.author) || 'Atleta Profesional'}</p>
                                         </div>
                                     </Link>
                                     

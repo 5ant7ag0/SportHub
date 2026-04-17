@@ -4,6 +4,7 @@ import { Loader2, Users, Check, X, MessageSquare, TrendingUp, UserPlus } from 'l
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMediaUrl } from '../utils/media';
+import { formatAuthorMetadata } from '../components/PostCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const COLORS = ['#A3E635', '#06B6D4', '#c084fc', '#fbbf24', '#f87171', '#34d399'];
@@ -145,7 +146,7 @@ export const Network = () => {
                                         </div>
                                         <div className="flex-1 overflow-hidden">
                                             <Link to={`/profile?id=${conn.id}`} className="text-white font-bold text-sm truncate hover:text-sporthub-neon transition-colors block">{conn.name}</Link>
-                                            <p className="text-gray-400 text-xs truncate mb-1.5">{conn.sport} • {conn.role}</p>
+                                            <p className="text-gray-400 text-xs truncate mb-1.5">{formatAuthorMetadata(conn)}</p>
                                             <div className="flex gap-2">
                                                 <span className={`${conn.is_online ? 'bg-[rgba(163,230,53,0.1)] text-sporthub-neon' : 'bg-gray-800 text-gray-500'} px-2 py-0.5 rounded-md text-[10px] font-bold`}>
                                                     {conn.is_online ? 'ACTIVO' : 'OFFLINE'}
@@ -201,7 +202,7 @@ export const Network = () => {
                                         </div>
                                         <div className="mt-8 mb-2">
                                             <h4 className="text-white font-bold text-sm tracking-wide truncate pr-2">{user.name}</h4>
-                                            <p className="text-gray-400 text-xs truncate mt-0.5">{user.role}</p>
+                                            <p className="text-gray-400 text-xs truncate mt-0.5">{formatAuthorMetadata(user)}</p>
                                         </div>
                                         <div className="flex items-center justify-between text-[10px] mb-4">
                                             <span className="text-sporthub-neon font-bold flex items-center gap-1">★ 4.{8 - (idx%3)}</span>

@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MessageSquare } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
+import { formatAuthorMetadata } from '../components/PostCard';
 
 const SPORTS_DATA = {
     'Fútbol': ['Arquero', 'Defensa', 'Mediocampista', 'Delantero'],
@@ -57,20 +58,22 @@ export const Search = () => {
     };
 
     const handleFollow = async (targetId) => {
-        // Optimistic UI update
+        const targetUser = results.find(u => u.id === targetId);
+        if (!targetUser) return;
+
+        const newState = !targetUser.is_following;
         const originalResults = [...results];
+
+        // Optimistic UI update
         setResults(prev => prev.map(u => 
-            u.id === targetId ? { ...u, is_following: true } : u
+            u.id === targetId ? { ...u, is_following: newState } : u
         ));
         
         setPendingIds(prev => new Set(prev).add(targetId));
         try {
             await api.post('/social/follow/', { target_id: targetId });
-            // Sincronización final opcional
-            // fetchResults(); // Omitido para máxima velocidad si el estado local ya es correcto
         } catch (e) {
             console.error("Error al seguir:", e);
-            // Revert on error
             setResults(originalResults);
         } finally {
             setPendingIds(prev => {
@@ -201,10 +204,7 @@ export const Search = () => {
                                     {user.name}
                                 </Link>
                                 <p className="text-xs text-sporthub-muted mb-4 truncate w-full px-2">
-                                    {user.role === 'athlete' 
-                                        ? (user.sport ? `${user.sport}${user.position ? ` - ${user.position}` : ''}` : 'Sin deporte')
-                                        : (user.company || user.job_title ? `${user.company || ''}${user.company && user.job_title ? ' - ' : ''}${user.job_title || ''}` : 'Reclutador Profesional')
-                                    }
+                                    {formatAuthorMetadata(user)}
                                 </p>
                                 
                                 <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-6">

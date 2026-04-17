@@ -40,6 +40,23 @@ const SOCIAL_SVGS = {
 };
 
 /**
+ * Helper para formatear metadatos de autor según su rol
+ */
+export const formatAuthorMetadata = (author) => {
+    if (!author) return "";
+    if (author.role === 'athlete') {
+        const sport = author.sport || "";
+        const pos = author.position || "";
+        return `${sport}${sport && pos ? ' - ' : ''}${pos}`;
+    } else {
+        // Recruiter, Admin, etc.
+        const company = author.company || "";
+        const job = author.job_title || author.position || "";
+        return `${company}${company && job ? ' - ' : ''}${job}`;
+    }
+};
+
+/**
  * Modal de confirmación para repostear
  */
 export const ShareConfirmModal = ({ isOpen, onClose, onConfirm, postAuthor, isLoading, error }) => {
@@ -358,7 +375,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                 </span>
                             )}
                         </div>
-                        <p className="text-[10px] text-sporthub-muted">{post.author?.sport} - {post.author?.position}</p>
+                        <p className="text-[10px] text-sporthub-muted">{formatAuthorMetadata(post.author)}</p>
                     </div>
                 </Link>
                 {authUser?.id === post.author?.id && !isEditing && (
@@ -506,7 +523,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                             />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-white hover:text-sporthub-neon transition-colors">{post.original_post.author.name}</span>
-                                <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{post.original_post.author.sport}</span>
+                                <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{formatAuthorMetadata(post.original_post.author)}</span>
                             </div>
                         </div>
                         <div className="p-3">
@@ -581,10 +598,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                     <div className="flex items-center gap-1 truncate w-full sm:w-auto">
                                         <Briefcase className="w-3 h-3 text-sporthub-neon shrink-0" /> 
                                         <span className="truncate">
-                                            {post.shared_profile.role === 'recruiter' 
-                                                ? <>{post.shared_profile.position} en <span className="text-sporthub-cyan">{post.shared_profile.company}</span></>
-                                                : <>{post.shared_profile.sport} - <span className="text-gray-300">{post.shared_profile.position}</span></>
-                                            }
+                                            {formatAuthorMetadata(post.shared_profile)}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
