@@ -9,6 +9,8 @@ from bson import ObjectId
 from mongoengine import Q
 from bson.errors import InvalidId
 from datetime import datetime, timedelta
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class AnalyticsView(APIView):
     authentication_classes = [MongoJWTAuthentication]
@@ -211,7 +213,8 @@ class AnalyticsView(APIView):
                     "city_ranking": city_ranking,
                     "connection_status": connection_status,
                     "community_pulse": pulse_data,
-                    "talent_growth": talent_growth
+                    "talent_growth": talent_growth,
+                    "roles_distribution": AnalyticsEvent.get_role_distribution(None)
                 }
             else:
                 target_profile_id = request.query_params.get('profile_id') or str(user.id)
@@ -246,7 +249,12 @@ class AnalyticsView(APIView):
                     "total_likes": total_likes,
                     "total_comments": total_comments,
                     "is_global": False,
-                    "trends": formatted_trends
+                    "trends": formatted_trends,
+                    "roles_distribution": AnalyticsEvent.get_role_distribution(target_profile_id),
+                    "visits_today": AnalyticsEvent.objects(
+                        visited_profile_id=target_profile_id, 
+                        timestamp__gte=datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+                    ).count()
                 }
             
             serializer = AnalyticsSerializer(data)
@@ -754,7 +762,32 @@ class ProfileView(APIView):
         if target_id:
             try:
                 profile_user = User.objects.get(id=target_id)
-                AnalyticsEvent.register_visit(visited_id=profile_user.id, visitor_age=user.computed_age)
+                
+                # 🛡️ PROTECCIÓN DE CONTADOR: 
+                # Solo registrar si NO es el dueño y NO es una petición de polling
+                is_poll = request.query_params.get('poll') == 'true'
+                if str(profile_user.id) != str(user.id) and not is_poll:
+                    AnalyticsEvent.register_visit(
+                        visited_id=profile_user.id, 
+                        visitor_age=user.computed_age,
+                        visitor_role=getattr(user, 'role', 'athlete')
+                    )
+                    
+                    # 🚀 EMITIR PULSO REAL-TIME: Avisar al dueño del perfil
+                    try:
+                        channel_layer = get_channel_layer()
+                        async_to_sync(channel_layer.group_send)(
+                            f"user_{str(profile_user.id)}",
+                            {
+                                "type": "new_notification",
+                                "data": {
+                                    "type": "profile_visit",
+                                    "visited_id": str(profile_user.id)
+                                }
+                            }
+                        )
+                    except Exception as e:
+                        print(f"⚠️ Error enviando pulso WS: {e}")
             except (User.DoesNotExist, InvalidId):
                 raise NotFound("Usuario no encontrado.")
         else:

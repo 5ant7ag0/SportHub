@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Loader2, Search as SearchIcon, Filter, MapPin, UserPlus, Check, X } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MessageSquare } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
@@ -14,8 +14,9 @@ const SPORTS_DATA = {
 };
 
 export const Search = () => {
-    const { user: authUser } = useAuth();
+    const { user: authUser, lastNotification } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [query, setQuery] = useState('');
     const [sport, setSport] = useState('');
     const [position, setPosition] = useState('');
@@ -23,7 +24,15 @@ export const Search = () => {
     const [city, setCity] = useState('');
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [pendingIds, setPendingIds] = useState(new Set());
+    const pendingIdsRef = useRef(new Set());
+
+    // Escuchar pulsos de tiempo real para seguidores
+    useEffect(() => {
+        if (lastNotification?.type === 'follow' || lastNotification?.type === 'count_update') {
+            // Refrescamos resultados (silenciosamente) para tener la versión más real
+            fetchResults(true);
+        }
+    }, [lastNotification]);
 
     // Búsqueda Inteligente Debounced
     useEffect(() => {
@@ -38,8 +47,8 @@ export const Search = () => {
         setPosition('');
     }, [sport]);
 
-    const fetchResults = async () => {
-        setIsLoading(true);
+    const fetchResults = async (isSilent = false) => {
+        if (!isSilent) setIsLoading(true);
         try {
             const params = new URLSearchParams();
             if (query) params.append('q', query);
@@ -49,11 +58,21 @@ export const Search = () => {
             if (position) params.append('position', position);
             
             const { data } = await api.get(`/search/?${params.toString()}`);
-            setResults(data);
+            
+            // 🛡️ PROTECCIÓN: No sobreescribir usuarios que están siendo procesados (Follow)
+            setResults(prev => {
+                return data.map(newUser => {
+                    if (pendingIdsRef.current.has(newUser.id)) {
+                        const existingUser = prev.find(u => u.id === newUser.id);
+                        return existingUser || newUser;
+                    }
+                    return newUser;
+                });
+            });
         } catch (error) {
             console.error("Error en búsqueda:", error);
         } finally {
-            setIsLoading(false);
+            if (!isSilent) setIsLoading(false);
         }
     };
 
@@ -69,18 +88,18 @@ export const Search = () => {
             u.id === targetId ? { ...u, is_following: newState } : u
         ));
         
-        setPendingIds(prev => new Set(prev).add(targetId));
+        pendingIdsRef.current.add(targetId);
+        
         try {
             await api.post('/social/follow/', { target_id: targetId });
         } catch (e) {
             console.error("Error al seguir:", e);
             setResults(originalResults);
         } finally {
-            setPendingIds(prev => {
-                const next = new Set(prev);
-                next.delete(targetId);
-                return next;
-            });
+            // 🕒 GRACE PERIOD: Mantenemos en pendingIds 3 segundos extra
+            setTimeout(() => {
+                pendingIdsRef.current.delete(targetId);
+            }, 3000);
         }
     };
 

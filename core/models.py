@@ -277,6 +277,7 @@ class Notification(Document):
 class AnalyticsEvent(Document):
     visited_profile_id = ReferenceField('User', required=True)
     visitor_age = IntField(required=True)
+    visitor_role = StringField(default='athlete')
     timestamp = DateTimeField(default=datetime.utcnow)
 
     meta = {
@@ -284,10 +285,64 @@ class AnalyticsEvent(Document):
     }
 
     @classmethod
-    def register_visit(cls, visited_id, visitor_age):
-        event = cls(visited_profile_id=visited_id, visitor_age=visitor_age)
+    def register_visit(cls, visited_id, visitor_age, visitor_role='athlete'):
+        event = cls(visited_profile_id=visited_id, visitor_age=visitor_age, visitor_role=visitor_role)
         event.save()
         return event
+
+    @classmethod
+    def get_role_distribution(cls, profile_id=None):
+        """
+        Calcula cuántas visitas provienen de cada rol.
+        Reparte las visitas antiguas (sin rol) 50/50 entre athlete y recruiter.
+        """
+        pipeline = []
+        if profile_id:
+            if isinstance(profile_id, str):
+                profile_id = ObjectId(profile_id)
+            pipeline.append({"$match": {"visited_profile_id": profile_id}})
+            
+        pipeline.append({"$group": {
+            "_id": "$visitor_role",
+            "count": {"$sum": 1}
+        }})
+        
+        try:
+            results = list(cls.objects.aggregate(pipeline))
+            
+            athlete_count = 0
+            recruiter_count = 0
+            unknown_count = 0
+            
+            for r in results:
+                role = r["_id"]
+                count = r["count"]
+                if role == 'athlete':
+                    athlete_count += count
+                elif role in ['recruiter', 'scout']:
+                    recruiter_count += count
+                else:
+                    # Incluye roles None, vacíos o no mapeados (datos antiguos)
+                    unknown_count += count
+            
+            # Repartir 50/50 según lo solicitado por el usuario
+            if unknown_count > 0:
+                athlete_count += unknown_count // 2
+                recruiter_count += unknown_count - (unknown_count // 2)
+            
+            final_distribution = []
+            if athlete_count > 0 or recruiter_count > 0:
+                final_distribution = [
+                    {"name": "athlete", "value": athlete_count},
+                    {"name": "recruiter", "value": recruiter_count}
+                ]
+            else:
+                # Si no hay nada de nada
+                final_distribution = []
+                
+            return final_distribution
+        except Exception:
+            return []
 
     @classmethod
     def get_visitor_age_stats(cls, profile_id=None):

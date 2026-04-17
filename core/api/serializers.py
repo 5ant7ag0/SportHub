@@ -21,6 +21,8 @@ class AnalyticsSerializer(serializers.Serializer):
     connection_status = serializers.DictField(required=False)
     community_pulse = serializers.ListField(child=serializers.DictField(), required=False)
     talent_growth = serializers.ListField(child=serializers.DictField(), required=False)
+    roles_distribution = serializers.ListField(child=serializers.DictField(), required=False)
+    visits_today = serializers.IntegerField(required=False)
 
 class MessageSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
