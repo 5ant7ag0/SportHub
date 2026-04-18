@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Sidebar } from './components/Sidebar';
@@ -20,10 +20,12 @@ import { BottomNav } from './components/BottomNav';
 // Layout wrapper for authenticated routes that require the Sidebar
 const DashboardLayout = ({ children }) => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const isMessages = location.pathname === '/messages';
   const isChatActive = !!searchParams.get('contactId');
 
-  // En modo chat, forzamos un viewport fijo (estilo app nativa)
-  if (isChatActive) {
+  // En modo mensajes o chat activo, forzamos un viewport fijo (estilo app nativa)
+  if (isMessages || isChatActive) {
     return (
       <div className="flex flex-col h-[100dvh] overflow-hidden bg-sporthub-bg font-outfit fixed inset-0 w-full">
         <div className="flex flex-1 overflow-hidden">

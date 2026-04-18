@@ -422,10 +422,10 @@ const Messages = () => {
 
     return (
         <div className="flex-1 flex overflow-hidden bg-[#0B0F19] p-4 lg:p-6 w-full h-full relative">
-            <div className="flex flex-col lg:flex-row gap-6 max-w-full w-full mx-auto h-full overflow-hidden relative">
+            <div className="flex flex-col lg:flex-row gap-6 max-w-full w-full mx-auto h-full overflow-hidden relative items-stretch">
                 
                 {/* LISTA DE CHATS */}
-                <div className={`${viewMode === 'chat' ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 xl:w-[350px] bg-sporthub-card rounded-[32px] border border-white/5 flex-col shrink-0 overflow-hidden shadow-xl`}>
+                <div className={`${viewMode === 'chat' ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 xl:w-[350px] bg-sporthub-card rounded-[32px] border border-white/5 flex-col shrink-0 overflow-hidden shadow-xl h-full`}>
                     <div className="p-6 pb-2">
                         <div className="bg-[#0B0F19] rounded-2xl flex items-center px-4 py-3 border border-white/5 shadow-inner mb-2">
                             <SearchIcon className="w-4 h-4 text-gray-600 mr-2" />
