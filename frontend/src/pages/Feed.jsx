@@ -229,9 +229,9 @@ export const Feed = () => {
                                 });
                             }}
                         />
-                    </div>
 
-                    <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-6">
+
                         {posts.length === 0 && !isLoading ? (
                             <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-[rgba(255,255,255,0.05)]">
                                 <AlertTriangle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
@@ -281,6 +281,7 @@ export const Feed = () => {
                         )}
                     </div>
                 </div>
+            </div>
 
                 {/* Columna Lateral - Sugerencias con scroll independiente */}
                 <aside className="hidden xl:flex xl:col-span-4 h-full overflow-y-auto no-scrollbar pb-20">
