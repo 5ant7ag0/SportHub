@@ -202,52 +202,78 @@ export const Search = () => {
                                 No se encontraron resultados que coincidan exacto con tus filtros.
                             </div>
                         )}
-                        {results.map(user => (
-                            <div key={user.id} className="bg-sporthub-card border border-[rgba(255,255,255,0.05)] rounded-3xl p-6 flex flex-col items-center text-center transition-transform hover:-translate-y-1">
-                                <Link to={`/profile?id=${user.id}`}>
-                                    <div className="flex flex-col items-center gap-0">
-                                        <div className="relative p-1">
+                        {results.map(user => {
+                            const hasBanner = user.banner_url && user.banner_url !== 'None' && user.banner_url !== '';
+
+                            return (
+                            <div key={user.id} className="bg-sporthub-card border border-[rgba(255,255,255,0.05)] rounded-[2rem] overflow-hidden flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] group">
+                                {/* Banner Section */}
+                                <div className="h-24 w-full relative">
+                                    {hasBanner ? (
+                                        <img 
+                                            src={getMediaUrl(user.banner_url)} 
+                                            className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500" 
+                                            alt="Banner" 
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-[#0B0F19] via-[#1a2235] to-[#0B0F19] relative overflow-hidden">
+                                            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-sporthub-card to-transparent"></div>
+                                        </div>
+                                    )}
+                                    <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-sporthub-card to-transparent"></div>
+                                </div>
+
+                                {/* Profile Content */}
+                                <div className="px-6 pb-6 flex flex-col items-center w-full relative">
+                                    <Link to={`/profile?id=${user.id}`} className="relative -mt-12 mb-4 group/avatar">
+                                        <div className="relative">
                                             <img 
                                                 src={getMediaUrl(user.avatar_url)} 
-                                                className="w-20 h-20 rounded-full border-2 border-sporthub-border shadow-lg object-cover" 
+                                                className="w-24 h-24 rounded-full border-4 border-sporthub-card shadow-2xl object-cover transition-transform duration-500 group-hover/avatar:scale-110" 
                                                 alt={user.name}
                                                 onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                                             />
+                                            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-sporthub-card ${user.is_online ? 'bg-sporthub-neon shadow-[0_0_10px_rgba(163,230,53,0.8)]' : 'bg-gray-600'}`}></div>
                                         </div>
-                                        <span className={`-mt-3 z-10 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm backdrop-blur-md ${user.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' : user.role === 'athlete' ? 'bg-sporthub-neon/10 text-sporthub-neon border-sporthub-neon/30' : 'bg-sporthub-cyan/10 text-sporthub-cyan border-sporthub-cyan/30'}`}>
-                                            {user.role === 'admin' ? 'Admin' : user.role === 'athlete' ? 'Deportista' : 'Reclutador'}
-                                        </span>
+                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                                            <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border shadow-xl backdrop-blur-xl ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : user.role === 'athlete' ? 'bg-sporthub-neon/10 text-sporthub-neon border-sporthub-neon/30' : 'bg-sporthub-cyan/10 text-sporthub-cyan border-sporthub-cyan/30'}`}>
+                                                {user.role === 'admin' ? 'Admin' : user.role === 'athlete' ? 'Deportista' : 'Reclutador'}
+                                            </span>
+                                        </div>
+                                    </Link>
+
+                                    <Link to={`/profile?id=${user.id}`} className="text-white font-black text-lg mb-1 hover:text-sporthub-neon transition-colors tracking-tight">
+                                        {user.name}
+                                    </Link>
+                                    
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 truncate w-full px-4">
+                                        {formatAuthorMetadata(user)}
+                                    </p>
+                                    
+                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-bold mb-6 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                                        <MapPin className="w-3 h-3 text-sporthub-cyan" /> {user.city || 'Global'}
                                     </div>
-                                </Link>
-                                <Link to={`/profile?id=${user.id}`} className="hover:underline text-white font-bold mb-1">
-                                    {user.name}
-                                </Link>
-                                <p className="text-xs text-sporthub-muted mb-4 truncate w-full px-2">
-                                    {formatAuthorMetadata(user)}
-                                </p>
-                                
-                                <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-6">
-                                    <MapPin className="w-3 h-3 text-sporthub-cyan" /> {user.city}
-                                </div>
-                                
-                                <div className="flex gap-2 w-full">
-                                    <button 
-                                        onClick={() => handleFollow(user.id)}
-                                        className={`flex-1 flex items-center justify-center gap-2 text-xs font-bold py-2.5 rounded-xl transition-all ${user.is_following ? 'bg-sporthub-neon/10 border border-sporthub-neon/20 text-sporthub-neon hover:bg-sporthub-neon/20' : 'bg-sporthub-neon text-black hover:shadow-[0_0_15px_rgba(163,230,53,0.5)]'}`}
-                                    >
-                                        {user.is_following ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                                        {user.is_following ? 'Siguiendo' : 'Seguir'}
-                                    </button>
-                                    <button 
-                                        onClick={() => navigate(`/messages?contactId=${user.id}`)}
-                                        className="bg-sporthub-cyan/20 border border-sporthub-cyan/30 text-sporthub-cyan p-2.5 rounded-xl hover:bg-sporthub-cyan hover:text-black transition-all"
-                                        title="Enviar Mensaje"
-                                    >
-                                        <MessageSquare className="w-4 h-4" />
-                                    </button>
+                                    
+                                    <div className="flex gap-2 w-full">
+                                        <button 
+                                            onClick={() => handleFollow(user.id)}
+                                            className={`flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-3 rounded-2xl transition-all duration-300 active:scale-95 ${user.is_following ? 'bg-white/5 border border-white/10 text-white hover:bg-white/10' : 'bg-sporthub-neon text-black hover:shadow-[0_10px_20px_rgba(163,230,53,0.3)] hover:scale-[1.02]'}`}
+                                        >
+                                            {user.is_following ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                                            {user.is_following ? 'Siguiendo' : 'Seguir'}
+                                        </button>
+                                        <button 
+                                            onClick={() => navigate(`/messages?contactId=${user.id}`)}
+                                            className="bg-sporthub-cyan/10 border border-sporthub-cyan/20 text-sporthub-cyan p-3 rounded-2xl hover:bg-sporthub-cyan hover:text-black transition-all duration-300 active:scale-95 shadow-lg group/msg"
+                                            title="Enviar Mensaje"
+                                        >
+                                            <MessageSquare className="w-4 h-4 transition-transform group-hover/msg:rotate-12" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        ))}
+                        )})}
                     </div>
                 )}
             </div>
