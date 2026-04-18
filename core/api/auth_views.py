@@ -118,6 +118,25 @@ class RegisterView(APIView):
             achievements=["Nuevo Miembro de SportHub"]
         )
         user.save()
+        
+        # 🌐 SIGNAL REAL-TIME: Notificar cambio en analítica global (Nueva incorporación)
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'presence',
+                {
+                    'type': 'analytics_update',
+                    'data': {
+                        'trigger': 'new_user',
+                        'role': user.role,
+                        'sport': user.sport
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"WS broadcast registration error: {e}")
 
         # Generamos tokens de inmediato para loguear tras registro
         tokens = generate_tokens_for_user(user)

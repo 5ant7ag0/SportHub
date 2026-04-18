@@ -62,7 +62,7 @@ const getSportColor = (sportName) => {
 };
 
 export const AnalyticsDashboard = () => {
-    const { user: authUser, onlineUserIds, lastNotification } = useAuth();
+    const { user: authUser, onlineUserIds, lastNotification, lastAnalyticsUpdate } = useAuth();
 
     const [stats, setStats] = useState(INITIAL_STATS);
     const [isLoading, setIsLoading] = useState(true);
@@ -125,6 +125,14 @@ export const AnalyticsDashboard = () => {
     useEffect(() => {
         fetchAnalytics();
     }, []);
+
+    // 📡 ACTUALIZACIÓN EN TIEMPO REAL (Ej: Nuevos deportistas registrados)
+    useEffect(() => {
+        if (lastAnalyticsUpdate) {
+            console.log("♻️ Refrescando analítica por señal externa...");
+            fetchAnalytics({ silent: true });
+        }
+    }, [lastAnalyticsUpdate]);
 
     useEffect(() => {
         if (stats.is_global) {

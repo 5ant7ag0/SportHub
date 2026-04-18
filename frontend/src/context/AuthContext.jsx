@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
     // NUEVO: Lista real de IDs conectados para evitar el "+2"
     const [onlineUserIds, setOnlineUserIds] = useState(new Set());
     const [lastProfileUpdate, setLastProfileUpdate] = useState(null);
+    const [lastAnalyticsUpdate, setLastAnalyticsUpdate] = useState(null);
     const socketRef = React.useRef(null);
 
     const fetchLatestUser = async (baseUser) => {
@@ -146,6 +147,12 @@ export const AuthProvider = ({ children }) => {
                     setLastProfileUpdate(data.data);
                 }
 
+                // 2.5 Actualización de Analítica (Ej: Distribución deportes)
+                if (data.type === 'analytics_update') {
+                    console.log("📊 Señal de actualización de analítica recibida:", data.data);
+                    setLastAnalyticsUpdate(Date.now());
+                }
+
                 // 3. Notificaciones y Contadores Propios
                 if (data.type === 'new_notification') {
                     setLastNotification({ ...data.data, eventType: data.type });
@@ -167,7 +174,7 @@ export const AuthProvider = ({ children }) => {
             user, setUser, login, logout, updateUser,
             unreadCount, setUnreadCount, fetchUnreadCount,
             socialCount, setSocialCount, fetchSocialCount,
-            loading, lastNotification, lastProfileUpdate, sendJsonMessage,
+            loading, lastNotification, lastProfileUpdate, lastAnalyticsUpdate, sendJsonMessage,
             onlineUserIds
         }}>
             {children}

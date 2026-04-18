@@ -116,6 +116,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'data': event.get('data', {})
         }))
 
+    async def analytics_update(self, event):
+        """Notificación global para refrescar analíticas (ej. nueva distribución de deportes)"""
+        await self.send(text_data=json.dumps({
+            'type': 'analytics_update',
+            'data': event.get('data', {})
+        }))
+
     @sync_to_async
     def update_last_activity(self, user_id):
         """Actualización rápida en MongoDB Atlas"""

@@ -28,7 +28,28 @@ class ProfileUpdateView(APIView):
         if 'bio' in data:
             user.bio = data.get('bio')
         if 'sport' in data:
-            user.sport = data.get('sport')
+            old_sport = user.sport
+            new_sport = data.get('sport')
+            user.sport = new_sport
+            
+            # 🌐 SIGNAL REAL-TIME: Si cambió el deporte, notificamos a analítica
+            if old_sport != new_sport:
+                try:
+                    from channels.layers import get_channel_layer
+                    from asgiref.sync import async_to_sync
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        'presence',
+                        {
+                            'type': 'analytics_update',
+                            'data': {
+                                'trigger': 'sport_change',
+                                'old_sport': old_sport,
+                                'new_sport': new_sport
+                            }
+                        }
+                    )
+                except: pass
         if 'city' in data:
             user.city = data.get('city')
         if 'birth_date' in data and data.get('birth_date'):
