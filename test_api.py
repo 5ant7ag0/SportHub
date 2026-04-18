@@ -1,28 +1,25 @@
-import os
+import sys, os
 import django
-import json
-
-# Preparar entorno de Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sporthub.settings")
 django.setup()
 
-from django.test import Client
+from core.models import User
+from core.api.serializers import UserSerializer
 
-def run_test():
-    client = Client()
-    print("Realizando petición GET a /api/analytics/summary/ ...\n")
-    
-    response = client.get('/api/analytics/summary/')
-    
-    print(f"Status Code: {response.status_code}")
-    
-    if response.status_code == 200:
-        data = response.json()
-        print("\nJSON devuelto por el API (Validado por DRF):\n")
-        print(json.dumps(data, indent=4, ensure_ascii=False))
-    else:
-        print(f"\nError en la respuesta (Status {response.status_code})")
-        print(response.json())
+class MockRequest:
+    def __init__(self, user):
+        self.user = user
 
-if __name__ == '__main__':
-    run_test()
+user1 = User.objects.first()
+user2 = User.objects.skip(1).first()
+
+request = MockRequest(user1)
+
+# Ensure User1 follows User2 for this test
+User.objects(id=user1.id).update_one(add_to_set__following=user2)
+
+print("\n--- Testing get_is_following directly ---")
+serializer = UserSerializer(user2, context={'request': request})
+data = serializer.data
+print("is_following from Serializer:", data.get('is_following'))
+

@@ -102,7 +102,7 @@ const PostThumbnail = ({ post, idx, onClick = () => {} }) => {
 };
 
 export const Profile = () => {
-    const { user: authUser, lastNotification } = useAuth();
+    const { user: authUser, updateUser } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [profile, setProfile] = useState(null);
@@ -115,7 +115,7 @@ export const Profile = () => {
     const [isSharing, setIsSharing] = useState(false);
     const [postToDelete, setPostToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const followStatusRef = useRef(false);
+
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('Publicaciones');
     const [isEditingSkills, setIsEditingSkills] = useState(false);
@@ -131,6 +131,7 @@ export const Profile = () => {
     const [shareProfileModalOpen, setShareProfileModalOpen] = useState(false);
     const [shareProfileMessage, setShareProfileMessage] = useState('');
     const [hasAnimatedRing, setHasAnimatedRing] = useState(false);
+    const followingLockRef = useRef(false); // Bloqueo para evitar colisiones durante Follow
 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
@@ -212,12 +213,12 @@ export const Profile = () => {
     const targetId = searchParams.get('id');
     const isOwner = !targetId || targetId === authUser?.id;
 
-    const fetchProfileData = async (isPolling = false) => {
+    const fetchProfileData = async () => {
         try {
-            if (!isPolling && !profile) setIsLoading(true);
+            if (!profile) setIsLoading(true);
             const tid = targetId;
-            const pollParam = isPolling ? '&poll=true' : '';
-            const path = tid ? `/profile/?id=${tid}${pollParam}` : `/profile/?poll=${isPolling}`;
+            // Añadimos _t para evitar caché de navegador
+            const path = tid ? `/profile/?id=${tid}&_t=${Date.now()}` : `/profile/?_t=${Date.now()}`;
             const analyticsPath = tid ? `/analytics/summary/?profile_id=${tid}` : '/analytics/summary/';
 
             const [profileRes, analyticsRes] = await Promise.all([
@@ -225,53 +226,32 @@ export const Profile = () => {
                 api.get(analyticsPath).catch(() => ({ data: null }))
             ]);
             
-            if (followStatusRef.current) {
-                setProfile(prev => ({
-                    ...profileRes.data,
-                    is_following: prev.is_following,
-                    followers_count: prev.followers_count
-                }));
-            } else {
-                setProfile(profileRes.data);
-            }
+            setProfile(profileRes.data);
+            setEditedSkills(profileRes.data.skills || {});
+            setEditedAchievements(profileRes.data.achievements || []);
 
-            if (!isPolling) {
-                setEditedSkills(profileRes.data.skills || {});
-                setEditedAchievements(profileRes.data.achievements || []);
-            }
             if (analyticsRes.data) {
                 setAnalytics(analyticsRes.data);
-                if (!isPolling && !hasAnimatedRing) {
+                if (!hasAnimatedRing) {
                     setHasAnimatedRing(true);
                 }
             }
             setError(null);
         } catch (err) {
+            if (followingLockRef.current) return; // Si estamos en medio de un follow, ignoramos errores de carga
             console.error("Error trayendo perfil:", err);
-            if (!isPolling) {
-                setError("No se pudo cargar el perfil.");
-            }
+            setError("No se pudo cargar el perfil.");
         } finally {
-            if (!isPolling) setIsLoading(false);
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        if (lastNotification?.type === 'profile_visit') {
-            const visitedId = lastNotification.visited_id;
-            // Solo actualizamos si el pulso es para el perfil que estamos viendo 
-            // (el propio o el que tenemos abierto)
-            if (!targetId || targetId === visitedId) {
-                console.log("🚀 Pulso de visita detectado. Refrescando analítica...");
-                fetchProfileData(true);
-            }
-        }
-    }, [lastNotification, targetId]);
-
-    useEffect(() => {
+        // Limpiamos estados previos para evitar "flashes" de info vieja
+        setProfile(null);
+        setAnalytics(null);
+        setHasAnimatedRing(false);
         fetchProfileData();
-        const pollId = setInterval(() => fetchProfileData(true), 5000);
-        return () => clearInterval(pollId);
     }, [targetId]);
 
     const handleFollow = async () => {
@@ -291,11 +271,26 @@ export const Profile = () => {
             following_count: (authUser.following_count || 0) + (originallyFollowing ? -1 : 1)
         });
 
-        // 2. Bloqueo de Polling
-        followStatusRef.current = true; // Previene que el GET periódico sobreescriba esta data fresca
+        // 2. Bloqueo de Estado
+        followingLockRef.current = true;
+        
         try {
-            await api.post('/social/follow/', { target_id: profile.id });
+            const { data } = await api.post('/social/follow/', { target_id: profile.id });
+            
+            // 3. Sincronización con la "Fuente de la Verdad" del Servidor
+            setProfile(prev => ({
+                ...prev,
+                is_following: data.is_following,
+                followers_count: data.followers_count
+            }));
+
+            // Actualizar también al usuario autenticado (siguiendo)
+            updateUser({
+                following_count: data.following_count
+            });
+
         } catch (err) {
+            console.error("Error al seguir:", err);
             // Revertir solo en caso de error real
             setProfile(prev => ({
                 ...prev,
@@ -306,10 +301,10 @@ export const Profile = () => {
                 following_count: authUser.following_count
             });
         } finally {
-            // 🕒 GRACE PERIOD: Mantenemos el bloqueo 3 segundos más para dar tiempo a DB/Cache
+            // 🕒 GRACE PERIOD: Mantenemos el bloqueo 2 segundos más para dar tiempo a DB
             setTimeout(() => {
-                followStatusRef.current = false;
-            }, 3000);
+                followingLockRef.current = false;
+            }, 2000);
         }
     };
 
@@ -786,82 +781,7 @@ export const Profile = () => {
 
                 {/* SIDE COLUMN */}
                 <div className="w-full lg:w-80 xl:w-[350px] flex flex-col gap-6 shrink-0 mt-6 lg:mt-0">
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 shadow-xl">
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 className="text-white font-bold text-sm">Visitas al Perfil</h3>
-                                <p className="text-[10px] text-gray-400">Distribución por rol</p>
-                            </div>
-                            <div className="bg-sporthub-neon/10 text-sporthub-neon text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 border border-sporthub-neon/10">
-                                <TrendingUp className="w-3 h-3" /> 
-                                {analytics?.total_visits > 0 
-                                    ? `+${Math.min(100, ((analytics.visits_today || 0) / (analytics.total_visits || 1)) * 100).toFixed(1)}%`
-                                    : '+0.0%'}
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center mt-4">
-                            <div className="h-44 w-full relative flex items-center justify-center">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie 
-                                            data={analytics?.roles_distribution?.length > 0 ? analytics.roles_distribution : [{name: 'Sin visitas', value: 1}]} 
-                                            dataKey="value" 
-                                            innerRadius={55} 
-                                            outerRadius={68} 
-                                            startAngle={90} 
-                                            endAngle={-270} 
-                                            stroke="none"
-                                            paddingAngle={2}
-                                            animationDuration={1500}
-                                            isAnimationActive={!hasAnimatedRing} 
-                                        >
-                                            {(analytics?.roles_distribution || [{name: 'Sin visitas', value: 1}]).map((entry, index) => (
-                                                <Cell 
-                                                    key={`cell-${index}`} 
-                                                    fill={entry.name === 'athlete' ? '#A3E635' : (entry.name === 'recruiter' || entry.name === 'scout' ? '#06B6D4' : '#1e293b')} 
-                                                />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            cursor={false}
-                                            coordinate={{ x: 0, y: 0 }} // Recharts Tooltip for Pie usually needs offset
-                                            offset={25}
-                                            content={({ active, payload }) => {
-                                                if (active && payload && payload.length) {
-                                                    const data = payload[0].payload;
-                                                    if (data.name === 'Sin visitas') return null;
-                                                    return (
-                                                        <div className="bg-[#0f172a]/95 border border-[#22D3EE] px-4 py-2.5 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.5)] z-[100]">
-                                                            <p className="text-[#F8FAFC] font-bold text-xs uppercase tracking-wider">
-                                                                {data.name === 'athlete' ? 'DEPORTISTAS' : 'RECLUTADORES'} : {data.value}
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-                                    <span className="text-xl font-bold text-white">{analytics?.total_visits || 0}</span>
-                                    <span className="text-[9px] text-gray-400 uppercase font-black">Visitas</span>
-                                </div>
-                            </div>
-
-                            {/* Legends at the bottom */}
-                            <div className="flex items-center gap-6 mt-6">
-                                <div className="flex items-center gap-2 group">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.6)] group-hover:scale-125 transition-transform"></div>
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Deportistas</span>
-                                </div>
-                                <div className="flex items-center gap-2 group">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-sporthub-cyan shadow-[0_0_8px_rgba(6,182,212,0.6)] group-hover:scale-125 transition-transform"></div>
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Reclutadores</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {/* WIDGET 'Visitas al Perfil' ELIMINADO PARA DIAGNÓSTICO */}
                     <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
                         <div className="flex justify-between items-start mb-6"><div><h3 className="text-white font-bold text-sm">Distribución de Edad</h3><p className="text-[10px] text-gray-500">Audiencia principal</p></div><div className="bg-sporthub-cyan/10 text-sporthub-cyan text-[10px] font-bold px-2 py-1 rounded-md">👨‍👩‍👧 {analytics?.average_age ? analytics.average_age.toFixed(1) : '24'} años</div></div>
                         <div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={barData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2130" /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} /><Tooltip cursor={{ fill: '#1a2130' }} contentStyle={{ backgroundColor: '#0B0F19', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} /><Bar dataKey="value" radius={[4, 4, 0, 0]}>{barData.map((entry, index) => <Cell key={`cell-${index}`} fill={index === 1 ? '#06B6D4' : '#1e5f72'} />)}</Bar></BarChart></ResponsiveContainer></div>

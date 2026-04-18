@@ -288,7 +288,8 @@ class FollowView(APIView):
         except (User.DoesNotExist, InvalidId):
             raise NotFound("Usuario a seguir no encontrado.")
 
-        is_following = target_user in user.following
+        # Comprobación atómica para evitar desincronización por estado en memoria (stale)
+        is_following = User.objects(id=user.id, following=target_user.id).count() > 0
         
         from channels.layers import get_channel_layer
         from asgiref.sync import async_to_sync
@@ -338,12 +339,15 @@ class FollowView(APIView):
                 )
             except: pass
 
+        # Forzar recarga de ambos para consistencia total en la respuesta
         user.reload()
+        target_user.reload()
+        
         return Response({
             "detail": detail,
-            "is_following": not is_following,
+            "is_following": User.objects(id=user.id, following=target_user.id).count() > 0,
             "following_count": len(user.following),
-            "followers_count": len(user.followers)
+            "followers_count": len(target_user.followers)
         }, status=200)
 
 class LikeView(APIView):
@@ -763,31 +767,8 @@ class ProfileView(APIView):
             try:
                 profile_user = User.objects.get(id=target_id)
                 
-                # 🛡️ PROTECCIÓN DE CONTADOR: 
-                # Solo registrar si NO es el dueño y NO es una petición de polling
-                is_poll = request.query_params.get('poll') == 'true'
-                if str(profile_user.id) != str(user.id) and not is_poll:
-                    AnalyticsEvent.register_visit(
-                        visited_id=profile_user.id, 
-                        visitor_age=user.computed_age,
-                        visitor_role=getattr(user, 'role', 'athlete')
-                    )
-                    
-                    # 🚀 EMITIR PULSO REAL-TIME: Avisar al dueño del perfil
-                    try:
-                        channel_layer = get_channel_layer()
-                        async_to_sync(channel_layer.group_send)(
-                            f"user_{str(profile_user.id)}",
-                            {
-                                "type": "new_notification",
-                                "data": {
-                                    "type": "profile_visit",
-                                    "visited_id": str(profile_user.id)
-                                }
-                            }
-                        )
-                    except Exception as e:
-                        print(f"⚠️ Error enviando pulso WS: {e}")
+                # SE ELIMINÓ EL REGISTRO DE VISITAS Y EL WEBSOCKET PARA DIAGNÓSTICO
+                pass
             except (User.DoesNotExist, InvalidId):
                 raise NotFound("Usuario no encontrado.")
         else:
@@ -795,7 +776,8 @@ class ProfileView(APIView):
 
         try:
             user_data = UserSerializer(profile_user, context={'request': request}).data
-            user_data['is_following'] = profile_user in user.following
+            # ELIMINADO: user_data['is_following'] = profile_user in user.following
+            # Confiamos 100% en el serializador que ya hace una consulta atómica a MongoDB.
             
             posts = Post.objects.filter(author=profile_user).order_by('-timestamp')
             user_data['posts'] = PostSerializer(posts, many=True, context={'request': request}).data

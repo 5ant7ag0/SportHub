@@ -92,17 +92,32 @@ class UserSerializer(serializers.Serializer):
 
     def get_is_following(self, obj):
         request = self.context.get('request')
-        if request and hasattr(request, 'user') and request.user:
-            return obj in getattr(request.user, 'following', [])
-        return False
+        if not request:
+            return False
+        auth_user = getattr(request, 'user', None)
+        if not auth_user:
+            return False
+        try:
+            from bson import ObjectId
+            from core.models import User
+            
+            auth_id = ObjectId(str(auth_user.id))
+            target_id = ObjectId(str(obj.id))
+            
+            # Consulta directa de conteo para evitar cualquier caché de campo
+            return User.objects(id=auth_id, following=target_id).count() > 0
+        except Exception:
+            return False
 
     def get_posts_count(self, obj):
+        if self.context.get('exclude_analytics'): return 0
         try:
             from core.models import Post
             return Post.objects(author=obj, post_type='post').count()
         except: return 0
 
     def get_total_likes(self, obj):
+        if self.context.get('exclude_analytics'): return 0
         try:
             from core.models import Post
             posts = Post.objects(author=obj)
@@ -110,6 +125,7 @@ class UserSerializer(serializers.Serializer):
         except: return 0
 
     def get_average_rating(self, obj):
+        if self.context.get('exclude_analytics'): return 0.0
         try:
             from core.models import Post
             services = Post.objects(author=obj, post_type='service', ratings_count__gt=0)
@@ -123,6 +139,7 @@ class UserSerializer(serializers.Serializer):
         except: return 0.0
 
     def get_services_count(self, obj):
+        if self.context.get('exclude_analytics'): return 0
         try:
             from core.models import Post
             return Post.objects(author=obj, post_type='service').count()
@@ -130,17 +147,27 @@ class UserSerializer(serializers.Serializer):
 
 class CommentSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
-    author = UserSerializer(read_only=True)
+    author = serializers.SerializerMethodField()
     text = serializers.CharField()
     media_url = serializers.CharField(required=False, allow_null=True)
     is_edited = serializers.BooleanField(required=False)
     timestamp = serializers.DateTimeField()
 
+    def get_author(self, obj):
+        ctx = dict(self.context)
+        ctx['exclude_analytics'] = True
+        return UserSerializer(obj.author, context=ctx).data
+
 class PostSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
-    author = UserSerializer(read_only=True)
+    author = serializers.SerializerMethodField()
     content = serializers.CharField()
     media_url = serializers.CharField(required=False, allow_null=True)
+
+    def get_author(self, obj):
+        ctx = dict(self.context)
+        ctx['exclude_analytics'] = True
+        return UserSerializer(obj.author, context=ctx).data
     is_edited = serializers.BooleanField(required=False)
     is_repost = serializers.BooleanField(required=False)
     original_post = serializers.SerializerMethodField()
@@ -161,9 +188,11 @@ class PostSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
     def get_original_post(self, obj):
         if obj.is_repost and obj.original_post:
+            ctx = dict(self.context)
+            ctx['exclude_analytics'] = True
             return {
                 "id": str(obj.original_post.id),
-                "author": UserSerializer(obj.original_post.author).data,
+                "author": UserSerializer(obj.original_post.author, context=ctx).data,
                 "content": obj.original_post.content,
                 "media_url": obj.original_post.media_url,
                 "timestamp": obj.original_post.timestamp.isoformat() + "Z" if obj.original_post.timestamp else None,
@@ -173,7 +202,9 @@ class PostSerializer(serializers.Serializer):
 
     def get_shared_profile(self, obj):
         if getattr(obj, 'post_type', 'post') == 'profile_share' and getattr(obj, 'shared_profile', None):
-            return UserSerializer(obj.shared_profile, context=self.context).data
+            ctx = dict(self.context)
+            ctx['exclude_analytics'] = True
+            return UserSerializer(obj.shared_profile, context=ctx).data
         return None
 
     def get_sport(self, obj):
@@ -191,7 +222,7 @@ class PostSerializer(serializers.Serializer):
         try:
             request = self.context.get('request')
             if request and hasattr(request, 'user') and request.user:
-                return request.user in getattr(obj, 'likes', [])
+                return str(request.user.id) in [str(getattr(like, 'id', like)) for like in obj._data.get('likes', [])]
             return False
         except: return False
         
@@ -199,7 +230,7 @@ class PostSerializer(serializers.Serializer):
         try:
             request = self.context.get('request')
             if request and hasattr(request, 'user') and request.user:
-                return obj in getattr(request.user, 'saved_posts', [])
+                return str(obj.id) in [str(getattr(saved, 'id', saved)) for saved in request.user._data.get('saved_posts', [])]
             return False
         except: return False
         

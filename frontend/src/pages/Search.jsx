@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { Loader2, Search as SearchIcon, Filter, MapPin, UserPlus, Check, X } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';

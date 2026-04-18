@@ -32,7 +32,10 @@ class MongoJWTAuthentication(BaseAuthentication):
                 user = User.objects.get(id=user_id)
                 # Rastreo atómico de actividad blindado
                 try:
-                    user.update(set__last_activity=datetime.utcnow())
+                    User.objects(id=user_id).update_one(set__last_activity=datetime.utcnow())
+                    # reload() garantiza que request.user refleja el estado real de MongoDB
+                    # (evita que _data quede stale tras update atómico)
+                    user.reload()
                 except Exception as e:
                     print(f"Error actualizando last_activity para {user_id}: {e}")
                     

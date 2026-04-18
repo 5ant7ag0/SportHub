@@ -35,9 +35,10 @@ export const AuthProvider = ({ children }) => {
         const initAuth = async () => {
             const token = localStorage.getItem('access_token');
 
+            // Extendimos el timeout para evitar que un backend ligeramente lento fuerce logout
             const safetyTimeout = setTimeout(() => {
                 setLoading(false);
-            }, 3000);
+            }, 10000);
 
             if (token) {
                 try {

@@ -45,9 +45,9 @@ class User(Document):
         return diff < 30
     
     # Red Social y Mensajería
-    followers = ListField(ReferenceField('self'))
-    following = ListField(ReferenceField('self'))
-    pending_connections = ListField(ReferenceField('self'))
+    followers = ListField(ReferenceField('self', dbref=False))
+    following = ListField(ReferenceField('self', dbref=False))
+    pending_connections = ListField(ReferenceField('self', dbref=False))
     saved_posts = ListField(ReferenceField('Post'))
     active_chats = ListField(ReferenceField('self'))
 
