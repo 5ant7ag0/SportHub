@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Activity, Heart, Users, TrendingUp } from 'lucide-react';
+import { Activity, Heart, Users, TrendingUp, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = {
@@ -124,8 +124,8 @@ const AnalyticsPanel = ({
                     </div>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                            <Users className="w-3.5 h-3.5 text-purple-400" />
-                            <span className="text-xs text-gray-400">Comunidad</span>
+                            <MessageCircle className="w-3.5 h-3.5 text-purple-400" />
+                            <span className="text-xs text-gray-400 font-medium">Comentarios</span>
                         </div>
                         <span className="text-sm font-black text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
                     </div>

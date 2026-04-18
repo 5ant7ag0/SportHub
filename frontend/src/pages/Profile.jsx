@@ -102,7 +102,7 @@ const PostThumbnail = ({ post, idx, onClick = () => {} }) => {
 };
 
 export const Profile = () => {
-    const { user: authUser, updateUser, lastProfileUpdate, sendJsonMessage } = useAuth();
+    const { user: authUser, updateUser, lastProfileUpdate, lastAnalyticsUpdate, lastNotification, sendJsonMessage } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [profile, setProfile] = useState(null);
@@ -253,6 +253,14 @@ export const Profile = () => {
         setHasAnimatedRing(false);
         fetchProfileData();
     }, [targetId]);
+
+    // 📡 ACTUALIZACIÓN EN TIEMPO REAL (WebSockets)
+    useEffect(() => {
+        if (lastAnalyticsUpdate || lastNotification) {
+            console.log("♻️ Perfil: Refrescando analítica/datos por señal externa...");
+            fetchProfileData();
+        }
+    }, [lastAnalyticsUpdate, lastNotification]);
 
     const handleFollow = async () => {
         if (!profile) return;

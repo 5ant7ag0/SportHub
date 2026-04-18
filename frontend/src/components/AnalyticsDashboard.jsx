@@ -567,8 +567,8 @@ export const AnalyticsDashboard = () => {
                         </div>
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <Users className="w-3.5 h-3.5 text-purple-400" />
-                                <span className="text-xs text-gray-400 font-medium">Comunidad</span>
+                                <MessageCircle className="w-3.5 h-3.5 text-purple-400" />
+                                <span className="text-xs text-gray-400 font-medium">Comentarios</span>
                             </div>
                             <span className="text-sm font-black text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
                         </div>

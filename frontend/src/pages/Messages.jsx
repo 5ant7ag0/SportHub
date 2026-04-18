@@ -8,7 +8,7 @@ import ChatOptionsMenu from '../components/ChatOptionsMenu';
 import AnalyticsPanel from '../components/AnalyticsPanel';
 
 const Messages = () => {
-    const { user: authUser, fetchUnreadCount, setUnreadCount, lastNotification } = useAuth();
+    const { user: authUser, fetchUnreadCount, setUnreadCount, lastNotification, lastAnalyticsUpdate } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [inboxConfig, setInboxConfig] = useState([]);
@@ -58,10 +58,9 @@ const Messages = () => {
         try {
             if (!isPolling && (!inboxConfig || inboxConfig.length === 0)) setIsLoading(true);
             
-            if (!isPolling) {
-                const analyticsRes = await api.get('/analytics/summary/').catch(() => ({ data: null }));
-                if (analyticsRes?.data) setAnalytics(analyticsRes.data);
-            }
+            // Sincronizar analítica siempre (ligero y necesario para tiempo real)
+            const analyticsRes = await api.get('/analytics/summary/').catch(() => ({ data: null }));
+            if (analyticsRes?.data) setAnalytics(analyticsRes.data);
 
             const { data: conversations } = await api.get('/messages/inbox/');
             
@@ -363,6 +362,14 @@ const Messages = () => {
             }
         }
     }, [lastNotification]);
+    
+    // 📡 ACTUALIZACIÓN DE ANALÍTICA EN TIEMPO REAL
+    useEffect(() => {
+        if (lastAnalyticsUpdate) {
+            console.log("♻️ Mensajes: Refrescando analítica por señal externa...");
+            fetchInitialData(true); // silent mode
+        }
+    }, [lastAnalyticsUpdate]);
 
     // 1. CARGA SILENCIOSA: Scroll instantáneo al entrar (Ejecutado antes de pintar)
     useLayoutEffect(() => {
