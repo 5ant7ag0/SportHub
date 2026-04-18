@@ -194,13 +194,12 @@ export const Feed = () => {
     ];
 
     return (
-        <div className="p-4 lg:p-8 bg-sporthub-bg pb-40">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        <div className="p-0 lg:p-6 bg-sporthub-bg h-[calc(100vh-6rem)] lg:h-[calc(100vh-2rem)] overflow-hidden">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 h-full items-start overflow-hidden">
                 
-                {/* Columna Principal - Feed */}
-                <div className="xl:col-span-8 flex flex-col gap-6">
+                {/* Columna Principal - Feed con scroll independiente */}
+                <div className="xl:col-span-8 flex flex-col gap-6 h-full overflow-y-auto no-scrollbar p-4 lg:p-0 pb-32">
                     <div className="mb-2">
-                        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">Feed Principal</h2>
 
                         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                             {FILTERS.map(filter => (
@@ -282,9 +281,11 @@ export const Feed = () => {
                     </div>
                 </div>
 
-                {/* Columna Lateral - Sugerencias */}
-                <aside className="hidden xl:block xl:col-span-4 sticky top-8">
-                    <SuggestedUsers />
+                {/* Columna Lateral - Sugerencias con scroll independiente */}
+                <aside className="hidden xl:flex xl:col-span-4 h-full overflow-y-auto no-scrollbar pb-20">
+                    <div className="w-full">
+                        <SuggestedUsers />
+                    </div>
                 </aside>
             </div>
 
