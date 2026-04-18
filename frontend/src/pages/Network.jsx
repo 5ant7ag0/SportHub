@@ -151,56 +151,70 @@ export const Network = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {connections.slice(0, 9).map((user, idx) => {
-                                // Default mock images if no media
-                                const dummys = [
-                                    "https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=400&fit=crop",
-                                    "https://images.unsplash.com/photo-1510566337590-2fc1f21100ab?q=80&w=400&fit=crop",
-                                    "https://images.unsplash.com/photo-1575361204481-4d162ffa89a6?q=80&w=400&fit=crop",
-                                    "https://images.unsplash.com/photo-1526676037598-3938ea5f309a?q=80&w=400&fit=crop",
-                                    "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&fit=crop",
-                                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&fit=crop"
-                                ];
-                                const bannerUrl = dummys[idx % dummys.length];
+                                const hasBanner = user.banner_url && user.banner_url !== 'None' && user.banner_url !== '';
                                 
                                 return (
-                                <div key={user.id || idx} className="bg-[#151b28] rounded-2xl border border-[rgba(255,255,255,0.05)] overflow-hidden flex flex-col group hover:-translate-y-1 transition-transform">
+                                <div key={user.id || idx} className="bg-[#151b28] rounded-2xl border border-[rgba(255,255,255,0.05)] overflow-hidden flex flex-col group hover:-translate-y-1 transition-all duration-300 hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
                                     <div className="h-24 w-full relative">
-                                        <img src={bannerUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="Banner" />
-                                        <div className="absolute top-2 right-2 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md">
-                                            {user.sport}
-                                        </div>
+                                        {hasBanner ? (
+                                            <img 
+                                                src={getMediaUrl(user.banner_url)} 
+                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" 
+                                                alt="Banner" 
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-[#0B0F19] via-[#1a2235] to-[#0B0F19] relative overflow-hidden">
+                                                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-tr from-sporthub-neon/5 to-transparent"></div>
+                                            </div>
+                                        )}
+                                        {user.sport && (
+                                            <div className="absolute top-2 right-2 bg-[rgba(0,0,0,0.6)] backdrop-blur-md border border-white/10 text-sporthub-neon text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-xl">
+                                                {user.sport}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-5 relative flex-1 flex flex-col">
                                         <div className="absolute -top-10 left-4">
-                                            <img 
-                                                src={getMediaUrl(user.avatar_url)} 
-                                                className="w-16 h-16 rounded-full border-4 border-[#151b28] bg-[#0B0F19] object-cover" 
-                                                alt={user.name} 
-                                                onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
-                                            />
+                                            <div className="relative group/avatar">
+                                                <img 
+                                                    src={getMediaUrl(user.avatar_url)} 
+                                                    className="w-16 h-16 rounded-full border-4 border-[#151b28] bg-[#0B0F19] object-cover shadow-2xl transition-transform group-hover/avatar:scale-105" 
+                                                    alt={user.name} 
+                                                    onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
+                                                />
+                                                <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-[#151b28] ${user.is_online ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.8)]' : 'bg-gray-600'}`}></div>
+                                            </div>
                                         </div>
-                                        <div className="mt-8 mb-2">
-                                            <h4 className="text-white font-bold text-sm tracking-wide truncate pr-2">{user.name}</h4>
-                                            <p className="text-gray-400 text-xs truncate mt-0.5">{formatAuthorMetadata(user)}</p>
+                                        <div className="mt-8 mb-4">
+                                            <h4 className="text-white font-bold text-sm tracking-wide truncate pr-2 group-hover:text-sporthub-neon transition-colors">{user.name}</h4>
+                                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider truncate mt-1 opacity-70">
+                                                {formatAuthorMetadata(user)}
+                                            </p>
                                         </div>
-                                        <div className="flex items-center justify-between text-[10px] mb-4">
-                                            <span className="text-sporthub-neon font-bold flex items-center gap-1">★ 4.{8 - (idx%3)}</span>
-                                            <span className="text-gray-400 flex items-center gap-1">📍 {user.city}</span>
+                                        
+                                        <div className="flex items-center gap-3 text-[10px] mb-5">
+                                            <div className="flex items-center gap-1.5 text-gray-500 font-medium">
+                                                <svg className="w-3 h-3 text-sporthub-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                {user.city || 'Global'}
+                                            </div>
+                                            <div className="w-1 h-1 rounded-full bg-white/10"></div>
+                                            <div className="text-sporthub-neon/80 font-bold uppercase tracking-tighter">
+                                                {user.followers_count || 0} seguidores
+                                            </div>
                                         </div>
-                                        <div className="text-[10px] text-gray-500 mb-4 pb-4 border-b border-[rgba(255,255,255,0.05)]">
-                                            {Math.floor(Math.random() * 20) + 1} conexiones mutuas
-                                        </div>
+
                                         <div className="mt-auto flex gap-2">
-                                            <Link to={`/profile?id=${user.id}`} className="flex-1 bg-[rgba(163,230,53,0.1)] border border-[rgba(163,230,53,0.2)] text-sporthub-neon text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-[rgba(163,230,53,0.2)] transition-colors">
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <Link to={`/profile?id=${user.id}`} className="flex-1 bg-white/5 border border-white/10 text-white text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-sporthub-neon hover:text-black hover:border-sporthub-neon transition-all uppercase tracking-widest active:scale-95">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                 Ver Perfil
                                             </Link>
                                             <button 
                                                 onClick={() => handleFollow(user.id)}
-                                                className="w-10 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl flex items-center justify-center hover:bg-sporthub-neon hover:border-sporthub-neon group/btn transition-all"
+                                                className="w-11 bg-sporthub-neon/10 border border-sporthub-neon/20 rounded-xl flex items-center justify-center hover:bg-sporthub-neon hover:border-sporthub-neon group/btn transition-all active:scale-90"
                                                 title="Seguir Atleta"
                                             >
-                                                <UserPlus className="w-4 h-4 text-gray-400 group-hover/btn:text-black" />
+                                                <UserPlus className="w-4 h-4 text-sporthub-neon group-hover/btn:text-black" />
                                             </button>
                                         </div>
                                     </div>
