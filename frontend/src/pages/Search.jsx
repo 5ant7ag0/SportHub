@@ -4,6 +4,7 @@ import { Loader2, Search as SearchIcon, Filter, MapPin, UserPlus, Check, X, Mess
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMediaUrl } from '../utils/media';
+import { UserCard } from '../components/UserCard';
 import { formatAuthorMetadata } from '../components/PostCard';
 
 const SPORTS_DATA = {
@@ -70,31 +71,6 @@ export const Search = () => {
         }
     };
 
-    const handleFollow = async (e, targetId) => {
-        e.stopPropagation();
-        const targetUser = results.find(u => u.id === targetId);
-        if (!targetUser) return;
-
-        const newState = !targetUser.is_following;
-        const originalResults = [...results];
-
-        setResults(prev => prev.map(u => 
-            u.id === targetId ? { ...u, is_following: newState } : u
-        ));
-        
-        pendingIdsRef.current.add(targetId);
-        
-        try {
-            await api.post('/social/follow/', { target_id: targetId });
-        } catch (e) {
-            console.error("Error al seguir:", e);
-            setResults(originalResults);
-        } finally {
-            setTimeout(() => {
-                pendingIdsRef.current.delete(targetId);
-            }, 3000);
-        }
-    };
 
     return (
         <main className="flex-1 p-4 md:p-8 bg-sporthub-bg pb-32">
@@ -180,92 +156,9 @@ export const Search = () => {
                                 No se encontraron resultados que coincidan con tus filtros.
                             </div>
                         )}
-                        {results.map(user => {
-                            const hasBanner = user.banner_url && user.banner_url !== 'None' && user.banner_url !== '';
-
-                            return (
-                                <div 
-                                    key={user.id} 
-                                    onClick={() => navigate(`/profile?id=${user.id}`)}
-                                    className="bg-sporthub-card border border-sporthub-border rounded-[2.5rem] overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] group cursor-pointer aspect-square max-h-[380px] relative"
-                                >
-                                    {/* Fondo de Banner con Máscara de Degradado (Consistencia con App) */}
-                                    <div className="absolute inset-0 h-full w-full pointer-events-none overflow-hidden">
-                                        <div 
-                                            className="w-full h-full relative"
-                                            style={{
-                                                maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)',
-                                                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)'
-                                            }}
-                                        >
-                                            {hasBanner ? (
-                                                <img 
-                                                    src={getMediaUrl(user.banner_url)} 
-                                                    className="w-full h-full object-cover opacity-60 transition-opacity duration-700 group-hover:opacity-80" 
-                                                    alt="" 
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-[#1a2235] to-sporthub-card opacity-30"></div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 flex flex-col items-center h-full relative z-10">
-                                        {/* Avatar con Badge superpuesto */}
-                                        <div className="relative mb-3 flex flex-col items-center pt-1">
-                                            <div className="p-1 rounded-full bg-sporthub-card/20 backdrop-blur-xl ring-2 ring-white/5 shadow-2xl">
-                                                <img 
-                                                    src={getMediaUrl(user.avatar_url)} 
-                                                    className="w-24 h-24 rounded-full object-cover border-4 border-sporthub-card shadow-2xl transition-transform duration-500 group-hover:scale-105" 
-                                                    alt={user.name} 
-                                                    onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
-                                                />
-                                            </div>
-                                            {/* Badge de Rol - Estilo consistente */}
-                                            <div className={`absolute -bottom-2 z-10 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-xl backdrop-blur-md ${user.role === 'recruiter' ? 'bg-sporthub-cyan/20 border-sporthub-cyan/40 text-sporthub-cyan' : 'bg-sporthub-neon/20 border-sporthub-neon/40 text-sporthub-neon'}`}>
-                                                {user.role === 'recruiter' ? 'Reclutador' : 'Deportista'}
-                                            </div>
-                                            <div className={`absolute bottom-2 right-2 w-5 h-5 rounded-full border-4 border-sporthub-card z-20 ${user.is_online ? 'bg-sporthub-neon shadow-[0_0_10px_rgba(163,230,53,0.8)]' : 'bg-gray-600'}`}></div>
-                                        </div>
-
-                                        {/* Información Central */}
-                                        <div className="text-center w-full mb-6">
-                                            <h4 className="text-white font-bold text-xl tracking-tight truncate mb-1">
-                                                {user.name}
-                                            </h4>
-                                            <p className="text-gray-400 text-[11px] font-medium leading-tight opacity-90">
-                                                {formatAuthorMetadata(user)}
-                                            </p>
-                                            <div className="mt-2 text-gray-400 text-[10px] font-medium flex items-center justify-center gap-1 opacity-80">
-                                                <MapPin className="w-3 h-3 text-sporthub-cyan" />
-                                                <span>{user.city || 'Quito'}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Botones Estilo Referencia - Al final de la tarjeta */}
-                                        <div className="w-full flex gap-2 mt-auto">
-                                            <button 
-                                                onClick={(e) => handleFollow(e, user.id)}
-                                                className={`flex-1 py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 transition-all active:scale-95 border font-black text-xs uppercase tracking-widest ${user.is_following ? 'bg-white/5 border-white/10 text-white' : 'bg-sporthub-neon border-sporthub-neon text-black hover:shadow-[0_0_20px_rgba(163,230,53,0.3)]'}`}
-                                            >
-                                                {user.is_following ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                                                {user.is_following ? 'Siguiendo' : 'Seguir'}
-                                            </button>
-
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/messages?contactId=${user.id}`);
-                                                }}
-                                                className="w-12 bg-white/5 border border-white/10 rounded-[1.25rem] flex items-center justify-center hover:bg-sporthub-cyan hover:text-black hover:border-sporthub-cyan transition-all active:scale-95 group/msg"
-                                            >
-                                                <MessageSquare className="w-5 h-5 text-gray-400 group-hover/msg:text-black transition-colors" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {results.map(user => (
+                            <UserCard key={user.id} user={user} />
+                        ))}
                     </div>
                 )}
             </div>

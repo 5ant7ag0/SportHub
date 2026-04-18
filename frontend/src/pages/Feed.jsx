@@ -8,6 +8,7 @@ import { PostDetailModal } from '../components/PostDetailModal';
 
 import { PostCard, ShareConfirmModal, DeleteConfirmModal } from '../components/PostCard';
 import { CreatePostBox } from '../components/CreatePostBox';
+import { SuggestedUsers } from '../components/SuggestedUsers';
 
 export const Feed = () => {
     // --- ESTADOS ---
@@ -194,112 +195,120 @@ export const Feed = () => {
 
     return (
         <div className="p-4 lg:p-8 bg-sporthub-bg pb-40">
-            <div className="max-w-2xl mx-auto flex flex-col gap-6">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                
+                {/* Columna Principal - Feed */}
+                <div className="xl:col-span-8 flex flex-col gap-6">
+                    <div className="mb-2">
+                        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">Feed Principal</h2>
 
-                <div className="mb-2">
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">Feed Principal</h2>
-
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-                        {FILTERS.map(filter => (
-                            <button
-                                key={filter.id}
-                                onClick={() => {
-                                    setActiveFilter(filter.value);
-                                }}
-                                className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeFilter === filter.value
-                                    ? 'bg-sporthub-neon text-black border-sporthub-neon shadow-[0_0_15px_rgba(163,230,53,0.4)]'
-                                    : 'bg-white/5 text-gray-400 border-white/10 hover:border-white/20'
-                                    }`}
-                            >
-                                {filter.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <CreatePostBox
-                    authUser={authUser}
-                    onPostCreated={(newPost) => {
-                        console.log("📝 Post creado localmente, prepending...");
-                        setPosts(prev => {
-                            if (prev.some(p => p.id === newPost.id)) return prev;
-                            return [newPost, ...prev];
-                        });
-                    }}
-                />
-
-                <div className="flex flex-col gap-6">
-                    {posts.length === 0 && !isLoading ? (
-                        <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-[rgba(255,255,255,0.05)]">
-                            <AlertTriangle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                            <p className="text-gray-500 text-sm">No hay contenido disponible para este deporte.</p>
-                            <button
-                                onClick={() => setActiveSport('')}
-                                className="text-sporthub-cyan text-xs font-bold mt-2 hover:underline"
-                            >
-                                Ver todas las publicaciones
-                            </button>
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+                            {FILTERS.map(filter => (
+                                <button
+                                    key={filter.id}
+                                    onClick={() => {
+                                        setActiveFilter(filter.value);
+                                    }}
+                                    className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeFilter === filter.value
+                                        ? 'bg-sporthub-neon text-black border-sporthub-neon shadow-[0_0_15px_rgba(163,230,53,0.4)]'
+                                        : 'bg-white/5 text-gray-400 border-white/10 hover:border-white/20'
+                                        }`}
+                                >
+                                    {filter.name}
+                                </button>
+                            ))}
                         </div>
-                    ) : (
-                        <>
-                            {posts.map((post, index) => {
-                                if (posts.length === index + 1) {
-                                    return (
-                                        <div ref={lastPostRef} key={post.id}>
+                    </div>
+
+                    <CreatePostBox
+                        authUser={authUser}
+                        onPostCreated={(newPost) => {
+                            console.log("📝 Post creado localmente, prepending...");
+                            setPosts(prev => {
+                                if (prev.some(p => p.id === newPost.id)) return prev;
+                                return [newPost, ...prev];
+                            });
+                        }}
+                    />
+
+                    <div className="flex flex-col gap-6">
+                        {posts.length === 0 && !isLoading ? (
+                            <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-[rgba(255,255,255,0.05)]">
+                                <AlertTriangle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                                <p className="text-gray-500 text-sm">No hay contenido disponible para este deporte.</p>
+                                <button
+                                    onClick={() => setActiveSport('')}
+                                    className="text-sporthub-cyan text-xs font-bold mt-2 hover:underline"
+                                >
+                                    Ver todas las publicaciones
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                {posts.map((post, index) => {
+                                    if (posts.length === index + 1) {
+                                        return (
+                                            <div ref={lastPostRef} key={post.id}>
+                                                <PostCard
+                                                    post={post}
+                                                    onShare={handleOpenShare}
+                                                    onMediaClick={(id) => setSelectedPostId(id)}
+                                                    onDelete={(id) => setPostToDelete(id)}
+                                                    onUpdate={handleUpdatePost}
+                                                />
+                                            </div>
+                                        );
+                                    } else {
+                                        return (
                                             <PostCard
+                                                key={post.id}
                                                 post={post}
                                                 onShare={handleOpenShare}
                                                 onMediaClick={(id) => setSelectedPostId(id)}
                                                 onDelete={(id) => setPostToDelete(id)}
                                                 onUpdate={handleUpdatePost}
                                             />
-                                        </div>
-                                    );
-                                } else {
-                                    return (
-                                        <PostCard
-                                            key={post.id}
-                                            post={post}
-                                            onShare={handleOpenShare}
-                                            onMediaClick={(id) => setSelectedPostId(id)}
-                                            onDelete={(id) => setPostToDelete(id)}
-                                            onUpdate={handleUpdatePost}
-                                        />
-                                    );
-                                }
-                            })}
-                            
-                            {isLoading && (
-                                <div className="flex justify-center py-4">
-                                    <Loader2 className="w-6 h-6 animate-spin text-sporthub-neon" />
-                                </div>
-                            )}
-                        </>
-                    )}
+                                        );
+                                    }
+                                })}
+                                
+                                {isLoading && (
+                                    <div className="flex justify-center py-4">
+                                        <Loader2 className="w-6 h-6 animate-spin text-sporthub-neon" />
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                <ShareConfirmModal
-                    isOpen={isShareModalOpen}
-                    onClose={() => setIsShareModalOpen(false)}
-                    onConfirm={handleConfirmShare}
-                    postAuthor={sharingPost?.author?.name}
-                    isLoading={isSharing}
-                    error={shareError}
-                />
-
-                <PostDetailModal
-                    postId={selectedPostId}
-                    onClose={handleCloseModal}
-                    onUpdatePost={handleUpdatePost}
-                />
-
-                <DeleteConfirmModal
-                    isOpen={!!postToDelete}
-                    onClose={() => setPostToDelete(null)}
-                    onConfirm={handleDeletePost}
-                    isDeleting={isDeleting}
-                />
+                {/* Columna Lateral - Sugerencias */}
+                <aside className="hidden xl:block xl:col-span-4 sticky top-8">
+                    <SuggestedUsers />
+                </aside>
             </div>
+
+            <ShareConfirmModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                onConfirm={handleConfirmShare}
+                postAuthor={sharingPost?.author?.name}
+                isLoading={isSharing}
+                error={shareError}
+            />
+
+            <PostDetailModal
+                postId={selectedPostId}
+                onClose={handleCloseModal}
+                onUpdatePost={handleUpdatePost}
+            />
+
+            <DeleteConfirmModal
+                isOpen={!!postToDelete}
+                onClose={() => setPostToDelete(null)}
+                onConfirm={handleDeletePost}
+                isDeleting={isDeleting}
+            />
         </div>
     );
 };
