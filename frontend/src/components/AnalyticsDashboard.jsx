@@ -61,6 +61,25 @@ const getSportColor = (sportName) => {
     return '#F59E0B';
 };
 
+const SkillBar = ({ skill, value, isNeon }) => (
+    <div className="mb-4">
+        <div className="flex justify-between text-[11px] mb-1.5">
+            <span className="text-white font-medium uppercase tracking-wider">{skill}</span>
+            <span className={isNeon ? "text-sporthub-neon font-bold" : "text-sporthub-cyan font-bold"}>{value}%</span>
+        </div>
+        <div className="w-full bg-[#0B0F19] rounded-full h-1 relative overflow-hidden">
+            <div 
+                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${
+                    isNeon 
+                    ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.5)]' 
+                    : 'bg-sporthub-cyan shadow-[0_0_8px_rgba(6,182,212,0.5)]'
+                }`} 
+                style={{ width: `${value}%` }}
+            ></div>
+        </div>
+    </div>
+);
+
 export const AnalyticsDashboard = () => {
     const { user: authUser, onlineUserIds, lastNotification, lastAnalyticsUpdate } = useAuth();
 
@@ -293,46 +312,77 @@ export const AnalyticsDashboard = () => {
                     </p>
                 </div>
 
-                {/* Distribución por Edad (Ahora a ancho completo) */}
-                <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 className="text-white font-semibold">Distribución por Edad</h3>
-                            <p className="text-xs text-sporthub-muted">Rango demográfico de visitantes</p>
+                {/* Distribución por Edad o Habilidades (Condicional para Deportistas) */}
+                {(!stats.is_global && authUser?.role === 'athlete') ? (
+                    <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 className="text-white font-semibold flex items-center gap-2">
+                                    Habilidades Profesionales
+                                    <TrendingUp className="w-4 h-4 text-sporthub-neon" />
+                                </h3>
+                                <p className="text-xs text-sporthub-muted">Desglose técnico de rendimiento actual</p>
+                            </div>
+                            <span className="text-[10px] text-sporthub-neon bg-sporthub-neon/10 px-2 py-1 rounded font-bold uppercase tracking-widest border border-sporthub-neon/20">
+                                Perfil Atleta
+                            </span>
                         </div>
-                        <span className="bg-sporthub-cyan/20 text-sporthub-cyan text-[10px] px-2 py-1 rounded">
-                            Promedio: {stats?.average_age ? Number(stats.average_age).toFixed(1) : '0.0'} años
-                        </span>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 mt-4 min-h-[240px]">
+                            {Object.entries(authUser?.skills || {
+                                "Velocidad": 80, "Táctica": 75, "Resistencia": 85, 
+                                "Remate": 70, "Control": 80, "Visión": 75
+                            }).map(([skill, value], idx) => (
+                                <SkillBar 
+                                    key={skill} 
+                                    skill={skill} 
+                                    value={value} 
+                                    isNeon={idx % 2 === 0} 
+                                />
+                            ))}
+                        </div>
                     </div>
-                    <div className="h-60 w-full mt-4" key={`bar-${stats?.is_global ? 'admin' : 'user'}`}>
-                        {viewData.demo.length > 0 ? (
-                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
-                                <BarChart data={viewData.demo}>
-                                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
-                                    <YAxis
-                                        tick={{ fill: COLORS.muted, fontSize: 10 }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        width={40}
-                                        domain={[0, 'auto']}
-                                        tickFormatter={(value) => `${value}%`}
-                                    />
-                                    <RechartsTooltip
-                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                        contentStyle={{ backgroundColor: COLORS.card, borderColor: '#334155', borderRadius: '12px', padding: '10px', border: '1px solid #334155' }}
-                                        itemStyle={{ color: COLORS.cyan, fontSize: '12px' }}
-                                        isAnimationActive={false}
-                                        formatter={(value, name) => [name === 'count' ? `${value} Usuarios` : `${value}%`, name === 'count' ? 'Total' : 'Porcentaje']}
-                                    />
-                                    <Bar dataKey="percentage" fill={COLORS.cyan} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex h-full items-center justify-center text-[10px] text-sporthub-muted uppercase tracking-widest italic">Datos demográficos en proceso</div>
-                        )}
+                ) : (
+                    <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-white font-semibold">Distribución por Edad</h3>
+                                <p className="text-xs text-sporthub-muted">Rango demográfico de visitantes</p>
+                            </div>
+                            <span className="bg-sporthub-cyan/20 text-sporthub-cyan text-[10px] px-2 py-1 rounded">
+                                Promedio: {stats?.average_age ? Number(stats.average_age).toFixed(1) : '0.0'} años
+                            </span>
+                        </div>
+                        <div className="h-60 w-full mt-4" key={`bar-${stats?.is_global ? 'admin' : 'user'}`}>
+                            {viewData.demo.length > 0 ? (
+                                <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
+                                    <BarChart data={viewData.demo}>
+                                        <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} dy={10} />
+                                        <YAxis
+                                            tick={{ fill: COLORS.muted, fontSize: 10 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            width={40}
+                                            domain={[0, 'auto']}
+                                            tickFormatter={(value) => `${value}%`}
+                                        />
+                                        <RechartsTooltip
+                                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                            contentStyle={{ backgroundColor: COLORS.card, borderColor: '#334155', borderRadius: '12px', padding: '10px', border: '1px solid #334155' }}
+                                            itemStyle={{ color: COLORS.cyan, fontSize: '12px' }}
+                                            isAnimationActive={false}
+                                            formatter={(value, name) => [name === 'count' ? `${value} Usuarios` : `${value}%`, name === 'count' ? 'Total' : 'Porcentaje']}
+                                        />
+                                        <Bar dataKey="percentage" fill={COLORS.cyan} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-[10px] text-sporthub-muted uppercase tracking-widest italic">Datos demográficos en proceso</div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Line Chart Trends */}
                 <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">

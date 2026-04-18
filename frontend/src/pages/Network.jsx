@@ -5,15 +5,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMediaUrl } from '../utils/media';
 import { formatAuthorMetadata } from '../components/PostCard';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-
-const COLORS = ['#A3E635', '#06B6D4', '#c084fc', '#fbbf24', '#f87171', '#34d399'];
 
 export const Network = () => {
     const { user: authUser, updateUser } = useAuth();
     const [connections, setConnections] = useState([]);
     const [myConnections, setMyConnections] = useState([]);
-    const [analytics, setAnalytics] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -27,19 +23,15 @@ export const Network = () => {
             }
         };
 
-        // 2. POLLING: Datos vivos (Presencia, Conexiones, Analítica) - Cada 2.5s
+        // 2. POLLING: Datos vivos (Presencia, Conexiones) - Cada 2.5s
         const fetchLiveUpdates = async (isPolling = false) => {
             try {
-                const [profileRes, analyticsRes, connectionsRes] = await Promise.all([
+                const [profileRes, connectionsRes] = await Promise.all([
                     api.get('/profile/'),
-                    api.get('/analytics/summary/').catch(() => ({ data: null })),
                     api.get('/network/connections/')
                 ]);
                 
                 setMyConnections(connectionsRes.data || []);
-                if (analyticsRes.data) {
-                    setAnalytics(analyticsRes.data);
-                }
             } catch (error) {
                 console.error("Error en polling de network:", error);
             } finally {
@@ -91,19 +83,6 @@ export const Network = () => {
 
     // Eliminamos myConnections hardcodeado por el estado dinámico
 
-    // Datos Analíticos replicados
-    const engagementRate = "8.7"; 
-    const impresiones = "15.2k";
-    const reach = "9.8k";
-    const barData = analytics?.demographics?.length > 0 
-        ? analytics.demographics.map(d => ({ name: `${d.age_group_start}-${d.age_group_start+10}`, value: d.count }))
-        : [
-            { name: "18-24", value: 300 },
-            { name: "25-34", value: 480 },
-            { name: "35-44", value: 200 },
-            { name: "45+", value: 120 }
-        ];
-
     return (
         <main className="flex-1 bg-[#0B0F19] p-6 lg:p-8 pb-32">
             <div className="flex flex-col lg:flex-row gap-6 max-w-[1500px] mx-auto">
@@ -118,7 +97,7 @@ export const Network = () => {
                             <p className="text-sm text-gray-500">Gestiona tus conexiones profesionales</p>
                         </div>
                         <button className="bg-[rgba(163,230,53,0.1)] border border-[rgba(163,230,53,0.2)] text-sporthub-neon font-bold text-sm px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-[rgba(163,230,53,0.2)] transition-colors">
-                            <Users className="w-4 h-4" /> 5 Conexiones
+                            <Users className="w-4 h-4" /> {myConnections.length} Conexiones
                         </button>
                     </div>
 
@@ -227,85 +206,6 @@ export const Network = () => {
                                     </div>
                                 </div>
                             )})}
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* COLUMNA DERECHA (Side Panel) IDÉNTICA AL PERFIL */}
-                <div className="w-full lg:w-80 xl:w-[350px] flex flex-col gap-6 shrink-0">
-                    
-                    {/* Visitas al Perfil (Donut) */}
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 className="text-white font-bold text-sm">Visitas al Perfil</h3>
-                                <p className="text-[10px] text-gray-500">vs. mes anterior</p>
-                            </div>
-                            <div className="bg-sporthub-neon/10 text-sporthub-neon text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                                <TrendingUp className="w-3 h-3" /> +14.0%
-                            </div>
-                        </div>
-                        <div className="h-44 relative flex items-center justify-center mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie data={[{value: 68}, {value: 32}]} dataKey="value" innerRadius={55} outerRadius={70} startAngle={90} endAngle={-270} stroke="none">
-                                        <Cell fill="#A3E635" />
-                                        <Cell fill="#1a2130" />
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute flex flex-col items-center">
-                                <span className="text-3xl font-bold text-white">68%</span>
-                                <span className="text-[9px] text-gray-400">2,847 visitas</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Distribución de Edad (Bar Chart) */}
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h3 className="text-white font-bold text-sm">Distribución de Edad</h3>
-                                <p className="text-[10px] text-gray-500">Audiencia principal</p>
-                            </div>
-                            <div className="bg-sporthub-cyan/10 text-sporthub-cyan text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                                👨‍👩‍👧 {analytics?.average_age ? analytics.average_age.toFixed(1) : 'S/N'} años
-                            </div>
-                        </div>
-                        <div className="h-48 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={barData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2130" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} />
-                                    <Tooltip cursor={{ fill: '#1a2130' }} contentStyle={{ backgroundColor: '#0B0F19', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} />
-                                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                        {barData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 1 ? '#06B6D4' : '#1e5f72'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Métricas Rápidas */}
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
-                        <h3 className="text-white font-bold text-sm mb-5">Métricas Rápidas</h3>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex justify-between items-center pb-3 border-b border-[rgba(255,255,255,0.05)]">
-                                <span className="text-sm text-gray-400">Engagement Rate</span>
-                                <span className="text-sm font-bold text-sporthub-neon">{engagementRate}%</span>
-                            </div>
-                            <div className="flex justify-between items-center pb-3 border-b border-[rgba(255,255,255,0.05)]">
-                                <span className="text-sm text-gray-400">Impresiones</span>
-                                <span className="text-sm font-bold text-sporthub-cyan">{impresiones}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-400">Reach</span>
-                                <span className="text-sm font-bold text-[#c084fc]">{reach}</span>
-                            </div>
                         </div>
                     </div>
 
