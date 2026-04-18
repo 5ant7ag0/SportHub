@@ -27,7 +27,7 @@ export const Feed = () => {
     const limit = 20;
 
     const { user: authUser, lastNotification } = useAuth();
-    
+
     const observer = useRef();
     const lastPostRef = useCallback(node => {
         if (isLoading) return;
@@ -45,12 +45,12 @@ export const Feed = () => {
         if (isInitial) setIsLoading(true);
         try {
             const currentOffset = isInitial ? 0 : offset;
-            const path = activeFilter 
-                ? `/feed/?post_type=${activeFilter}&limit=${limit}&offset=${currentOffset}` 
+            const path = activeFilter
+                ? `/feed/?post_type=${activeFilter}&limit=${limit}&offset=${currentOffset}`
                 : `/feed/?limit=${limit}&offset=${currentOffset}`;
-            
+
             const { data } = await api.get(path);
-            
+
             if (isInitial) {
                 setPosts(data.posts || []);
             } else {
@@ -85,7 +85,7 @@ export const Feed = () => {
         // A. Nuevo Post en el Feed
         if (lastNotification.type === 'feed_update' && lastNotification.post) {
             const newPost = lastNotification.post;
-            
+
             // Filtrado por tipo (Servicios vs Todos)
             if (activeFilter === 'service' && newPost.post_type !== 'service') {
                 return;
@@ -118,7 +118,7 @@ export const Feed = () => {
         if (lastNotification.type === 'share_action') {
             const { original_post: updatedPost, new_repost: newPost } = lastNotification;
             console.log("⚡ Processing Share Action...", { orig: updatedPost.id, new: newPost.id });
-            
+
             setPosts(prev => {
                 // 1. Actualizar el contador en el post original
                 let intermediatePosts = prev.map(p => {
@@ -135,9 +135,9 @@ export const Feed = () => {
 
                 // 2. Añadir el nuevo repost (si cumple filtro de tipo)
                 if (activeFilter === 'service' && newPost.post_type !== 'service') {
-                    return intermediatePosts; 
+                    return intermediatePosts;
                 }
-                
+
                 if (intermediatePosts.some(p => p.id === newPost.id)) return intermediatePosts;
                 return [newPost, ...intermediatePosts];
             });
@@ -194,13 +194,12 @@ export const Feed = () => {
     ];
 
     return (
-        <div className="p-0 lg:p-6 bg-sporthub-bg h-[calc(100vh-6rem)] lg:h-[calc(100vh-2rem)] overflow-hidden">
+        <div className="p-0 bg-sporthub-bg h-[calc(100vh-6rem)] lg:h-screen overflow-hidden">
             <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 h-full items-start overflow-hidden">
-                
-                {/* Columna Principal - Feed con scroll independiente */}
-                <div className="xl:col-span-8 flex flex-col gap-6 h-full overflow-y-auto no-scrollbar p-4 lg:p-0 pb-32">
-                    <div className="mb-2">
 
+                {/* Columna Principal - Feed con scroll independiente */}
+                <div className="xl:col-span-8 flex flex-col h-full overflow-y-auto no-scrollbar p-4 lg:p-0">
+                    <div className="sticky top-0 z-20 bg-sporthub-bg/95 backdrop-blur-md pt-4 pb-2 mb-2 px-4 lg:px-0">
                         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                             {FILTERS.map(filter => (
                                 <button
@@ -219,16 +218,18 @@ export const Feed = () => {
                         </div>
                     </div>
 
-                    <CreatePostBox
-                        authUser={authUser}
-                        onPostCreated={(newPost) => {
-                            console.log("📝 Post creado localmente, prepending...");
-                            setPosts(prev => {
-                                if (prev.some(p => p.id === newPost.id)) return prev;
-                                return [newPost, ...prev];
-                            });
-                        }}
-                    />
+                    <div className="flex flex-col gap-6 p-1 pt-4">
+                        <CreatePostBox
+                            authUser={authUser}
+                            onPostCreated={(newPost) => {
+                                console.log("📝 Post creado localmente, prepending...");
+                                setPosts(prev => {
+                                    if (prev.some(p => p.id === newPost.id)) return prev;
+                                    return [newPost, ...prev];
+                                });
+                            }}
+                        />
+                    </div>
 
                     <div className="flex flex-col gap-6">
                         {posts.length === 0 && !isLoading ? (
@@ -270,7 +271,7 @@ export const Feed = () => {
                                         );
                                     }
                                 })}
-                                
+
                                 {isLoading && (
                                     <div className="flex justify-center py-4">
                                         <Loader2 className="w-6 h-6 animate-spin text-sporthub-neon" />

@@ -46,7 +46,7 @@ const DashboardLayout = ({ children }) => {
       <div className="lg:flex">
         <Sidebar aria-hidden={false} />
         {/* En PC ml-64 (ancho sidebar), en móvil pt-24 (alto header) */}
-        <main className="flex-1 w-full max-w-[100vw] relative lg:ml-64 pt-24 lg:pt-8 pb-32 lg:pb-8 px-0 md:px-4">
+        <main className="flex-1 w-full max-w-[100vw] relative lg:ml-64 pt-24 lg:pt-0 pb-32 lg:pb-0 px-0 md:px-4">
           {children}
         </main>
       </div>
