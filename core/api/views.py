@@ -1250,12 +1250,16 @@ class ConnectionsListView(APIView):
 
     def get(self, request):
         user = request.user
-        connection_ids = list(set([f.id for f in user.followers] + [f.id for f in user.following]))
-        connections = User.objects(id__in=connection_ids)
-        
         from core.api.serializers import UserSerializer
-        serializer = UserSerializer(connections, many=True, context={'request': request})
-        return Response(serializer.data, status=200)
+        
+        # Obtenemos seguidores y seguidos por separado
+        followers_qs = User.objects(id__in=[f.id for f in user.followers])
+        following_qs = User.objects(id__in=[f.id for f in user.following])
+        
+        return Response({
+            "followers": UserSerializer(followers_qs, many=True, context={'request': request}).data,
+            "following": UserSerializer(following_qs, many=True, context={'request': request}).data
+        }, status=200)
 
 class PostLikesListView(APIView):
     authentication_classes = [MongoJWTAuthentication]
