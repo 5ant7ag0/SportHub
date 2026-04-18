@@ -413,46 +413,48 @@ const Messages = () => {
     const barData = analytics?.demographics || [];
 
     return (
-        <div className="flex-1 flex overflow-hidden bg-sporthub-bg w-full h-full relative">
-            <div className="flex flex-col md:flex-row gap-0 max-w-full w-full mx-auto h-full overflow-hidden relative isolate">
+        <div className="flex-1 flex overflow-hidden bg-[#0B0F19] p-4 lg:p-6 w-full h-full relative">
+            <div className="flex flex-col lg:flex-row gap-6 max-w-full w-full mx-auto h-full overflow-hidden relative">
                 
                 {/* LISTA DE CHATS */}
-                <div className={`${viewMode === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-[360px] bg-[#0B0F19] border-r border-sporthub-border flex-col shrink-0 pb-4 overflow-hidden z-20 relative`}>
-                    <div className="p-6">
-                        <div className="bg-[#151b28] rounded-2xl flex items-center px-4 py-3 border border-white/5 shadow-inner">
-                            <SearchIcon className="w-4 h-4 text-gray-500 mr-2" />
-                            <input type="text" placeholder="Filtrar mensajes..." className="w-full bg-transparent border-none text-white text-xs outline-none" />
+                <div className={`${viewMode === 'chat' ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 xl:w-[350px] bg-sporthub-card rounded-[32px] border border-white/5 flex-col shrink-0 overflow-hidden shadow-xl`}>
+                    <div className="p-6 pb-2">
+                        <div className="bg-[#0B0F19] rounded-2xl flex items-center px-4 py-3 border border-white/5 shadow-inner mb-2">
+                            <SearchIcon className="w-4 h-4 text-gray-600 mr-2" />
+                            <input type="text" placeholder="Buscar conversación..." className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-gray-600" />
                         </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar px-3 space-y-1 pb-20">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-2 pb-6">
                         {inboxConfig.length > 0 ? inboxConfig.map(chat => (
-                            <button key={chat.contactId} onClick={() => handleSelectChat(chat)} className={`w-full flex items-start gap-4 p-4 rounded-2xl transition-all group ${activeChat?.contactId === chat.contactId ? 'bg-sporthub-neon/10 border border-sporthub-neon/20' : 'hover:bg-white/5 border border-transparent'}`}>
+                            <button key={chat.contactId} onClick={() => handleSelectChat(chat)} className={`w-full flex items-center gap-4 p-4 rounded-[24px] transition-all group relative ${activeChat?.contactId === chat.contactId ? 'bg-sporthub-neon/10' : 'hover:bg-white/5'}`}>
                                 <div className="relative shrink-0">
-                                    <img src={chat.avatar} className="w-12 h-12 rounded-full border border-white/10 object-cover bg-sporthub-card" alt="" />
-                                    <div className={`absolute bottom-0.5 right-0.5 w-3 h-3 ${chat.is_online ? 'bg-sporthub-neon' : 'bg-gray-600'} rounded-full border-2 border-[#0B0F19]`}></div>
+                                    <img src={chat.avatar} className="w-12 h-12 rounded-full border-2 border-transparent group-hover:border-sporthub-neon/30 object-cover bg-sporthub-card transition-all" alt="" />
+                                    <div className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 ${chat.is_online ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.6)]' : 'bg-gray-600'} rounded-full border-2 border-[#151b28]`}></div>
                                 </div>
                                 <div className="flex-1 text-left overflow-hidden">
                                     <div className="flex justify-between items-start mb-0.5">
                                         <h3 className="text-sm font-bold truncate text-white">{chat.name}</h3>
                                         <span className="text-[10px] text-gray-500">{chat.time}</span>
                                     </div>
-                                    <p className="text-[10px] text-sporthub-cyan font-medium uppercase tracking-wider mb-1 opacity-70">{chat.sport}</p>
-                                    <p className="text-xs truncate text-gray-400 group-hover:text-gray-300 transition-colors">{chat.lastMessage}</p>
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5 opacity-60">{chat.sport}</p>
+                                    <p className="text-xs truncate text-gray-500 group-hover:text-gray-300 transition-colors leading-tight">{chat.lastMessage}</p>
                                 </div>
                                 <div className="flex flex-col items-end gap-2 shrink-0">
                                     {chat.unread > 0 && (
-                                        <div className="bg-sporthub-neon text-black text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in shadow-[0_0_10px_rgba(0,255,136,0.3)]">
+                                        <div className="bg-sporthub-neon text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in shadow-[0_4px_12px_rgba(163,230,53,0.4)]">
                                             {chat.unread}
                                         </div>
                                     )}
-                                    <ChatOptionsMenu 
-                                        chat={chat} 
-                                        isOpen={activeDropdownId === chat.contactId} 
-                                        onToggle={() => setActiveDropdownId(activeDropdownId === chat.contactId ? null : chat.contactId)} 
-                                        onMarkAsUnread={handleMarkAsUnread} 
-                                        onClearChat={() => setConfirmModal({ show: true, type: 'clear', contact: chat })} 
-                                        onDeleteChat={() => setConfirmModal({ show: true, type: 'delete', contact: chat })} 
-                                    />
+                                    <div className="lg:opacity-0 lg:group-hover:opacity-100 opacity-100 transition-opacity">
+                                        <ChatOptionsMenu 
+                                            chat={chat} 
+                                            isOpen={activeDropdownId === chat.contactId} 
+                                            onToggle={() => setActiveDropdownId(activeDropdownId === chat.contactId ? null : chat.contactId)} 
+                                            onMarkAsUnread={handleMarkAsUnread} 
+                                            onClearChat={() => setConfirmModal({ show: true, type: 'clear', contact: chat })} 
+                                            onDeleteChat={() => setConfirmModal({ show: true, type: 'delete', contact: chat })} 
+                                        />
+                                    </div>
                                 </div>
                             </button>
                         )) : (
@@ -462,30 +464,43 @@ const Messages = () => {
                 </div>
 
                 {/* VENTANA DE CHAT */}
-                <div className="flex-1 flex flex-col min-w-0 bg-[#0B0F19] relative h-full z-10 border-r border-sporthub-border">
+                <div className="flex-1 flex flex-col min-w-0 bg-sporthub-card rounded-[32px] border border-white/5 relative h-full overflow-hidden shadow-2xl">
                     {activeChat ? (
                         <>
                             {/* CABECERA: Ajustada para ser el único elemento fijo en iOS */}
-                            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0d111a]/95 backdrop-blur-xl sticky top-0 z-50 pt-[calc(1rem+env(safe-area-inset-top))] md:pt-4">
+                            <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0B0F19]/20 backdrop-blur-xl">
                                 <div className="flex items-center gap-4">
                                     <button 
                                         onClick={() => { setViewMode('list'); navigate('/messages', { replace: true }); setActiveChat(null); }} 
-                                        className="md:hidden text-gray-400 p-2 hover:text-white transition-colors bg-white/5 rounded-full"
+                                        className="lg:hidden text-gray-400 p-2 hover:text-white transition-colors bg-white/5 rounded-full"
                                     >
                                         <ArrowLeft className="w-5 h-5" />
                                     </button>
-                                    <Link to={`/profile?id=${activeChat.contactId}`} className="flex items-center gap-3 group">
-                                        <img src={activeChat.avatar} className="w-10 h-10 rounded-full object-cover border border-white/10" alt="" />
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <img src={activeChat.avatar} className="w-12 h-12 rounded-full object-cover border-2 border-white/5" alt="" />
+                                            <div className={`absolute bottom-0 right-0 w-3 h-3 ${activeChat.is_online ? 'bg-sporthub-neon shadow-[0_0_5px_rgba(163,230,53,0.5)]' : 'bg-gray-600'} rounded-full border-2 border-sporthub-card`}></div>
+                                        </div>
                                         <div className="min-w-0">
-                                            <h3 className="text-white font-bold group-hover:text-sporthub-neon transition-colors truncate max-w-[150px]">{activeChat.name}</h3>
-                                            <p className="text-[10px] text-gray-500 flex items-center gap-1">
-                                                <span className={`w-1.5 h-1.5 rounded-full ${activeChat.is_online ? 'bg-sporthub-neon' : 'bg-gray-600'}`}></span>
+                                            <h3 className="text-white font-bold text-lg tracking-tight truncate max-w-[200px]">{activeChat.name}</h3>
+                                            <p className="text-[10px] text-gray-500 font-medium">
                                                 {activeChat.is_online ? 'En línea' : 'Desconectado'}
                                             </p>
                                         </div>
-                                    </Link>
+                                    </div>
                                 </div>
-                                <ChatOptionsMenu chat={activeChat} variant="header" isOpen={headerDropdownOpen} onToggle={() => setHeaderDropdownOpen(!headerDropdownOpen)} onClearChat={() => setConfirmModal({ show: true, type: 'clear', contact: activeChat })} onDeleteChat={() => setConfirmModal({ show: true, type: 'delete', contact: activeChat })} />
+                                <div className="flex items-center gap-3">
+                                    <button className="hidden md:flex p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                    </button>
+                                    <button className="hidden md:flex p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                    </button>
+                                    <Link to={`/profile?id=${activeChat.contactId}`} className="bg-sporthub-neon text-black px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-sporthub-neon/20">
+                                        Ver Perfil
+                                    </Link>
+                                    <ChatOptionsMenu chat={activeChat} variant="header" isOpen={headerDropdownOpen} onToggle={() => setHeaderDropdownOpen(!headerDropdownOpen)} onClearChat={() => setConfirmModal({ show: true, type: 'clear', contact: activeChat })} onDeleteChat={() => setConfirmModal({ show: true, type: 'delete', contact: activeChat })} />
+                                </div>
                             </div>
 
                             <div 
@@ -500,7 +515,7 @@ const Messages = () => {
 
                                 {(messages || []).map((msg, idx) => (
                                     <div key={msg.id || idx} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                                    <div className={`p-4 rounded-2xl max-w-[80%] md:max-w-[70%] shadow-lg transition-all relative group ${msg.isMe ? 'bg-gradient-to-br from-sporthub-neon to-[#00cc6a] text-black font-semibold rounded-br-none' : 'bg-[#151b28] text-white border border-white/5 rounded-bl-none'}`}>
+                                        <div className={`p-5 rounded-[24px] max-w-[85%] md:max-w-[75%] shadow-xl transition-all relative group ${msg.isMe ? 'bg-sporthub-neon text-black font-semibold rounded-br-none shadow-sporthub-neon/10' : 'bg-[#151b28] text-white border border-white/5 rounded-bl-none shadow-[#000]/20'}`}>
                                             {msg.media_url && !editingMessageId && (
                                                 <div className="mb-2 relative rounded-xl overflow-hidden group/media">
                                                     {(() => {
@@ -598,11 +613,15 @@ const Messages = () => {
                                                 </div>
                                             )}
                                             
-                                            <div className="mt-1 flex justify-end items-center gap-1">
-                                                {msg.is_edited && <span className={`text-[8px] italic ${msg.isMe ? 'text-black/40' : 'text-gray-500'}`}>(editado)</span>}
-                                                <span className={`text-[9px] ${msg.isMe ? 'text-black/60' : 'text-gray-500'}`}>
+                                            <div className="mt-2 flex justify-end items-center gap-1.5 opacity-80">
+                                                <span className={`text-[9px] ${msg.isMe ? 'text-black/70' : 'text-gray-500'}`}>
                                                     {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                 </span>
+                                                {msg.isMe && (
+                                                    <div className="flex items-center text-black/70">
+                                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline><polyline points="22 10 13.5 18.5 11 16"></polyline></svg>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -610,9 +629,11 @@ const Messages = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            <div className="p-4 bg-white/[0.01] border-t border-white/5 pb-20 md:pb-4">
-                                <form onSubmit={handleSend} className="flex gap-2 items-end">
-                                    <button type="button" onClick={() => fileInputRef.current.click()} className="p-3 text-gray-400 hover:text-sporthub-neon hover:bg-white/5 rounded-xl transition-all"><Paperclip className="w-5 h-5" /></button>
+                            <div className="p-6 bg-[#0B0F19]/20 border-t border-white/5 relative">
+                                <form onSubmit={handleSend} className="flex gap-4 items-center">
+                                    <button type="button" onClick={() => fileInputRef.current.click()} className="p-2 text-gray-500 hover:text-white transition-all">
+                                        <Paperclip className="w-5 h-5" />
+                                    </button>
                                     <input type="file" ref={fileInputRef} onChange={e => {
                                         if (e.target.files?.[0]) {
                                             setPendingFile(e.target.files[0]);
@@ -620,19 +641,25 @@ const Messages = () => {
                                         }
                                     }} className="hidden" />
                                     
-                                    <div className="flex-1 relative flex flex-col">
+                                    <div className="flex-1 relative">
                                         {pendingFile && (
-                                            <div className="absolute bottom-full left-0 mb-3 bg-[#151b28] p-2 rounded-xl border border-sporthub-neon/30 flex items-center gap-3 animate-in zoom-in slide-in-from-bottom-2">
-                                                <img src={previewUrl} className="w-12 h-12 rounded-lg object-cover" alt="" />
-                                                <div className="flex-1"><p className="text-[10px] text-white font-bold truncate max-w-[100px]">{pendingFile.name}</p></div>
-                                                <button type="button" onClick={() => { setPendingFile(null); setPreviewUrl(null); }} className="text-red-400 hover:bg-red-500/10 p-1 rounded-full"><X className="w-4 h-4" /></button>
+                                            <div className="absolute bottom-full left-0 mb-4 bg-sporthub-card p-2 rounded-2xl border border-sporthub-neon/20 flex items-center gap-3 animate-in fade-in zoom-in shadow-2xl">
+                                                <img src={previewUrl} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                                                <button type="button" onClick={() => { setPendingFile(null); setPreviewUrl(null); }} className="text-red-400 bg-red-400/10 p-1 rounded-full"><X className="w-4 h-4" /></button>
                                             </div>
                                         )}
-                                        <textarea rows="1" value={body} onChange={e => setBody(e.target.value)} placeholder="Escribe un mensaje..." className="w-full bg-[#151b28] border border-white/5 rounded-xl text-white px-4 py-3 text-sm resize-none focus:outline-none focus:border-sporthub-neon/50 transition-colors custom-scrollbar" onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
+                                        <input 
+                                            type="text" 
+                                            value={body} 
+                                            onChange={e => setBody(e.target.value)} 
+                                            placeholder="Escribe un mensaje..." 
+                                            className="w-full bg-[#151b28] border border-white/5 rounded-[20px] text-white px-5 py-4 text-sm focus:outline-none focus:border-sporthub-neon/30 transition-all placeholder:text-gray-600 shadow-inner" 
+                                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} 
+                                        />
                                     </div>
                                     
-                                    <button type="submit" disabled={isUploading} className="bg-sporthub-neon p-3.5 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(0,255,136,0.3)] disabled:opacity-50 disabled:grayscale">
-                                        <Send className="w-4 h-4 text-black" />
+                                    <button type="submit" disabled={isUploading} className="bg-sporthub-neon w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_4px_20px_rgba(163,230,53,0.4)] disabled:opacity-50">
+                                        <Send className="w-5 h-5 text-black" />
                                     </button>
                                 </form>
                             </div>
