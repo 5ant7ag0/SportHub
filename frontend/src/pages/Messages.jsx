@@ -52,6 +52,7 @@ const Messages = () => {
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
     const isManualScroll = useRef(false);
     const [syncingChats, setSyncingChats] = useState(new Set());
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchInitialData = async (isPolling = false) => {
         try {
@@ -410,7 +411,7 @@ const Messages = () => {
         );
     }
 
-    const barData = analytics?.demographics || [];
+
 
     return (
         <div className="flex-1 flex overflow-hidden bg-[#0B0F19] p-4 lg:p-6 w-full h-full relative">
@@ -421,12 +422,24 @@ const Messages = () => {
                     <div className="p-6 pb-2">
                         <div className="bg-[#0B0F19] rounded-2xl flex items-center px-4 py-3 border border-white/5 shadow-inner mb-2">
                             <SearchIcon className="w-4 h-4 text-gray-600 mr-2" />
-                            <input type="text" placeholder="Buscar conversación..." className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-gray-600" />
+                            <input 
+                                type="text" 
+                                placeholder="Buscar conversación..." 
+                                className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-gray-600" 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-2 pb-6">
-                        {inboxConfig.length > 0 ? inboxConfig.map(chat => (
-                            <button key={chat.contactId} onClick={() => handleSelectChat(chat)} className={`w-full flex items-center gap-4 p-4 rounded-[24px] transition-all group relative ${activeChat?.contactId === chat.contactId ? 'bg-sporthub-neon/10' : 'hover:bg-white/5'}`}>
+                        {(() => {
+                            const filteredInbox = (inboxConfig || []).filter(chat => 
+                                chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                chat.sport.toLowerCase().includes(searchTerm.toLowerCase())
+                            );
+
+                            return filteredInbox.length > 0 ? filteredInbox.map(chat => (
+                                <button key={chat.contactId} onClick={() => handleSelectChat(chat)} className={`w-full flex items-center gap-4 p-4 rounded-[24px] transition-all group relative ${activeChat?.contactId === chat.contactId ? 'bg-sporthub-neon/10' : 'hover:bg-white/5'}`}>
                                 <div className="relative shrink-0">
                                     <img src={chat.avatar} className="w-12 h-12 rounded-full border-2 border-transparent group-hover:border-sporthub-neon/30 object-cover bg-sporthub-card transition-all" alt="" />
                                     <div className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 ${chat.is_online ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.6)]' : 'bg-gray-600'} rounded-full border-2 border-[#151b28]`}></div>
@@ -457,9 +470,14 @@ const Messages = () => {
                                     </div>
                                 </div>
                             </button>
-                        )) : (
-                            <div className="p-8 text-center"><p className="text-gray-600 text-xs">Sin conversaciones activas</p></div>
-                        )}
+                            )) : (
+                                <div className="p-8 text-center">
+                                    <p className="text-gray-600 text-xs">
+                                        {searchTerm ? `No hay resultados para "${searchTerm}"` : "Sin conversaciones activas"}
+                                    </p>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -675,8 +693,8 @@ const Messages = () => {
                     )}
                 </div>
 
-                {/* PANEL DE ANALÍTICA */}
-                <AnalyticsPanel analytics={analytics} barData={barData} />
+                {/* PANEL DE ANALÍTICA (Widget Unificado) */}
+                <AnalyticsPanel analytics={analytics} />
             </div>
 
             {/* MODALES Y OVERLAYS */}

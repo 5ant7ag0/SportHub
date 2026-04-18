@@ -500,17 +500,17 @@ export const AnalyticsDashboard = () => {
             <div className="flex flex-col gap-6">
                 
                 {/* 1. DISTRIBUCIÓN POR DEPORTE (Siempre visible arriba) */}
-                <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border flex flex-col items-center">
+                <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 shadow-xl flex flex-col items-center">
                     <div className="flex justify-between items-start w-full mb-4">
                         <div>
-                            <h3 className="text-white font-semibold text-sm">Distribución por Deporte</h3>
-                            <p className="text-[10px] text-sporthub-muted">Talentos por categoría</p>
+                            <h3 className="text-white font-bold text-sm">Distribución por Deporte</h3>
+                            <p className="text-[10px] text-gray-500">Talentos por categoría</p>
                         </div>
                     </div>
 
                     <div className="h-44 w-full relative flex items-center justify-center">
                         {viewData.sportsDonut.length > 0 ? (
-                            <ResponsiveContainer width="99%" height="99%">
+                            <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
                                         data={viewData.sportsDonut}
@@ -522,93 +522,93 @@ export const AnalyticsDashboard = () => {
                                         ))}
                                     </Pie>
                                     <RechartsTooltip
-                                        cursor={false} offset={40}
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: '#22D3EE', borderRadius: '12px' }}
-                                        itemStyle={{ color: '#F8FAFC', fontWeight: 'bold', fontSize: '12px' }}
+                                        cursor={false}
+                                        contentStyle={{ backgroundColor: 'rgba(11, 15, 25, 0.95)', borderColor: '#A3E635', borderRadius: '12px', border: '1px solid rgba(163,230,53,0.2)' }}
+                                        itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="text-[10px] text-sporthub-muted uppercase italic">Datos insuficientes</div>
+                            <div className="text-[10px] text-gray-600 uppercase italic">Análisis en progreso...</div>
                         )}
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-xl font-bold text-white">{stats?.extra_stats?.total_users || 0}</span>
-                            <span className="text-[9px] text-sporthub-muted uppercase font-black">Talentos</span>
+                            <span className="text-xl font-bold text-white tracking-tighter">{stats?.extra_stats?.total_users || 0}</span>
+                            <span className="text-[9px] text-gray-500 uppercase font-black">Talentos</span>
                         </div>
                     </div>
 
-                    {/* Leyenda de deportes */}
-                    <div className="flex justify-center gap-4 mt-6 w-full border-t border-sporthub-border/50 pt-4">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#A3E635]" style={{ backgroundColor: COLORS.neon }} />
-                            <span className="text-[9px] text-white font-bold uppercase tracking-widest">Fútbol</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#22D3EE]" style={{ backgroundColor: COLORS.cyan }} />
-                            <span className="text-[9px] text-white font-bold uppercase tracking-widest">Básquet</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#A855F7]" style={{ backgroundColor: '#A855F7' }} />
-                            <span className="text-[9px] text-white font-bold uppercase tracking-widest">Voley</span>
-                        </div>
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 w-full border-t border-white/5 pt-4">
+                        {['Fútbol', 'Básquet', 'Voley'].map((sport, i) => (
+                            <div key={sport} className="flex items-center gap-1.5">
+                                <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: getSportColor(sport) }} />
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">{sport}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
                 {/* 2. RESUMEN DE MÉTRICAS */}
-                <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
-                    <h3 className="text-white font-semibold mb-4 text-sm">Resumen de Métricas</h3>
+                <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 shadow-xl">
+                    <h3 className="text-white font-bold text-sm mb-5">Resumen de Métricas</h3>
                     <div className="flex flex-col gap-4">
-                        <div className="flex justify-between items-center border-b border-sporthub-border pb-3">
+                        <div className="flex justify-between items-center border-b border-white/5 pb-3">
                             <div className="flex items-center gap-2">
                                 <Activity className="w-3.5 h-3.5 text-sporthub-neon font-bold" />
-                                <span className="text-sm text-sporthub-muted">Engagement Medio</span>
+                                <span className="text-xs text-gray-400 font-medium">Engagement</span>
                             </div>
-                            <span className="text-sm font-bold text-sporthub-neon">{viewData.rate}%</span>
+                            <span className="text-sm font-black text-sporthub-neon">{viewData.rate}%</span>
                         </div>
-                        <div className="flex justify-between items-center border-b border-sporthub-border pb-3">
+                        <div className="flex justify-between items-center border-b border-white/5 pb-3">
                             <div className="flex items-center gap-2">
-                                <Heart className="w-3.5 h-3.5 text-sporthub-cyan fill-sporthub-cyan/20" />
-                                <span className="text-sm text-sporthub-muted">Total Likes</span>
+                                <Heart className="w-3.5 h-3.5 text-sporthub-cyan fill-sporthub-cyan/10" />
+                                <span className="text-xs text-gray-400 font-medium">Total Likes</span>
                             </div>
-                            <span className="text-sm font-bold text-sporthub-cyan">{(stats?.total_likes || 0).toLocaleString()}</span>
+                            <span className="text-sm font-black text-sporthub-cyan">{(stats?.total_likes || 0).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <MessageCircle className="w-3.5 h-3.5 text-purple-400" />
-                                <span className="text-sm text-sporthub-muted">Comunidades</span>
+                                <Users className="w-3.5 h-3.5 text-purple-400" />
+                                <span className="text-xs text-gray-400 font-medium">Comunidad</span>
                             </div>
-                            <span className="text-sm font-bold text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
+                            <span className="text-sm font-black text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* 3. PROGRESO HACIA META (Visible para No-Admins) */}
                 {!stats.is_global && (
-                    <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border flex flex-col items-center">
+                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 shadow-xl flex flex-col items-center">
                         <div className="flex justify-between items-start w-full mb-4">
                             <div>
-                                <h3 className="text-white font-semibold text-sm">Progreso hacia Meta</h3>
-                                <p className="text-[10px] text-sporthub-muted">Objetivo de visibilidad</p>
+                                <h3 className="text-white font-bold text-sm">Progreso hacia Meta</h3>
+                                <p className="text-[10px] text-gray-500 font-medium">Objetivo de visibilidad</p>
+                            </div>
+                            <div className="bg-sporthub-neon/10 text-sporthub-neon text-[10px] font-bold px-2 py-1 rounded-md">
+                                {Math.round(viewData.completed)}%
                             </div>
                         </div>
 
                         <div className="h-36 w-full relative flex items-center justify-center">
-                            <ResponsiveContainer width="99%" height="99%">
+                            <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
                                         data={viewData.goalDonut}
-                                        cx="50%" cy="50%" innerRadius={40} outerRadius={55}
-                                        dataKey="value" stroke="none" isAnimationActive={false}
+                                        cx="50%" cy="50%" innerRadius={42} outerRadius={56}
+                                        paddingAngle={5} dataKey="value" stroke="none" isAnimationActive={false}
                                     >
-                                        <Cell fill={COLORS.neon} />
-                                        <Cell fill="#1a2130" />
+                                        <Cell fill={COLORS.neon} className="drop-shadow-[0_0_8px_rgba(163,230,53,0.4)]" />
+                                        <Cell fill="rgba(255,255,255,0.03)" />
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-lg font-bold text-white">{Number(viewData.completed).toFixed(1)}%</span>
-                                <span className="text-[8px] text-sporthub-muted">{(stats?.total_visits || 0).toLocaleString()} de 4000</span>
+                                <span className="text-xl font-black text-white">{(stats.total_visits || 0)}</span>
+                                <span className="text-[8px] text-gray-500 uppercase font-black tracking-widest">Visitas</span>
                             </div>
+                        </div>
+                        
+                        <div className="w-full bg-white/5 rounded-2xl p-4 mt-4 text-center border border-white/5">
+                            <p className="text-[10px] text-gray-400 leading-tight">Te faltan <span className="text-sporthub-neon font-bold">{4000 - (stats.total_visits || 0)}</span> visitas para alcanzar el siguiente nivel de perfil verificado.</p>
                         </div>
                     </div>
                 )}

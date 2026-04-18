@@ -42,7 +42,7 @@ const SOCIAL_SVGS = {
 import { PostCard, ShareConfirmModal, DeleteConfirmModal } from '../components/PostCard';
 import { PostDetailModal } from '../components/PostDetailModal';
 import { CreatePostBox } from '../components/CreatePostBox';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import AnalyticsPanel from '../components/AnalyticsPanel';
 
 const COLORS = ['#A3E635', '#06B6D4', '#c084fc', '#fbbf24', '#f87171', '#34d399'];
 
@@ -502,10 +502,7 @@ export const Profile = () => {
         );
     };
 
-    const engagementRate = analytics?.total_visits > 0 ? (((analytics.total_likes + analytics.total_comments) / analytics.total_visits) * 100).toFixed(1) : "8.7";
-    const impresiones = "15.2k";
-    const reach = "9.8k";
-    const barData = analytics?.demographics?.length > 0 ? analytics.demographics.map(d => ({ name: `${d.age_group_start}-${d.age_group_start+10}`, value: d.count })) : [{ name: "18-24", value: 300 }, { name: "25-34", value: 480 }, { name: "35-44", value: 200 }, { name: "45+", value: 120 }];
+    // Cálculos de analítica eliminados para usar AnalyticsPanel
 
     if (isLoading || !profile) {
         return (
@@ -811,22 +808,8 @@ export const Profile = () => {
                     </div>
                 </div>
 
-                {/* SIDE COLUMN */}
-                <div className="w-full lg:w-80 xl:w-[350px] flex flex-col gap-6 shrink-0 mt-6 lg:mt-0">
-                    {/* WIDGET 'Visitas al Perfil' ELIMINADO PARA DIAGNÓSTICO */}
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
-                        <div className="flex justify-between items-start mb-6"><div><h3 className="text-white font-bold text-sm">Distribución de Edad</h3><p className="text-[10px] text-gray-500">Audiencia principal</p></div><div className="bg-sporthub-cyan/10 text-sporthub-cyan text-[10px] font-bold px-2 py-1 rounded-md">👨‍👩‍👧 {analytics?.average_age ? analytics.average_age.toFixed(1) : '24'} años</div></div>
-                        <div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={barData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2130" /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} /><Tooltip cursor={{ fill: '#1a2130' }} contentStyle={{ backgroundColor: '#0B0F19', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} /><Bar dataKey="value" radius={[4, 4, 0, 0]}>{barData.map((entry, index) => <Cell key={`cell-${index}`} fill={index === 1 ? '#06B6D4' : '#1e5f72'} />)}</Bar></BarChart></ResponsiveContainer></div>
-                    </div>
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
-                        <h3 className="text-white font-bold text-sm mb-5">Métricas Rápidas</h3>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex justify-between items-center pb-3 border-b border-white/5"><span className="text-sm text-gray-400">Engagement</span><span className="text-sm font-bold text-sporthub-neon">{engagementRate}%</span></div>
-                            <div className="flex justify-between items-center pb-3 border-b border-white/5"><span className="text-sm text-gray-400">Impresiones</span><span className="text-sm font-bold text-sporthub-cyan">{impresiones}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-sm text-gray-400">Reach</span><span className="text-sm font-bold text-[#c084fc]">{reach}</span></div>
-                        </div>
-                    </div>
-                </div> {/* Fin de Side Column */}
+                {/* SIDE COLUMN - Usando componente unificado */}
+                <AnalyticsPanel analytics={analytics} />
             </div> {/* Fin de Max-W Container */}
 
             {/* Modals - Dentro del Root div */}
