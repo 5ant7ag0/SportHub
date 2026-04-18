@@ -69,18 +69,29 @@ class AnalyticsView(APIView):
             
             formatted_trends = list(trends_map.values())
 
-            # --- 2. LÓGICA DE DATOS ---
+            # --- 2. LÓGICA DE DATOS (Global para todos los roles) ---
+            try:
+                pipeline_sports = [
+                    {"$match": {"sport": {"$exists": True, "$ne": "", "$ne": None}}},
+                    {"$project": {"sport_upper": {"$toUpper": {"$toString": "$sport"}}}},
+                    {"$group": {"_id": "$sport_upper", "count": {"$sum": 1}}},
+                    {"$sort": {"count": -1}}
+                ]
+                stats_deportes = list(User._get_collection().aggregate(pipeline_sports))
+            except Exception as e:
+                print(f"Error Sports: {e}")
+                stats_deportes = []
+
+            # --- Conteo total de usuarios (Global para visualización de talentos) ---
+            try:
+                total_users_global = User.objects.count()
+                total_posts_global = Post.objects.count()
+            except Exception as e:
+                print(f"Error counts: {e}")
+                total_users_global = 0
+                total_posts_global = 0
+
             if is_admin:
-                try:
-                    pipeline_sports = [
-                        {"$match": {"sport": {"$exists": True, "$ne": "", "$ne": None}}},
-                        {"$project": {"sport_upper": {"$toUpper": {"$toString": "$sport"}}}},
-                        {"$group": {"_id": "$sport_upper", "count": {"$sum": 1}}},
-                        {"$sort": {"count": -1}}
-                    ]
-                    stats_deportes = list(User._get_collection().aggregate(pipeline_sports))
-                except Exception as e:
-                    stats_deportes = []
 
                 # 🟢 REGRESAMOS A VISITAS REALES (Para que se mueva en vivo)
                 try:
@@ -104,9 +115,6 @@ class AnalyticsView(APIView):
                     total_likes = agg_engagement[0].get('total_likes', 0) if agg_engagement else 0
                     total_comments = agg_engagement[0].get('total_comments', 0) if agg_engagement else 0
                     
-                    total_users = User.objects.count()
-                    total_posts = Post.objects.count()
-                    
                     user_growth = User.get_user_growth_stats()
                     city_ranking = User.get_city_distribution()
                     connection_status = User.get_connection_metrics()
@@ -115,7 +123,7 @@ class AnalyticsView(APIView):
                     print(f"Error Global Stats: {e}")
                     stats = {}
                     percentages = []
-                    total_likes = total_comments = total_users = total_posts = 0
+                    total_likes = total_comments = 0
                     user_growth = city_ranking = talent_growth = []
                     connection_status = {"online": 0, "offline": 0}
 
@@ -206,7 +214,7 @@ class AnalyticsView(APIView):
                     "total_likes": total_likes,
                     "total_comments": total_comments,
                     "is_global": True,
-                    "extra_stats": {"total_users": total_users, "total_posts": total_posts},
+                    "extra_stats": {"total_users": total_users_global, "total_posts": total_posts_global},
                     "stats_por_deporte": stats_deportes, 
                     "trends": formatted_trends,
                     "user_growth": user_growth,
@@ -249,7 +257,9 @@ class AnalyticsView(APIView):
                     "total_likes": total_likes,
                     "total_comments": total_comments,
                     "is_global": False,
+                    "extra_stats": {"total_users": total_users_global, "total_posts": total_posts_global},
                     "trends": formatted_trends,
+                    "stats_por_deporte": stats_deportes,
                     "roles_distribution": AnalyticsEvent.get_role_distribution(target_profile_id),
                     "visits_today": AnalyticsEvent.objects(
                         visited_profile_id=target_profile_id, 

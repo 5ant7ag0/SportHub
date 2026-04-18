@@ -213,14 +213,19 @@ export const AnalyticsDashboard = () => {
             usuarios: g.count || 0
         })) : [];
 
-        let donut = [];
-        if (d.is_global && Array.isArray(d.stats_por_deporte) && d.stats_por_deporte.length > 0) {
-            donut = d.stats_por_deporte.map(s => ({ name: s._id || 'Otro', value: s.count || 0 }));
-        } else if (d.is_global) {
-            donut = [{ name: 'Sin datos', value: 1 }];
+        // 📊 Sport Distribution Data (Global)
+        let sportsDonut = [];
+        if (Array.isArray(d.stats_por_deporte) && d.stats_por_deporte.length > 0) {
+            sportsDonut = d.stats_por_deporte.map(s => ({ name: s._id || 'Otro', value: s.count || 0 }));
         } else {
-            donut = [{ name: 'Visitas', value: completed }, { name: 'Meta', value: Math.max(0, 100 - completed) }];
+            sportsDonut = [{ name: 'Sin datos', value: 1 }];
         }
+
+        // 🎯 Goal Progress Data (Personal)
+        const goalDonut = [
+            { name: 'Visitas', value: completed },
+            { name: 'Meta', value: Math.max(0, 100 - completed) }
+        ];
 
         const currentOnline = onlineUserIds?.size || 0;
         const currentTotal = d.extra_stats?.total_users || users.length || 100;
@@ -241,7 +246,7 @@ export const AnalyticsDashboard = () => {
             z: 100 // Tamaño constante para los puntos
         })) : [];
 
-        return { rate, completed, demo, trend, growth, donut, connections, cities, currentOnline, talent };
+        return { rate, completed, demo, trend, growth, sportsDonut, goalDonut, connections, cities, currentOnline, talent };
     }, [stats, onlineUserIds, users.length]);
 
     if (isLoading || !stats) {
@@ -434,103 +439,64 @@ export const AnalyticsDashboard = () => {
                 )}
             </div>
 
-            {/* Right Sidebar Column */}
             <div className="flex flex-col gap-6">
-
-                {/* Circular Donut Widget (Adapted for Sports) */}
+                
+                {/* 1. DISTRIBUCIÓN POR DEPORTE (Siempre visible arriba) */}
                 <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border flex flex-col items-center">
                     <div className="flex justify-between items-start w-full mb-4">
                         <div>
-                            <h3 className="text-white font-semibold text-sm">
-                                {stats.is_global ? 'Distribución por Deporte' : 'Progreso hacia Meta'}
-                            </h3>
-                            <p className="text-[10px] text-sporthub-muted">
-                                {stats.is_global ? 'Talentos por categoría' : 'Objetivo de visibilidad'}
-                            </p>
+                            <h3 className="text-white font-semibold text-sm">Distribución por Deporte</h3>
+                            <p className="text-[10px] text-sporthub-muted">Talentos por categoría</p>
                         </div>
                     </div>
 
-                    <div className="h-44 w-full relative flex items-center justify-center" key={`pie-${stats?.is_global ? 'admin' : 'user'}`}>
-                        {viewData.donut.length > 0 ? (
-                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
+                    <div className="h-44 w-full relative flex items-center justify-center">
+                        {viewData.sportsDonut.length > 0 ? (
+                            <ResponsiveContainer width="99%" height="99%">
                                 <PieChart>
                                     <Pie
-                                        data={viewData.donut}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={50}
-                                        outerRadius={70}
-                                        dataKey="value"
-                                        stroke="none"
-                                        isAnimationActive={false}
+                                        data={viewData.sportsDonut}
+                                        cx="50%" cy="50%" innerRadius={50} outerRadius={70}
+                                        dataKey="value" stroke="none" isAnimationActive={false}
                                     >
-                                        {viewData.donut.map((entry, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                fill={stats.is_global
-                                                    ? getSportColor(entry.name)
-                                                    : (index === 0 ? COLORS.neon : '#1a2130')}
-                                            />
+                                        {viewData.sportsDonut.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={getSportColor(entry.name)} />
                                         ))}
                                     </Pie>
                                     <RechartsTooltip
-                                        cursor={false}
-                                        offset={40}
-                                        wrapperStyle={{ zIndex: 100 }}
-                                        contentStyle={{
-                                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                                            borderColor: '#22D3EE',
-                                            borderRadius: '12px',
-                                            padding: '10px 15px',
-                                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
-                                        }}
-                                        itemStyle={{
-                                            color: '#F8FAFC',
-                                            fontWeight: 'bold',
-                                            fontSize: '12px',
-                                            textTransform: 'uppercase'
-                                        }}
+                                        cursor={false} offset={40}
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: '#22D3EE', borderRadius: '12px' }}
+                                        itemStyle={{ color: '#F8FAFC', fontWeight: 'bold', fontSize: '12px' }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="text-[10px] text-sporthub-muted uppercase tracking-widest italic">Visitas insuficientes</div>
+                            <div className="text-[10px] text-sporthub-muted uppercase italic">Datos insuficientes</div>
                         )}
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            {stats?.is_global ? (
-                                <>
-                                    <span className="text-xl font-bold text-white">{stats?.extra_stats?.total_users || 0}</span>
-                                    <span className="text-[9px] text-sporthub-muted uppercase font-black">Talentos</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-2xl font-bold text-white">{Number(viewData.completed).toFixed(1)}%</span>
-                                    <span className="text-[9px] text-sporthub-muted">{(stats?.total_visits || 0).toLocaleString()} de 4000</span>
-                                </>
-                            )}
+                            <span className="text-xl font-bold text-white">{stats?.extra_stats?.total_users || 0}</span>
+                            <span className="text-[9px] text-sporthub-muted uppercase font-black">Talentos</span>
                         </div>
                     </div>
 
-                    {/* LEYENDA INFERIOR FIJA */}
-                    {stats?.is_global && (
-                        <div className="flex justify-center gap-4 mt-6 w-full border-t border-sporthub-border/50 pt-4">
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#A3E635]" style={{ backgroundColor: COLORS.neon }} />
-                                <span className="text-[9px] text-white font-bold uppercase tracking-widest">Fútbol</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#22D3EE]" style={{ backgroundColor: COLORS.cyan }} />
-                                <span className="text-[9px] text-white font-bold uppercase tracking-widest">Básquet</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#A855F7]" style={{ backgroundColor: '#A855F7' }} />
-                                <span className="text-[9px] text-white font-bold uppercase tracking-widest">Ecuavoley</span>
-                            </div>
+                    {/* Leyenda de deportes */}
+                    <div className="flex justify-center gap-4 mt-6 w-full border-t border-sporthub-border/50 pt-4">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#A3E635]" style={{ backgroundColor: COLORS.neon }} />
+                            <span className="text-[9px] text-white font-bold uppercase tracking-widest">Fútbol</span>
                         </div>
-                    )}
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#22D3EE]" style={{ backgroundColor: COLORS.cyan }} />
+                            <span className="text-[9px] text-white font-bold uppercase tracking-widest">Básquet</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full shadow-[0_0_5px_#A855F7]" style={{ backgroundColor: '#A855F7' }} />
+                            <span className="text-[9px] text-white font-bold uppercase tracking-widest">Voley</span>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Métricas Rápidas (Aquí sobrevive el Engagement Medio) */}
+                {/* 2. RESUMEN DE MÉTRICAS */}
                 <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
                     <h3 className="text-white font-semibold mb-4 text-sm">Resumen de Métricas</h3>
                     <div className="flex flex-col gap-4">
@@ -551,14 +517,45 @@ export const AnalyticsDashboard = () => {
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
                                 <MessageCircle className="w-3.5 h-3.5 text-purple-400" />
-                                <span className="text-sm text-sporthub-muted">Comentarios en comunidad</span>
+                                <span className="text-sm text-sporthub-muted">Comunidades</span>
                             </div>
                             <span className="text-sm font-bold text-purple-400">{(stats?.total_comments || 0).toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* City Ranking Widget */}
+                {/* 3. PROGRESO HACIA META (Visible para No-Admins) */}
+                {!stats.is_global && (
+                    <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border flex flex-col items-center">
+                        <div className="flex justify-between items-start w-full mb-4">
+                            <div>
+                                <h3 className="text-white font-semibold text-sm">Progreso hacia Meta</h3>
+                                <p className="text-[10px] text-sporthub-muted">Objetivo de visibilidad</p>
+                            </div>
+                        </div>
+
+                        <div className="h-36 w-full relative flex items-center justify-center">
+                            <ResponsiveContainer width="99%" height="99%">
+                                <PieChart>
+                                    <Pie
+                                        data={viewData.goalDonut}
+                                        cx="50%" cy="50%" innerRadius={40} outerRadius={55}
+                                        dataKey="value" stroke="none" isAnimationActive={false}
+                                    >
+                                        <Cell fill={COLORS.neon} />
+                                        <Cell fill="#1a2130" />
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-lg font-bold text-white">{Number(viewData.completed).toFixed(1)}%</span>
+                                <span className="text-[8px] text-sporthub-muted">{(stats?.total_visits || 0).toLocaleString()} de 4000</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* City Ranking (Admin only) */}
                 {stats.is_global && (
                     <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
                         <div className="flex justify-between items-start mb-4">
@@ -577,19 +574,19 @@ export const AnalyticsDashboard = () => {
                                     </div>
                                     <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-gradient-to-r from-sporthub-cyan to-blue-500 rounded-full transition-all duration-1000"
+                                            className="h-full bg-gradient-to-r from-sporthub-cyan to-blue-500 rounded-full"
                                             style={{ width: `${(city.count / Math.max(...viewData.cities.map(c => c.count), 1)) * 100}%` }}
                                         />
                                     </div>
                                 </div>
                             )) : (
-                                <div className="text-[10px] text-sporthub-muted text-center py-4 italic">Sin datos geográficos registrados</div>
+                                <div className="text-[10px] text-sporthub-muted text-center py-4 italic">Sin datos registrados</div>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* Connection Status Widget */}
+                {/* Connection Status (Admin only) */}
                 {stats.is_global && (
                     <div className="p-6 bg-sporthub-card rounded-2xl border border-sporthub-border">
                         <div className="flex justify-between items-start mb-4">
@@ -600,16 +597,12 @@ export const AnalyticsDashboard = () => {
                             <Activity className="w-4 h-4 text-sporthub-neon" />
                         </div>
                         <div className="h-32 w-full relative">
-                            <ResponsiveContainer width="99%" height="99%" minWidth={1} minHeight={1}>
+                            <ResponsiveContainer width="99%" height="99%">
                                 <PieChart>
                                     <Pie
                                         data={viewData.connections}
-                                        innerRadius={35}
-                                        outerRadius={45}
-                                        dataKey="value"
-                                        stroke="none"
-                                        startAngle={90}
-                                        endAngle={450}
+                                        innerRadius={35} outerRadius={45}
+                                        dataKey="value" stroke="none" startAngle={90} endAngle={450}
                                     >
                                         {viewData.connections.map((entry, index) => (
                                             <Cell key={`cell-conn-${index}`} fill={entry.color} />
@@ -618,7 +611,7 @@ export const AnalyticsDashboard = () => {
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-lg font-bold text-white leading-none">{viewData.currentOnline}</span>
+                                <span className="text-lg font-bold text-white">{viewData.currentOnline}</span>
                                 <span className="text-[8px] text-sporthub-neon uppercase font-black tracking-tighter shadow-neon-glow">Live</span>
                             </div>
                         </div>
