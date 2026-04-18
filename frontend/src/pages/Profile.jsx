@@ -102,7 +102,7 @@ const PostThumbnail = ({ post, idx, onClick = () => {} }) => {
 };
 
 export const Profile = () => {
-    const { user: authUser, updateUser } = useAuth();
+    const { user: authUser, updateUser, lastProfileUpdate, sendJsonMessage } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [profile, setProfile] = useState(null);
@@ -375,11 +375,43 @@ export const Profile = () => {
         }
     };
 
+    // 📡 GESTIÓN DE WEBSOCKETS (Sincronización Multi-Usuario)
+    useEffect(() => {
+        if (profile?.id) {
+            console.log("🔗 Uniendo a sala de perfil:", profile.id);
+            sendJsonMessage({ action: 'join_profile', profile_id: profile.id });
+        }
+    }, [profile?.id, sendJsonMessage]);
+
+    useEffect(() => {
+        if (lastProfileUpdate && profile?.id) {
+            // Solo actualizamos si el ID del perfil que cambió coincide con el que estamos viendo
+            // Nota: El backend envía IDs como ObjectId o string, normalizamos
+            const updateId = lastProfileUpdate.profile_id || lastProfileUpdate.user_id;
+            if (String(updateId) === String(profile.id)) {
+                console.log("⚡ Actualización de estadísticas recibida:", lastProfileUpdate);
+                setProfile(prev => ({
+                    ...prev,
+                    ...lastProfileUpdate
+                }));
+            }
+        }
+    }, [lastProfileUpdate, profile?.id]);
+
     const handleUpdatePost = useCallback((updatedPost) => {
-        setProfile(prev => ({
-            ...prev,
-            posts: (prev.posts || []).map(post => post.id === updatedPost.id ? updatedPost : post)
-        }));
+        setProfile(prev => {
+            if (!prev) return prev;
+            const oldPost = (prev.posts || []).find(p => p.id === updatedPost.id);
+            const likeDiff = (updatedPost.likes_count || 0) - (oldPost?.likes_count || 0);
+            
+            // Sincronización proactiva de estadísticas de cabecera
+            return {
+                ...prev,
+                total_likes: (prev.total_likes || 0) + likeDiff,
+                average_rating: updatedPost.post_type === 'service' ? updatedPost.average_rating : prev.average_rating,
+                posts: (prev.posts || []).map(p => p.id === updatedPost.id ? updatedPost : p)
+            };
+        });
     }, []);
 
     const handleCloseDetail = useCallback(() => setSelectedPostId(null), []);
@@ -764,11 +796,11 @@ export const Profile = () => {
                             {activeTab === 'Publicaciones' ? (
                                 <div className="flex flex-col gap-6 max-w-2xl mx-auto">
                                     {isOwner && <CreatePostBox authUser={authUser} onPostCreated={fetchProfileData} />}
-                                    {(profile.posts || []).map((post, idx) => <PostCard key={post.id || idx} post={post} onShare={handleOpenShare} onMediaClick={(id) => setSelectedPostId(id)} onDelete={(id) => setPostToDelete(id)} />)}
+                                    {(profile.posts || []).map((post, idx) => <PostCard key={post.id || idx} post={post} onUpdate={handleUpdatePost} onShare={handleOpenShare} onMediaClick={(id) => setSelectedPostId(id)} onDelete={(id) => setPostToDelete(id)} />)}
                                 </div>
                             ) : activeTab === 'Servicios' ? (
                                 <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-                                    {(profile.posts || []).filter(p => p.post_type === 'service').map((post, idx) => <PostCard key={post.id || idx} post={post} onShare={handleOpenShare} onMediaClick={(id) => setSelectedPostId(id)} onDelete={(id) => setPostToDelete(id)} />)}
+                                    {(profile.posts || []).filter(p => p.post_type === 'service').map((post, idx) => <PostCard key={post.id || idx} post={post} onUpdate={handleUpdatePost} onShare={handleOpenShare} onMediaClick={(id) => setSelectedPostId(id)} onDelete={(id) => setPostToDelete(id)} />)}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">

@@ -311,6 +311,18 @@ class FollowView(APIView):
                     f'user_{user.id}',
                     {'type': 'new_notification', 'data': {'type': 'count_update', 'following_count': len(user.following) - 1}}
                 )
+                
+                # 📡 BROADCAST AL PERFIL (Decremento en tiempo real para todos)
+                async_to_sync(channel_layer.group_send)(
+                    f'profile_{target_user.id}',
+                    {
+                        'type': 'profile_update',
+                        'data': {
+                            'profile_id': str(target_user.id),
+                            'followers_count': len(target_user.followers) - 1
+                        }
+                    }
+                )
             except: pass
         else:
             User.objects(id=user.id).update_one(add_to_set__following=target_user)
@@ -336,6 +348,18 @@ class FollowView(APIView):
                 async_to_sync(channel_layer.group_send)(
                     f'user_{user.id}',
                     {'type': 'new_notification', 'data': {'type': 'count_update', 'following_count': len(user.following) + 1}}
+                )
+                
+                # 📡 BROADCAST AL PERFIL (Para que todo espectador vea el incremento)
+                async_to_sync(channel_layer.group_send)(
+                    f'profile_{target_user.id}',
+                    {
+                        'type': 'profile_update',
+                        'data': {
+                            'profile_id': str(target_user.id),
+                            'followers_count': len(target_user.followers) + 1
+                        }
+                    }
                 )
             except: pass
 
@@ -404,6 +428,26 @@ class LikeView(APIView):
                     'data': {
                         'type': 'post_update',
                         'post': serializer.data
+                    }
+                }
+            )
+            
+            # 📡 BROADCAST AL PERFIL: Actualizar TOTAL LIKES de la cabecera del autor
+            pipeline_agg = [
+                {"$match": {"author": post.author.id}},
+                {"$project": {"likes_count": {"$size": {"$ifNull": ["$likes", []]}}}},
+                {"$group": {"_id": None, "total": {"$sum": "$likes_count"}}}
+            ]
+            agg_res = list(Post._get_collection().aggregate(pipeline_agg))
+            new_total_likes = agg_res[0].get('total', 0) if agg_res else 0
+            
+            async_to_sync(channel_layer.group_send)(
+                f'profile_{post.author.id}',
+                {
+                    'type': 'profile_update',
+                    'data': {
+                        'profile_id': str(post.author.id),
+                        'total_likes': new_total_likes
                     }
                 }
             )
@@ -1149,6 +1193,18 @@ class RatePostView(APIView):
                         'data': {
                             'type': 'post_update',
                             'post': serializer.data
+                        }
+                    }
+                )
+                
+                # 📡 BROADCAST AL PERFIL: Actualizar Promedio de Rating
+                async_to_sync(channel_layer.group_send)(
+                    f'profile_{post.author.id}',
+                    {
+                        'type': 'profile_update',
+                        'data': {
+                            'profile_id': str(post.author.id),
+                            'average_rating': round(new_avg, 1)
                         }
                     }
                 )

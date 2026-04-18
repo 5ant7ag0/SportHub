@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
     const [lastNotification, setLastNotification] = useState(null);
     // NUEVO: Lista real de IDs conectados para evitar el "+2"
     const [onlineUserIds, setOnlineUserIds] = useState(new Set());
+    const [lastProfileUpdate, setLastProfileUpdate] = useState(null);
+    const socketRef = React.useRef(null);
 
     const fetchLatestUser = async (baseUser) => {
         try {
@@ -30,15 +32,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const sendJsonMessage = useCallback((msg) => {
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify(msg));
+        }
+    }, []);
+
     // --- BLOQUE CRUCIAL: Inicialización (Evita la pantalla negra) ---
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('access_token');
-
-            // Extendimos el timeout para evitar que un backend ligeramente lento fuerce logout
-            const safetyTimeout = setTimeout(() => {
-                setLoading(false);
-            }, 10000);
+            const safetyTimeout = setTimeout(() => setLoading(false), 10000);
 
             if (token) {
                 try {
@@ -49,14 +53,12 @@ export const AuthProvider = ({ children }) => {
                         await fetchLatestUser(decoded);
                         fetchUnreadCount();
                         fetchSocialCount();
-
                     }
                 } catch (e) {
                     console.error("Token decoding error:", e);
                     logout();
                 }
             }
-
             clearTimeout(safetyTimeout);
             setLoading(false);
         };
@@ -95,104 +97,78 @@ export const AuthProvider = ({ children }) => {
         } catch (e) { console.error("Error social:", e); }
     };
 
-    // 🟢 NUEVO: LATIDO GLOBAL (HEARTBEAT)
-    // Mantiene al usuario Online actualizando el "last_activity" de Django cada 20 segundos
+    // 🟢 LATIDO GLOBAL (HEARTBEAT)
     useEffect(() => {
         if (!user?.id) return;
-
         const heartbeat = setInterval(async () => {
             if (!localStorage.getItem('access_token')) return;
             try {
-                // Estas peticiones ligeras le dicen a Django "Sigo aquí"
                 const [msgRes, notifRes] = await Promise.all([
                     api.get('/messages/unread-count/'),
                     api.get('/social/notifications/count/')
                 ]);
                 setUnreadCount(msgRes.data.unread_count);
                 setSocialCount(notifRes.data.unread_count);
-            } catch (e) {
-                console.warn("Error en Heartbeat:", e);
-            }
-        }, 20000); // 20 segundos (Menor a los 30s de expiración de Django)
-
-        // Limpiamos el intervalo al cerrar la sesión
+            } catch (e) { console.warn("Error en Heartbeat:", e); }
+        }, 20000);
         return () => clearInterval(heartbeat);
     }, [user?.id]);
 
-
-    // --- Sistema de Sincronización Real (WebSockets Centralizado) ---
     useEffect(() => {
         if (!user) return;
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
 
-        let ws = null;
+        const baseURL = api.defaults.baseURL || "";
+        const wsBaseUrl = baseURL.replace('http', 'ws').replace('/api', '');
+        const wsUrl = `${wsBaseUrl}/ws/notifications/?token=${token}`;
 
-        const connectWS = () => {
-            const token = localStorage.getItem('access_token');
-            if (!token) return;
+        const ws = new WebSocket(wsUrl);
+        socketRef.current = ws;
 
+        ws.onmessage = (event) => {
             try {
-                const baseURL = api.defaults.baseURL || "";
-                const wsBaseUrl = baseURL.replace('http', 'ws').replace('/api', '');
-                const wsUrl = `${wsBaseUrl}/ws/notifications/?token=${token}`;
+                const data = JSON.parse(event.data);
+                
+                // 1. Presencia
+                if (data.type === 'presence_update') {
+                    const { user_id, is_online } = data.data;
+                    setOnlineUserIds(prev => {
+                        const newSet = new Set(prev);
+                        if (is_online) newSet.add(user_id);
+                        else newSet.delete(user_id);
+                        return newSet;
+                    });
+                }
 
-                ws = new WebSocket(wsUrl);
+                // 2. Actualización de Perfil (Global/Cualquier Usuario)
+                if (data.type === 'profile_update') {
+                    setLastProfileUpdate(data.data);
+                }
 
-                ws.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        console.log("📥 WS RECEIVED:", { type: data.type, payload: data.data });
-
-                        // 1. Gestión de Presencia (Donut y Tabla)
-                        if (data.type === 'presence_update') {
-                            const { user_id, is_online } = data.data;
-                            setOnlineUserIds(prev => {
-                                const newSet = new Set(prev);
-                                if (is_online) newSet.add(user_id);
-                                else newSet.delete(user_id);
-                                return newSet;
-                            });
-                        }
-
-                        // 2. Notificaciones Generales y Actualización de Contadores
-                        if (data.type === 'new_notification' || data.type === 'feed_update') {
-                            setLastNotification({ ...data.data, eventType: data.type });
-
-                            // Gestión de contadores en vivo
-                            if (data.data?.type === 'count_update' || data.data?.type === 'follow') {
-                                if (data.data.followers_count !== undefined) {
-                                    updateUser({ followers_count: data.data.followers_count });
-                                }
-                                if (data.data.following_count !== undefined) {
-                                    updateUser({ following_count: data.data.following_count });
-                                }
-                            }
-
-                            // Refrescar contadores si es mensaje o social
-                            if (data.data?.type === 'message') fetchUnreadCount();
-                            fetchSocialCount();
-                        }
-                    } catch (err) {
-                        console.error("Error procesando socket:", err);
+                // 3. Notificaciones y Contadores Propios
+                if (data.type === 'new_notification') {
+                    setLastNotification({ ...data.data, eventType: data.type });
+                    if (data.data?.type === 'count_update' || data.data?.type === 'follow') {
+                        if (data.data.followers_count !== undefined) updateUser({ followers_count: data.data.followers_count });
+                        if (data.data.following_count !== undefined) updateUser({ following_count: data.data.following_count });
                     }
-                };
-
-                ws.onerror = (e) => console.warn("WebSocket error:", e);
-            } catch (error) {
-                console.error("Fallo crítico WebSocket:", error);
-            }
+                    if (data.data?.type === 'message') fetchUnreadCount();
+                    fetchSocialCount();
+                }
+            } catch (err) { console.error("WS error:", err); }
         };
 
-        connectWS();
-        return () => { if (ws) ws.close(); };
-    }, [user?.id]);
+        return () => { ws.close(); socketRef.current = null; };
+    }, [user?.id, updateUser]); 
 
     return (
         <AuthContext.Provider value={{
             user, setUser, login, logout, updateUser,
             unreadCount, setUnreadCount, fetchUnreadCount,
             socialCount, setSocialCount, fetchSocialCount,
-            loading, lastNotification,
-            onlineUserIds // Enviamos el Set para el Donut del Dashboard
+            loading, lastNotification, lastProfileUpdate, sendJsonMessage,
+            onlineUserIds
         }}>
             {children}
         </AuthContext.Provider>

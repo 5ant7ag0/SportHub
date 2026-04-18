@@ -89,6 +89,33 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'data': event.get('data', {})
         }))
 
+    async def receive(self, text_data):
+        """Maneja mensajes entrantes del navegador (ej. unirse a una sala de perfil)"""
+        try:
+            data = json.loads(text_data)
+            action = data.get('action')
+            
+            if action == 'join_profile':
+                profile_id = data.get('profile_id')
+                if profile_id:
+                    # Limpiar suscripción a perfil anterior si existe
+                    if hasattr(self, 'current_profile_group'):
+                        await self.channel_layer.group_discard(self.current_profile_group, self.channel_name)
+                    
+                    self.current_profile_group = f'profile_{profile_id}'
+                    await self.channel_layer.group_add(self.current_profile_group, self.channel_name)
+                    print(f"📡 Usuario {self.user_id} se unió a la sala de perfil: {self.current_profile_group}")
+
+        except Exception as e:
+            print(f"❌ WebSocket Receive Error: {e}")
+
+    async def profile_update(self, event):
+        """Envía actualizaciones de estadísticas del perfil en tiempo real"""
+        await self.send(text_data=json.dumps({
+            'type': 'profile_update',
+            'data': event.get('data', {})
+        }))
+
     @sync_to_async
     def update_last_activity(self, user_id):
         """Actualización rápida en MongoDB Atlas"""
