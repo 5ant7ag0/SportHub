@@ -14,6 +14,7 @@ import Messages from './pages/Messages';
 import { Notifications } from './pages/Notifications';
 import { Placeholder } from './pages/Placeholder';
 import { Settings } from './pages/Settings';
+import { Landing } from './pages/Landing';
 import { MobileHeader } from './components/MobileHeader';
 import { BottomNav } from './components/BottomNav';
 
@@ -56,7 +57,7 @@ const DashboardLayout = ({ children }) => {
 };
 
 function AppContent() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
   
   // DESBLOQUEADOR UNIVERSAL: Limpia bloqueos de scroll residuales (modales, etc) al cambiar de página
   useEffect(() => {
@@ -79,6 +80,10 @@ function AppContent() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
+          <Route 
+            path="/" 
+            element={loading ? null : (user ? <Navigate to="/dashboard" replace /> : <Landing />)} 
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 

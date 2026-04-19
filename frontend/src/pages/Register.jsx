@@ -59,7 +59,7 @@ export const Register = () => {
         setError(null);
         setSuccessMessage('');
         setIsLoading(true);
-        
+
         const formData = new FormData();
         formData.append('role', role);
         formData.append('name', name);
@@ -67,7 +67,7 @@ export const Register = () => {
         formData.append('password', password);
         formData.append('birth_date', birthDate);
         formData.append('city', city);
-        
+
         if (role === 'athlete') {
             formData.append('sport', sport);
             formData.append('position', position);
@@ -82,12 +82,12 @@ export const Register = () => {
             const { data } = await api.post('/register/', formData);
             // Mostrar mensaje de bienvenida personalizado
             setSuccessMessage(`¡Bienvenid@ ${name} a SportHub! ✨`);
-            
+
             // Esperar 3 segundos para que el usuario vea el mensaje y redireccionar
             setTimeout(() => {
                 navigate('/login');
             }, 3000);
-            
+
         } catch (err) {
             setError(err.response?.data?.detail || "Error al registrar usuario.");
             setIsLoading(false);
@@ -99,8 +99,11 @@ export const Register = () => {
             <div className="max-w-xl w-full bg-sporthub-card p-8 md:p-10 rounded-3xl border border-sporthub-border shadow-2xl relative overflow-hidden">
                 {/* Decorative glow */}
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-sporthub-neon/10 blur-[80px] rounded-full pointer-events-none"></div>
-                
+
                 <div className="text-center mb-8 relative">
+                    <Link to="/" className="inline-block hover:opacity-80 transition-opacity mb-4">
+                        <span className="text-3xl font-black tracking-tighter text-sporthub-neon italic">SportHub</span>
+                    </Link>
                     <div className="w-16 h-16 bg-sporthub-neon/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-sporthub-neon/20 shadow-inner">
                         <UserPlus className="w-8 h-8 text-sporthub-neon" />
                     </div>
@@ -110,13 +113,13 @@ export const Register = () => {
 
                 {/* Role Selector */}
                 <div className="flex p-1 bg-[#0B0F19] rounded-2xl border border-sporthub-border mb-8 max-w-sm mx-auto">
-                    <button 
+                    <button
                         onClick={() => setRole('athlete')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${role === 'athlete' ? 'bg-sporthub-neon text-black shadow-lg' : 'text-sporthub-muted hover:text-white'}`}
                     >
                         <Trophy size={16} /> Deportista
                     </button>
-                    <button 
+                    <button
                         onClick={() => setRole('recruiter')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${role === 'recruiter' ? 'bg-sporthub-neon text-black shadow-lg' : 'text-sporthub-muted hover:text-white'}`}
                     >
@@ -149,10 +152,10 @@ export const Register = () => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Nombre Completo</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
-                                    placeholder="Ej. Santiago Pro"
+                                    placeholder="Ej. Moises Caicedo"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
@@ -160,8 +163,8 @@ export const Register = () => {
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Email Corporativo</label>
-                                <input 
-                                    type="email" 
+                                <input
+                                    type="email"
                                     className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
                                     placeholder="tu@email.com"
                                     value={email}
@@ -170,13 +173,13 @@ export const Register = () => {
                                 />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div 
+                                <div
                                     className="cursor-pointer group/date"
                                     onClick={() => birthDateRef.current?.showPicker()}
                                 >
                                     <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest group-hover/date:text-sporthub-neon transition-colors">Fecha de nacimiento</label>
-                                    <input 
-                                        type="date" 
+                                    <input
+                                        type="date"
                                         ref={birthDateRef}
                                         className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 h-[45px] appearance-none focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
                                         style={{ WebkitAppearance: 'none', margin: 0 }}
@@ -187,8 +190,8 @@ export const Register = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Ciudad</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 h-[45px] focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
                                         placeholder="Quito"
                                         value={city}
@@ -203,8 +206,8 @@ export const Register = () => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Contraseña</label>
-                                <input 
-                                    type="password" 
+                                <input
+                                    type="password"
                                     className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
                                     placeholder="••••••••"
                                     value={password}
@@ -217,7 +220,7 @@ export const Register = () => {
                                 <>
                                     <div>
                                         <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Deporte</label>
-                                        <select 
+                                        <select
                                             className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors appearance-none"
                                             value={sport}
                                             onChange={(e) => setSport(e.target.value)}
@@ -231,7 +234,7 @@ export const Register = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Posición / Especialidad</label>
-                                        <select 
+                                        <select
                                             className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors appearance-none disabled:opacity-50"
                                             value={position}
                                             onChange={(e) => setPosition(e.target.value)}
@@ -249,8 +252,8 @@ export const Register = () => {
                                 <>
                                     <div>
                                         <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Empresa / Club</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
                                             placeholder="Ej. Real Madrid CF"
                                             value={company}
@@ -260,8 +263,8 @@ export const Register = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-sporthub-muted mb-2 uppercase tracking-widest">Cargo</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-sporthub-neon focus:ring-1 focus:ring-sporthub-neon transition-colors"
                                             placeholder="Ej. Scout Principal"
                                             value={jobTitle}
@@ -281,8 +284,8 @@ export const Register = () => {
                     )}
 
                     <div className="relative group">
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={isLoading || !!successMessage}
                             className={`w-full bg-sporthub-neon text-black font-extrabold py-4 rounded-xl transition-all flex items-center justify-center shadow-[0_0_20px_rgba(163,230,53,0.3)] active:scale-95 group ${successMessage ? 'opacity-0 scale-95 pointer-events-none' : 'hover:bg-lime-400 hover:shadow-[0_0_30px_rgba(163,230,53,0.5)]'}`}
                         >
@@ -302,7 +305,7 @@ export const Register = () => {
                             </div>
                         )}
                     </div>
-                    
+
                     <p className="text-center text-xs text-sporthub-muted pt-2">
                         ¿Ya tienes una cuenta? <Link to="/login" className="text-sporthub-cyan hover:text-[#00e5ff] transition-colors font-bold">Inicia Sesión aquí</Link>
                     </p>

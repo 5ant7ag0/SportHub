@@ -34,7 +34,9 @@ export const Login = () => {
         <div className="min-h-screen bg-sporthub-bg flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-sporthub-card p-10 rounded-3xl border border-sporthub-border shadow-2xl">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-sporthub-neon mb-2 tracking-tight">SportHub</h1>
+                    <Link to="/" className="inline-block hover:opacity-80 transition-opacity">
+                        <h1 className="text-4xl font-bold text-sporthub-neon mb-2 tracking-tight">SportHub</h1>
+                    </Link>
                     <p className="text-sporthub-muted text-sm">Inicio de Sesión Profesional</p>
                 </div>
 
