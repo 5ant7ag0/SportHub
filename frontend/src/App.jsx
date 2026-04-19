@@ -82,7 +82,7 @@ function AppContent() {
           {/* Public Routes */}
           <Route 
             path="/" 
-            element={loading ? null : (user ? <Navigate to="/dashboard" replace /> : <Landing />)} 
+            element={loading ? null : (user ? <Navigate to="/feed" replace /> : <Landing />)} 
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -109,7 +109,7 @@ function AppContent() {
           <Route path="/saved" element={<ProtectedRoute><DashboardLayout><Placeholder title="Elementos Guardados" /></DashboardLayout></ProtectedRoute>} />
 
           {/* Default Redirect */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/feed" replace />} />
         </Routes>
       </BrowserRouter>
     </div>

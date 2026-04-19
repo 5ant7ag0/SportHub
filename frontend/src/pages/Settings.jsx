@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import { Camera, Save, Loader2, CheckCircle2, User, MapPin, Trophy, Shield, Bell, X, Globe, Link, Share2, LogOut, ShieldCheck, Trash2, AlertTriangle, Pencil, Briefcase } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
+import { LogoutConfirmModal } from '../components/LogoutConfirmModal';
 
 const SOCIAL_SVGS = {
 // ... (rest of social svgs)
@@ -642,35 +643,11 @@ export const Settings = () => {
                 </div>
             </div>
 
-            {/* LOGOUT CONFIRMATION MODAL */}
-            {showLogoutConfirm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-sporthub-card border border-sporthub-border w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-                        <div className="flex flex-col items-center text-center gap-4 mb-8">
-                            <div className="w-16 h-16 rounded-full bg-sporthub-neon/10 flex items-center justify-center text-sporthub-neon">
-                                <LogOut className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white">¿Cerrar sesión?</h3>
-                            <p className="text-sm text-sporthub-muted">Tendrás que volver a ingresar tus credenciales para acceder a SportHub.</p>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <button 
-                                onClick={logout}
-                                className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl hover:bg-red-600 transition-all shadow-lg"
-                            >
-                                SÍ, CERRAR SESIÓN
-                            </button>
-                            <button 
-                                onClick={() => setShowLogoutConfirm(false)}
-                                className="w-full bg-transparent text-white font-bold py-3 hover:bg-white/5 rounded-2xl transition-all"
-                            >
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <LogoutConfirmModal 
+                isOpen={showLogoutConfirm}
+                onConfirm={logout}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
 
             {/* DELETE ACCOUNT MODAL (FULL SCREEN BACKDROP) */}
             {showDeleteModal && (

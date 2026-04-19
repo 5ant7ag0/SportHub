@@ -22,7 +22,7 @@ export const Login = () => {
         try {
             const { data } = await api.post('/auth/token/obtain/', { email, password });
             await login(data.access);
-            navigate('/dashboard');
+            navigate('/feed');
         } catch (err) {
             setError(err.response?.data?.detail || "Credenciales inválidas o error de conexión.");
         } finally {

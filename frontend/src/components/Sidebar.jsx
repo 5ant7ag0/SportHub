@@ -3,6 +3,7 @@ import { Home, Search, Users, MessageSquare, BarChart2, User, Bookmark, Bell, Lo
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMediaUrl } from '../utils/media';
+import { LogoutConfirmModal } from './LogoutConfirmModal';
 import clsx from 'clsx';
 
 const SidebarItem = ({ icon: Icon, label, to, badgeCount }) => (
@@ -28,8 +29,9 @@ const SidebarItem = ({ icon: Icon, label, to, badgeCount }) => (
 );
 
 export const Sidebar = () => {
-  // 🟢 Obtenemos lastNotification para reaccionar a nuevos posts
-  const { user, logout, unreadCount, socialCount, setUser, lastNotification } = useAuth();
+    const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
+    // 🟢 Obtenemos lastNotification para reaccionar a nuevos posts
+    const { user, logout, unreadCount, socialCount, setUser, lastNotification } = useAuth();
 
   // 🟢 Sincronizar posts usando la notificación central del Contexto
   useEffect(() => {
@@ -121,7 +123,7 @@ export const Sidebar = () => {
           <div className="h-px bg-white/5 my-2 mx-4" />
           
           <button 
-            onClick={logout} 
+            onClick={() => setShowLogoutConfirm(true)} 
             className="flex items-center w-full px-4 py-2 mb-1 rounded-xl transition-all duration-300 text-red-500/70 hover:bg-red-500/10 hover:text-red-500 group"
           >
             <LogOut className="w-5 h-5 mr-4 opacity-70 group-hover:opacity-100" />
@@ -129,6 +131,12 @@ export const Sidebar = () => {
           </button>
         </div>
       </nav>
+
+      <LogoutConfirmModal 
+        isOpen={showLogoutConfirm}
+        onConfirm={logout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </aside>
   );
 };
