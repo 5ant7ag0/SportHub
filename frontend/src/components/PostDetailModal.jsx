@@ -481,8 +481,8 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
                                             <Share2 className="w-5 h-5" />
                                         </button>
                                         <button 
-                                            onClick={handleSave}
-                                            className={`transition-all ${post.is_saved_by_user ? 'text-sporthub-neon' : 'text-gray-400 hover:text-white'}`}
+                                            onClick={handleSave} 
+                                            className={`transition-all duration-300 p-1 rounded-lg ${post.is_saved_by_user ? 'text-sporthub-steel bg-white/5 drop-shadow-[0_0_10px_rgba(203,213,225,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                         >
                                             <Bookmark className={`w-5 h-5 ${post.is_saved_by_user ? 'fill-current' : ''}`} />
                                         </button>

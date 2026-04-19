@@ -727,7 +727,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                     <MessageCircle className="w-5 h-5" /> 
                     <span className="text-xs font-bold">{post.comments_count || 0}</span>
                 </button>
-                <div className="flex items-center gap-4 ml-auto">
+                <div className="flex items-center gap-3 sm:gap-4 ml-auto">
                     <button 
                         onClick={handleShare}
                         className="text-sporthub-muted hover:text-sporthub-neon transition-colors group/share flex items-center gap-2"
@@ -737,9 +737,10 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                     </button>
                     <button 
                         onClick={handleSave}
-                        className={`transition-colors ${post.is_saved_by_user ? 'text-sporthub-neon font-bold drop-shadow-[0_0_8px_rgba(163,230,53,0.8)]' : 'text-sporthub-muted hover:text-white'}`}
+                        className={`transition-all duration-300 p-1.5 rounded-lg ${post.is_saved_by_user ? 'text-sporthub-steel bg-white/5 drop-shadow-[0_0_10px_rgba(203,213,225,0.4)]' : 'text-sporthub-muted hover:text-white hover:bg-white/5'}`}
+                        title={post.is_saved_by_user ? "Quitar de guardados" : "Guardar publicación"}
                     >
-                        <Bookmark className={`w-5 h-5 transition-transform active:scale-75 ${post.is_saved_by_user ? 'fill-sporthub-neon' : ''}`} /> 
+                        <Bookmark className={`w-5 h-5 transition-transform active:scale-75 ${post.is_saved_by_user ? 'fill-sporthub-steel' : ''}`} /> 
                     </button>
                 </div>
             </div>

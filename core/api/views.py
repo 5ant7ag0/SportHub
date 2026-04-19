@@ -811,6 +811,38 @@ class FeedView(APIView):
                 except: continue
             return Response({"posts": fallback_data, "has_more": len(fallback_data) == limit}, status=200)
 
+class SavedPostsListView(APIView):
+    authentication_classes = [MongoJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user
+            # Paginación básica
+            try:
+                limit = int(request.query_params.get('limit', 20))
+                offset = int(request.query_params.get('offset', 0))
+            except:
+                limit, offset = 20, 0
+            
+            # Obtener posts guardados de la lista de referencias
+            # Filtramos None por si algún post fue borrado pero sigue la referencia (si el cleanup falló)
+            saved_posts = [p for p in user.saved_posts if p is not None]
+            
+            # Ordenar por el más reciente
+            saved_posts.sort(key=lambda x: getattr(x, 'timestamp', datetime.min), reverse=True)
+            
+            paginated_posts = saved_posts[offset : offset + limit]
+            
+            serializer = PostSerializer(paginated_posts, many=True, context={'request': request})
+            return Response({
+                "posts": serializer.data,
+                "has_more": len(serializer.data) == limit
+            }, status=200)
+        except Exception as e:
+            print(f"Error in SavedPostsListView: {e}")
+            return Response([], status=200)
+
 class PostDetailView(APIView):
     authentication_classes = [MongoJWTAuthentication]
     permission_classes = [IsAuthenticated]

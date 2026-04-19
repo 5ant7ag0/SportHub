@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AnalyticsView, FollowView, LikeView, SendMessageView, InboxView, ConversationDetailView, FeedView, PostDetailView, PostLikesListView, ProfileView, CommentView, SearchView, NetworkSuggestionsView, SavePostView, ConnectionRequestView, AcceptConnectionView, EditMessageView, EditPostView, PendingConnectionsView, ConnectionsListView, UnreadCountView, NotificationListView, NotificationCountView, ClearChatView, DeleteChatView, MarkAsUnreadView, RatePostView, AdminUserManagementView, UserFollowersListView, UserFollowingListView
+from .views import AnalyticsView, FollowView, LikeView, SendMessageView, InboxView, ConversationDetailView, FeedView, PostDetailView, PostLikesListView, ProfileView, CommentView, SearchView, NetworkSuggestionsView, SavePostView, SavedPostsListView, ConnectionRequestView, AcceptConnectionView, EditMessageView, EditPostView, PendingConnectionsView, ConnectionsListView, UnreadCountView, NotificationListView, NotificationCountView, ClearChatView, DeleteChatView, MarkAsUnreadView, RatePostView, AdminUserManagementView, UserFollowersListView, UserFollowingListView
 from .auth_views import CustomTokenObtainPairView, CustomTokenRefreshView, RegisterView
 from .upload_views import PostCreateView, MessageWithMediaView, CommentWithMediaView, PostShareView
 from .profile_views import ProfileUpdateView, AccountDeleteView
@@ -52,6 +52,7 @@ urlpatterns = [
     path('network/pending/', PendingConnectionsView.as_view(), name='network-pending'),
     path('network/connections/', ConnectionsListView.as_view(), name='network-connections'),
     path('posts/save/', SavePostView.as_view(), name='posts-save'),
+    path('posts/saved/', SavedPostsListView.as_view(), name='posts-saved-list'),
     path('posts/<str:post_id>/', PostDetailView.as_view(), name='posts-detail'),
     path('posts/<str:post_id>/likes/', PostLikesListView.as_view(), name='posts-likes'),
 ]

@@ -13,7 +13,7 @@ import { Search } from './pages/Search';
 import { Network } from './pages/Network';
 import Messages from './pages/Messages';
 import { Notifications } from './pages/Notifications';
-import { Placeholder } from './pages/Placeholder';
+import { Saved } from './pages/Saved';
 import { Settings } from './pages/Settings';
 import { Landing } from './pages/Landing';
 import { MobileHeader } from './components/MobileHeader';
@@ -107,7 +107,7 @@ function AppContent() {
           <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><DashboardLayout><Notifications /></DashboardLayout></ProtectedRoute>} />
-          <Route path="/saved" element={<ProtectedRoute><DashboardLayout><Placeholder title="Elementos Guardados" /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/saved" element={<ProtectedRoute><DashboardLayout><Saved /></DashboardLayout></ProtectedRoute>} />
 
           {/* Default Redirect */}
           <Route path="*" element={<Navigate to="/feed" replace />} />

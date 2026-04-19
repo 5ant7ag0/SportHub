@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api';
-import { Loader2, Camera, MapPin, Calendar, CheckCircle2, TrendingUp, Trophy, Medal, Star, Goal, UserPlus, UserMinus, MessageSquare, Heart, Play, Image as ImageIcon, Layout, Briefcase, Building2, Link, Globe, X, Share2, Map } from 'lucide-react';
+import { Loader2, Camera, MapPin, Calendar, CheckCircle2, TrendingUp, Trophy, Medal, Star, Goal, UserPlus, UserMinus, MessageSquare, Heart, Bookmark, Play, Image as ImageIcon, Layout, Briefcase, Building2, Link, Globe, X, Share2, Map } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMediaUrl, isVideo } from '../utils/media';
@@ -156,6 +156,10 @@ export const Profile = () => {
     const [shareProfileMessage, setShareProfileMessage] = useState('');
     const [hasAnimatedRing, setHasAnimatedRing] = useState(false);
     const followingLockRef = useRef(false); // Bloqueo para evitar colisiones durante Follow
+
+    // Estados para Guardados en Perfil
+    const [savedPosts, setSavedPosts] = useState([]);
+    const [isLoadingSaved, setIsLoadingSaved] = useState(false);
     
     // Estados para Listas Expandibles
     const [expandedList, setExpandedList] = useState(null); // 'followers' | 'following' | null
@@ -309,8 +313,29 @@ export const Profile = () => {
         setProfile(null);
         setAnalytics(null);
         setHasAnimatedRing(false);
+        setSavedPosts([]); // Reset saved posts
         fetchProfileData();
     }, [targetId]);
+
+    // Cargar Guardados solo si es Owner y se selecciona la pestaña
+    const fetchSavedPosts = async () => {
+        if (!isOwner || savedPosts.length > 0) return;
+        setIsLoadingSaved(true);
+        try {
+            const { data } = await api.get('/posts/saved/');
+            setSavedPosts(data.posts || []);
+        } catch (err) {
+            console.error("Error cargando guardados en perfil:", err);
+        } finally {
+            setIsLoadingSaved(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'Guardados') {
+            fetchSavedPosts();
+        }
+    }, [activeTab]);
 
     // 📡 ACTUALIZACIÓN EN TIEMPO REAL (WebSockets)
     useEffect(() => {
@@ -466,6 +491,13 @@ export const Profile = () => {
     }, [lastProfileUpdate, profile?.id]);
 
     const handleUpdatePost = useCallback((updatedPost) => {
+        // Si el post se des-guarda y estamos en la pestaña Guardados, lo removemos de la lista local
+        if (updatedPost.is_saved_by_user === false) {
+            setSavedPosts(prev => prev.filter(p => p.id !== updatedPost.id));
+        } else {
+            setSavedPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+        }
+
         setProfile(prev => {
             if (!prev) return prev;
             const oldPost = (prev.posts || []).find(p => p.id === updatedPost.id);
@@ -479,7 +511,7 @@ export const Profile = () => {
                 posts: (prev.posts || []).map(p => p.id === updatedPost.id ? updatedPost : p)
             };
         });
-    }, []);
+    }, [activeTab]);
 
     const handleCloseDetail = useCallback(() => setSelectedPostId(null), []);
 
@@ -895,8 +927,14 @@ export const Profile = () => {
 
                     {/* TABS & FEED */}
                     <div className="flex flex-col">
-                        <div className="flex gap-8 border-b border-white/5 px-2 mb-6 overflow-x-auto">
-                            {[{ name: 'Publicaciones', icon: Layout }, { name: 'Servicios', icon: Briefcase }, { name: 'Fotos', icon: ImageIcon }, { name: 'Videos', icon: Play }].map(tab => (
+                        <div className="flex gap-8 border-b border-white/5 px-2 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
+                            {[
+                                { name: 'Publicaciones', icon: Layout }, 
+                                { name: 'Servicios', icon: Briefcase }, 
+                                { name: 'Fotos', icon: ImageIcon }, 
+                                { name: 'Videos', icon: Play },
+                                ...(isOwner ? [{ name: 'Guardados', icon: Bookmark }] : [])
+                            ].map(tab => (
                                 <button key={tab.name} onClick={() => setActiveTab(tab.name)} className={`pb-3 text-sm font-semibold transition-all relative flex items-center gap-2 whitespace-nowrap ${activeTab === tab.name ? 'text-sporthub-neon' : 'text-gray-500 hover:text-gray-300'}`}>
                                     <tab.icon className="w-4 h-4" /> {tab.name}
                                     {activeTab === tab.name && <div className="absolute bottom-0 left-0 w-full h-[2px] bg-sporthub-neon rounded-t-full shadow-[0_0_8px_rgba(163,230,53,0.8)]"></div>}
@@ -912,6 +950,19 @@ export const Profile = () => {
                             ) : activeTab === 'Servicios' ? (
                                 <div className="flex flex-col gap-6 max-w-2xl mx-auto">
                                     {(profile.posts || []).filter(p => p.post_type === 'service').map((post, idx) => <PostCard key={post.id || idx} post={post} onUpdate={handleUpdatePost} onShare={handleOpenShare} onMediaClick={(id) => setSelectedPostId(id)} onDelete={(id) => setPostToDelete(id)} />)}
+                                </div>
+                            ) : activeTab === 'Guardados' ? (
+                                <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+                                    {isLoadingSaved ? (
+                                        <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-sporthub-neon" /></div>
+                                    ) : savedPosts.length > 0 ? (
+                                        savedPosts.map((post, idx) => <PostCard key={post.id || idx} post={post} onUpdate={handleUpdatePost} onShare={handleOpenShare} onMediaClick={(id) => setSelectedPostId(id)} onDelete={(id) => setPostToDelete(id)} />)
+                                    ) : (
+                                        <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-white/5">
+                                            <Bookmark className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+                                            <p className="text-gray-500 text-sm">No tienes nada guardado todavía.</p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
