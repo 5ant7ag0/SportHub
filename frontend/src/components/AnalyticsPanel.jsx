@@ -17,7 +17,7 @@ const getSportColor = (sportName) => {
     const name = String(sportName || '').toUpperCase();
     if (name.includes('FUTBOL') || name.includes('FÚTBOL')) return COLORS.neon;
     if (name.includes('BASQUET') || name.includes('BÁSQUET')) return COLORS.cyan;
-    if (name.includes('ECUAVOLEY')) return '#A855F7';
+    if (name.includes('VOLEY')) return '#A855F7';
     return '#F59E0B';
 };
 

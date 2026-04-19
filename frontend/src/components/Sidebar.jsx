@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
 import { Home, Search, Users, MessageSquare, BarChart2, User, Bookmark, Bell, LogOut, Settings } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMediaUrl } from '../utils/media';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 import clsx from 'clsx';
 
-const SidebarItem = ({ icon: Icon, label, to, badgeCount }) => (
+const SidebarItem = ({ icon: Icon, label, to, badgeCount, isActive: customIsActive }) => (
   <NavLink
     to={to}
     className={({ isActive }) => clsx(
       "flex items-center w-full px-4 py-2 mb-1 rounded-xl transition-all duration-300 relative",
-      isActive
+      (customIsActive !== undefined ? customIsActive : isActive)
         ? "bg-sporthub-neon/10 text-sporthub-neon font-semibold"
         : "text-sporthub-muted hover:bg-sporthub-card-hover hover:text-white"
     )}
@@ -29,9 +29,17 @@ const SidebarItem = ({ icon: Icon, label, to, badgeCount }) => (
 );
 
 export const Sidebar = () => {
+    const location = useLocation();
     const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
     // 🟢 Obtenemos lastNotification para reaccionar a nuevos posts
     const { user, logout, unreadCount, socialCount, setUser, lastNotification } = useAuth();
+
+    // 🔍 Detectar si estamos en un perfil ajeno
+    const query = new URLSearchParams(location.search);
+    const targetId = query.get('id');
+    const myId = user ? (typeof user.id === 'object' ? user.id.$oid : String(user.id)) : null;
+    const isExternalProfile = location.pathname === '/profile' && targetId && targetId !== myId;
+    const isMyProfile = location.pathname === '/profile' && (!targetId || targetId === myId);
 
   // 🟢 Sincronizar posts usando la notificación central del Contexto
   useEffect(() => {
@@ -110,7 +118,7 @@ export const Sidebar = () => {
         <div className="bg-sporthub-card border border-white/5 rounded-[32px] p-2 mb-6">
           <SidebarItem icon={Home} label="Feed" to="/feed" />
           <SidebarItem icon={BarChart2} label="Analítica" to="/dashboard" />
-          <SidebarItem icon={User} label="Perfil" to="/profile" />
+          <SidebarItem icon={User} label="Perfil" to="/profile" isActive={isMyProfile} />
           <SidebarItem icon={Search} label="Buscar" to="/search" />
           <SidebarItem icon={Users} label="Red" to="/network" />
           {/* 🟢 BadgeCount ahora viene directamente del Contexto */}
