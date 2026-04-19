@@ -28,8 +28,8 @@ export const Register = () => {
     const [avatar, setAvatar] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -57,6 +57,7 @@ export const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setSuccessMessage('');
         setIsLoading(true);
         
         const formData = new FormData();
@@ -79,15 +80,16 @@ export const Register = () => {
 
         try {
             const { data } = await api.post('/register/', formData);
-            if (data.tokens && data.tokens.access) {
-                login(data.tokens.access);
-                navigate('/dashboard');
-            } else {
+            // Mostrar mensaje de bienvenida personalizado
+            setSuccessMessage(`¡Bienvenid@ ${name} a SportHub! ✨`);
+            
+            // Esperar 3 segundos para que el usuario vea el mensaje y redireccionar
+            setTimeout(() => {
                 navigate('/login');
-            }
+            }, 3000);
+            
         } catch (err) {
             setError(err.response?.data?.detail || "Error al registrar usuario.");
-        } finally {
             setIsLoading(false);
         }
     };
@@ -278,19 +280,28 @@ export const Register = () => {
                         </div>
                     )}
 
-                    <button 
-                        type="submit" 
-                        disabled={isLoading}
-                        className="w-full bg-sporthub-neon text-black font-extrabold py-4 rounded-xl hover:bg-lime-400 transition-all flex items-center justify-center shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] active:scale-95 group"
-                    >
-                        {isLoading ? (
-                            <Loader2 className="animate-spin w-5 h-5 mx-auto" />
-                        ) : (
-                            <>
-                                Finalizar Registro <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
-                            </>
+                    <div className="relative group">
+                        <button 
+                            type="submit" 
+                            disabled={isLoading || !!successMessage}
+                            className={`w-full bg-sporthub-neon text-black font-extrabold py-4 rounded-xl transition-all flex items-center justify-center shadow-[0_0_20px_rgba(163,230,53,0.3)] active:scale-95 group ${successMessage ? 'opacity-0 scale-95 pointer-events-none' : 'hover:bg-lime-400 hover:shadow-[0_0_30px_rgba(163,230,53,0.5)]'}`}
+                        >
+                            {isLoading ? (
+                                <Loader2 className="animate-spin w-5 h-5 mx-auto" />
+                            ) : (
+                                <>
+                                    Finalizar Registro <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+                                </>
+                            )}
+                        </button>
+
+                        {successMessage && (
+                            <div className="absolute inset-0 bg-sporthub-neon/10 border border-sporthub-neon/30 rounded-xl flex items-center justify-center gap-3 text-sporthub-neon font-black text-sm animate-in zoom-in fade-in duration-500 shadow-[0_10px_30px_rgba(163,230,53,0.15)] backdrop-blur-sm">
+                                <div className="w-2 h-2 bg-sporthub-neon rounded-full animate-ping"></div>
+                                {successMessage}
+                            </div>
                         )}
-                    </button>
+                    </div>
                     
                     <p className="text-center text-xs text-sporthub-muted pt-2">
                         ¿Ya tienes una cuenta? <Link to="/login" className="text-sporthub-cyan hover:text-[#00e5ff] transition-colors font-bold">Inicia Sesión aquí</Link>
