@@ -469,8 +469,8 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
                                 {/* E. Interacciones Social */}
                                 <div className="px-8 py-4 flex items-center justify-between border-y border-white/5 my-4">
                                     <div className="flex items-center gap-8">
-                                        <button onClick={handleLike} className={`flex items-center gap-2.5 transition-all ${post.is_liked_by_user ? 'text-red-500 scale-105' : 'text-gray-400 hover:text-white'}`}>
-                                            <Heart className={`w-5 h-5 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                                        <button onClick={handleLike} className={`flex items-center gap-2.5 transition-all ${post.is_liked_by_user ? 'text-sporthub-neon scale-105' : 'text-gray-400 hover:text-white'}`}>
+                                            <Heart className={`w-5 h-5 ${post.is_liked_by_user ? 'fill-current drop-shadow-[0_0_8px_rgba(163,230,53,0.6)]' : ''}`} />
                                             <span className="text-xs font-black">{post.likes_count}</span>
                                         </button>
                                         <div className="flex items-center gap-2.5 text-gray-400">
@@ -489,7 +489,7 @@ export const PostDetailModal = ({ postId, onClose, onUpdatePost }) => {
                                     </div>
                                     <button 
                                         onClick={() => setShowLikesModal(true)}
-                                        className="flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-all hover:bg-white/5 group/likelist shadow-sm"
+                                        className="flex items-center gap-2 p-3 text-gray-400 hover:text-white transition-all group/likelist"
                                         title="Ver quiénes dieron like"
                                     >
                                         <Heart className="w-5 h-5 group-hover/likelist:scale-110 transition-transform" />

@@ -7,6 +7,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { getMediaUrl } from '../utils/media';
 import ChatOptionsMenu from '../components/ChatOptionsMenu';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import { formatAuthorMetadata } from '../components/PostCard';
 
 const Messages = () => {
     const { user: authUser, fetchUnreadCount, setUnreadCount, lastNotification, lastAnalyticsUpdate } = useAuth();
@@ -76,7 +77,7 @@ const Messages = () => {
                     id: contactId,
                     contactId: contactId,
                     name: c.contact.name || "Usuario",
-                    sport: c.contact.sport || c.contact.rol || "Atleta",
+                    sport: formatAuthorMetadata(c.contact) || (c.contact.role === 'recruiter' ? 'Reclutador' : 'Deportista'),
                     avatar: getMediaUrl(c.contact.avatar_url),
                     unread: isSyncing && existingChat ? existingChat.unread : ((activeChat && String(activeChat.contactId) === contactId) ? 0 : (c.unread_count || 0)),
                     is_online: c.contact.is_online,
@@ -102,7 +103,7 @@ const Messages = () => {
                             id: profile.id,
                             contactId: profile.id,
                             name: profile.name || "Usuario",
-                            sport: profile.sport || profile.rol || "Deportista",
+                            sport: formatAuthorMetadata(profile) || (profile.role === 'recruiter' ? 'Reclutador' : 'Deportista'),
                             avatar: getMediaUrl(profile.avatar_url),
                             unread: 0,
                             is_online: profile.is_online,

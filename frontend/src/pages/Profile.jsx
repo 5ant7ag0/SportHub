@@ -60,7 +60,7 @@ const CompactUserRow = ({ user, onClick }) => (
         <div className="flex-1 min-w-0">
             <h4 className="text-white font-semibold text-sm truncate group-hover:text-sporthub-neon transition-colors">{user.name}</h4>
             <p className="text-sporthub-muted text-[10px] truncate">
-                {user.sport || "Atleta"}{user.position ? ` - ${user.position}` : ` - ${user.role === 'recruiter' ? 'Reclutador' : 'Deportista'}`}
+                {formatAuthorMetadata(user) || (user.role === 'recruiter' ? 'Reclutador' : 'Deportista')}
             </p>
         </div>
         <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -765,10 +765,7 @@ export const Profile = () => {
                                             <div className="flex items-center gap-1.5 break-words">
                                                 <Briefcase className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-neon" /> 
                                                 <span className="truncate">
-                                                    {profile?.role === 'athlete' 
-                                                        ? (profile?.sport ? `${profile.sport}${profile.position ? ` - ${profile.position}` : ''}` : '')
-                                                        : (profile?.company || profile?.job_title ? `${profile?.company || ''}${profile?.company && profile?.job_title ? ' - ' : ''}${profile?.job_title || ''}` : '')
-                                                    }
+                                                    {formatAuthorMetadata(profile)}
                                                 </span>
                                             </div>
                                         )}

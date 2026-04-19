@@ -4,6 +4,7 @@ import { api } from '../api';
 import { getMediaUrl } from '../utils/media';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { formatAuthorMetadata } from './PostCard';
 
 /**
  * LikesListModal - Un modal elegante con estética SportHub para ver quién dio Like.
@@ -102,7 +103,7 @@ export const LikesListModal = ({ postId, onClose }) => {
                                             {user.name}
                                         </p>
                                         <p className="text-[10px] text-gray-500 uppercase tracking-widest truncate">
-                                            {user.sport || 'Atleta'} • {user.position || 'Deportista'}
+                                            {formatAuthorMetadata(user) || (user.role === 'recruiter' ? 'Reclutador' : 'Deportista')}
                                         </p>
                                     </div>
                                     {authUser?.id !== user.id && (
