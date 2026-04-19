@@ -21,7 +21,8 @@ export const Feed = () => {
     const [shareError, setShareError] = useState(null);
     const [postToDelete, setPostToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [activeFilter, setActiveFilter] = useState(''); // '' o 'service'
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeFilter = searchParams.get('post_type') || '';
     const [hasMore, setHasMore] = useState(true);
     const [offset, setOffset] = useState(0);
     const limit = 20;
@@ -199,13 +200,20 @@ export const Feed = () => {
 
                 {/* Columna Principal - Feed con scroll independiente */}
                 <div className="xl:col-span-8 flex flex-col h-full overflow-y-auto no-scrollbar p-4 lg:p-0">
-                    <div className="sticky top-0 z-20 bg-sporthub-bg/95 backdrop-blur-md pt-4 pb-2 mb-2 px-4 lg:px-0">
+                    {/* Filtros de Escritorio (Ocultos en móvil porque se mueven al Header) */}
+                    <div className="sticky top-0 z-20 bg-sporthub-bg/95 backdrop-blur-md pt-4 pb-2 mb-2 px-4 lg:px-0 hidden lg:block">
                         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                             {FILTERS.map(filter => (
                                 <button
                                     key={filter.id}
                                     onClick={() => {
-                                        setActiveFilter(filter.value);
+                                        const params = new URLSearchParams(searchParams);
+                                        if (filter.value) {
+                                            params.set('post_type', filter.value);
+                                        } else {
+                                            params.delete('post_type');
+                                        }
+                                        setSearchParams(params);
                                     }}
                                     className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeFilter === filter.value
                                         ? 'bg-sporthub-neon text-black border-sporthub-neon shadow-[0_0_15px_rgba(163,230,53,0.4)]'
