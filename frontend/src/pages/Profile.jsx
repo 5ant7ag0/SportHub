@@ -39,7 +39,7 @@ const SOCIAL_SVGS = {
     )
 };
 
-import { PostCard, ShareConfirmModal, DeleteConfirmModal } from '../components/PostCard';
+import { PostCard, ShareConfirmModal, DeleteConfirmModal, formatAuthorMetadata } from '../components/PostCard';
 import { PostDetailModal } from '../components/PostDetailModal';
 import { CreatePostBox } from '../components/CreatePostBox';
 import AnalyticsPanel from '../components/AnalyticsPanel';
