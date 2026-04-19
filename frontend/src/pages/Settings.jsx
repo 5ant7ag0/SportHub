@@ -79,8 +79,59 @@ export const Settings = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [securityError, setSecurityError] = useState('');
 
+    // Lógica de detección de cambios de seguridad
+    const hasChangesSecurity = newEmail !== '' || newPassword !== '' || currentPassword !== '';
+
+    const handleCancelSecurity = () => {
+        setNewEmail('');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setSecurityError('');
+        setShowSecurity(false);
+    };
+
     const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+
+    // Lógica de detección de cambios
+    const hasChangesBasic =
+        name !== (user?.name || '') ||
+        bio !== (user?.bio || '') ||
+        sport !== (user?.sport || '') ||
+        position !== (user?.position || '') ||
+        company !== (user?.company || '') ||
+        jobTitle !== (user?.job_title || '') ||
+        city !== (user?.city || '') ||
+        birthDate !== (user?.birth_date ? user.birth_date.split('T')[0] : '');
+
+    const hasChangesSocials =
+        github !== (user?.social_links?.github || '') ||
+        linkedin !== (user?.social_links?.linkedin || '') ||
+        twitter !== (user?.social_links?.twitter || '') ||
+        instagram !== (user?.social_links?.instagram || '') ||
+        facebook !== (user?.social_links?.facebook || '');
+
+    const handleCancelBasic = () => {
+        setName(user?.name || '');
+        setBio(user?.bio || '');
+        setSport(user?.sport || '');
+        setPosition(user?.position || '');
+        setCompany(user?.company || '');
+        setJobTitle(user?.job_title || '');
+        setCity(user?.city || '');
+        setBirthDate(user?.birth_date ? user.birth_date.split('T')[0] : '');
+        setIsEditingBasic(false);
+    };
+
+    const handleCancelSocials = () => {
+        setGithub(user?.social_links?.github || '');
+        setLinkedin(user?.social_links?.linkedin || '');
+        setTwitter(user?.social_links?.twitter || '');
+        setInstagram(user?.social_links?.instagram || '');
+        setFacebook(user?.social_links?.facebook || '');
+        setIsEditingSocials(false);
+    };
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
@@ -167,76 +218,100 @@ export const Settings = () => {
 
     return (
         <div className="flex-1 bg-sporthub-bg p-6 lg:p-10 overflow-y-auto h-screen custom-scrollbar">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 <header className="mb-10">
                     <h1 className="text-3xl font-bold text-white mb-2">Configuración</h1>
                     <p className="text-sporthub-muted">Gestiona tu identidad profesional y preferencias</p>
                 </header>
 
-                <form onSubmit={handleSubmit} className="space-y-8 pb-10">
-
-                    {/* BASIC INFO */}
-                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6 relative group/section">
+                <form onSubmit={handleSubmit} className="pb-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-10">
+                        {/* COLUMNA IZQUIERDA: INFORMACIÓN BÁSICA */}
+                        <div className="space-y-8">
+                            {/* BASIC INFO */}
+                            <div className="bg-sporthub-card border border-white/5 rounded-3xl p-6 lg:p-7 shadow-xl space-y-4 relative group/section">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <User className="w-5 h-5 text-sporthub-cyan" />
                                 <h3 className="text-xl font-bold text-white">Información Básica</h3>
                             </div>
-                            <button 
-                                type="button"
-                                onClick={() => setIsEditingBasic(!isEditingBasic)}
-                                className={`p-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isEditingBasic ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white'}`}
-                            >
-                                <Pencil className="w-4 h-4" />
-                                {isEditingBasic ? 'Editando...' : 'Editar'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {!isEditingBasic ? (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setIsEditingBasic(true)}
+                                        className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                        Editar
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                        <button 
+                                            type="button"
+                                            onClick={handleCancelBasic}
+                                            className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button 
+                                            type="submit"
+                                            disabled={isLoading || !hasChangesBasic}
+                                            className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesBasic ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
+                                        >
+                                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                            {hasChangesBasic ? 'Guardar' : 'Editando...'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-white font-bold text-sm mb-2">Nombre Completo</label>
+                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Nombre Completo</label>
                                 <input 
                                     type="text" 
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     disabled={!isEditingBasic}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                             <div>
-                                <label className="block text-white font-bold text-sm mb-2">Fecha de nacimiento</label>
+                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Fecha de nacimiento</label>
                                 <input 
                                     type="date" 
                                     value={birthDate}
                                     onChange={(e) => setBirthDate(e.target.value)}
                                     disabled={!isEditingBasic}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-white font-bold text-sm mb-2">Biografía Profesional</label>
+                            <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Biografía Profesional</label>
                             <textarea 
-                                rows="3"
+                                rows="2"
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
                                 disabled={!isEditingBasic}
-                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all resize-none ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                placeholder="Cuéntanos sobre tu trayectoria y objetivos..."
+                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all resize-none text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                placeholder="Trayectoria y objetivos..."
                             ></textarea>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {user?.role === 'athlete' ? (
                                 <>
                                     <div className="relative">
-                                        <label className="block text-white font-bold text-sm mb-2">Deporte Principal</label>
+                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Deporte Principal</label>
                                         <select 
                                             value={sport}
                                             onChange={(e) => setSport(e.target.value)}
                                             disabled={!isEditingBasic}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all appearance-none ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all appearance-none text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                         >
                                             <option value="">Seleccionar deporte</option>
                                             {Object.keys(SPORTS_DATA).map(s => (
@@ -245,12 +320,12 @@ export const Settings = () => {
                                         </select>
                                     </div>
                                     <div className="relative">
-                                        <label className="block text-white font-bold text-sm mb-2">Posición / Especialidad</label>
+                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Posición / Especialidad</label>
                                         <select 
                                             value={position}
                                             onChange={(e) => setPosition(e.target.value)}
                                             disabled={!isEditingBasic || !sport}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-3 focus:outline-none transition-all appearance-none ${(!isEditingBasic || !sport) && 'opacity-80 cursor-default'}`}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all appearance-none text-sm ${(!isEditingBasic || !sport) && 'opacity-80 cursor-default'}`}
                                         >
                                             <option value="">Seleccionar posición</option>
                                             {sport && SPORTS_DATA[sport].map(p => (
@@ -262,8 +337,8 @@ export const Settings = () => {
                             ) : (
                                 <>
                                     <div className="relative">
-                                        <label className="block text-white font-bold text-sm mb-2">Empresa / Club</label>
-                                        <div className="absolute left-4 top-10 pointer-events-none">
+                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Empresa / Club</label>
+                                        <div className="absolute left-4 top-8 pointer-events-none">
                                             <Briefcase className="w-4 h-4 text-sporthub-muted" />
                                         </div>
                                         <input 
@@ -271,13 +346,13 @@ export const Settings = () => {
                                             value={company}
                                             onChange={(e) => setCompany(e.target.value)}
                                             disabled={!isEditingBasic}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                             placeholder="Ej. Independiente del Valle"
                                         />
                                     </div>
                                     <div className="relative">
-                                        <label className="block text-white font-bold text-sm mb-2">Cargo Actual</label>
-                                        <div className="absolute left-4 top-10 pointer-events-none">
+                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Cargo Actual</label>
+                                        <div className="absolute left-4 top-8 pointer-events-none">
                                             <Shield className="w-4 h-4 text-sporthub-muted" />
                                         </div>
                                         <input 
@@ -285,7 +360,7 @@ export const Settings = () => {
                                             value={jobTitle}
                                             onChange={(e) => setJobTitle(e.target.value)}
                                             disabled={!isEditingBasic}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                             placeholder="Ej. Entrenador Principal"
                                         />
                                     </div>
@@ -294,8 +369,8 @@ export const Settings = () => {
                         </div>
 
                         <div className="relative">
-                            <label className="block text-white font-bold text-sm mb-2">Ciudad / Ubicación</label>
-                            <div className="absolute left-4 top-10 pointer-events-none">
+                            <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Ciudad / Ubicación</label>
+                            <div className="absolute left-4 top-8 pointer-events-none">
                                 <MapPin className="w-4 h-4 text-sporthub-muted" />
                             </div>
                             <input 
@@ -303,32 +378,165 @@ export const Settings = () => {
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
                                 disabled={!isEditingBasic}
-                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                             />
                         </div>
-                    </div>
-
-                    {/* PRIVACY & NOTIFICATIONS */}
-                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Shield className="w-5 h-5 text-sporthub-neon" />
-                            <h3 className="text-xl font-bold text-white">Privacidad</h3>
+                            </div>
                         </div>
 
-                        {/* SECURITY TOGGLE */}
-                        <div>
-                            <button 
-                                type="button"
-                                onClick={() => setShowSecurity(!showSecurity)}
-                                className={`w-full py-4 px-6 rounded-2xl border flex items-center justify-between transition-all ${showSecurity ? 'bg-sporthub-neon/10 border-sporthub-neon text-sporthub-neon' : 'bg-transparent border-sporthub-border text-white hover:border-sporthub-neon/50'}`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <ShieldCheck className="w-5 h-5" />
-                                    <span className="font-bold">Editar Seguridad</span>
+                        {/* COLUMNA DERECHA: REDES SOCIALES */}
+                        <div className="space-y-8">
+                            {/* SOCIAL NETWORKS */}
+                            <div className="bg-sporthub-card border border-white/5 rounded-3xl p-6 lg:p-7 shadow-xl space-y-6 group/section">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <SOCIAL_SVGS.linkedin className="w-5 h-5 text-sporthub-neon" />
+                                        <h3 className="text-xl font-bold text-white">Redes Sociales</h3>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {!isEditingSocials ? (
+                                            <button 
+                                                type="button"
+                                                onClick={() => setIsEditingSocials(true)}
+                                                className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                                Editar
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleCancelSocials}
+                                                    className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button 
+                                                    type="submit"
+                                                    disabled={isLoading || !hasChangesSocials}
+                                                    className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesSocials ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
+                                                >
+                                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                    {hasChangesSocials ? 'Guardar' : 'Editando...'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <X className={`w-4 h-4 transition-transform ${showSecurity ? 'rotate-0' : 'rotate-45'}`} />
-                            </button>
+                                <p className="text-sm text-sporthub-muted mb-6">Vincula tus perfiles externos para validar tu identidad profesional.</p>
+
+                                <div className="space-y-4">
+                                    <div className="relative">
+                                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-gray-400 group-focus-within:text-[#333]' : 'text-gray-600'}`}>
+                                            <SOCIAL_SVGS.github className="w-5 h-5" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL de Github (ej: https://github.com/...)"
+                                            value={github}
+                                            onChange={(e) => setGithub(e.target.value)}
+                                            disabled={!isEditingSocials}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-white' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-400 group-focus-within:text-[#0077b5]' : 'text-blue-400/50'}`}>
+                                            <SOCIAL_SVGS.linkedin className="w-5 h-5" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL de LinkedIn"
+                                            value={linkedin}
+                                            onChange={(e) => setLinkedin(e.target.value)}
+                                            disabled={!isEditingSocials}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-blue-500' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-white group-focus-within:text-[#000000]' : 'text-white/50'}`}>
+                                            <SOCIAL_SVGS.twitter className="w-5 h-5" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL de X (Twitter)"
+                                            value={twitter}
+                                            onChange={(e) => setTwitter(e.target.value)}
+                                            disabled={!isEditingSocials}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-white' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-pink-500 group-focus-within:text-[#e4405f]' : 'text-pink-500/50'}`}>
+                                            <SOCIAL_SVGS.instagram className="w-5 h-5" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL de Instagram"
+                                            value={instagram}
+                                            onChange={(e) => setInstagram(e.target.value)}
+                                            disabled={!isEditingSocials}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-pink-500' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-600 group-focus-within:text-[#1877f2]' : 'text-blue-600/50'}`}>
+                                            <SOCIAL_SVGS.facebook className="w-5 h-5" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL de Facebook"
+                                            value={facebook}
+                                            onChange={(e) => setFacebook(e.target.value)}
+                                            disabled={!isEditingSocials}
+                                            className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-blue-600' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        {/* PARTE INFERIOR: PRIVACIDAD (OCUPA AMBAS COLUMNAS) */}
+                        <div className="lg:col-span-2">
+                            {/* PRIVACY & NOTIFICATIONS */}
+                            <div className="bg-sporthub-card border border-white/5 rounded-3xl p-6 lg:p-7 shadow-xl space-y-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <Shield className="w-5 h-5 text-sporthub-neon" />
+                                <h3 className="text-xl font-bold text-white">Privacidad y Seguridad</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {!showSecurity ? (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowSecurity(true)}
+                                        className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                        Editar
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                        <button 
+                                            type="button"
+                                            onClick={handleCancelSecurity}
+                                            className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button 
+                                            type="submit"
+                                            disabled={isLoading || !hasChangesSecurity}
+                                            className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesSecurity ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
+                                        >
+                                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                            {hasChangesSecurity ? 'Guardar' : 'Ajustando...'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <p className="text-sm text-sporthub-muted mb-6">Gestiona la seguridad de tu cuenta y la visibilidad de tu perfil profesional.</p>
 
                         {/* SECURITY FIELDS (Progressive Disclosure) */}
                         {showSecurity && (
@@ -403,116 +611,22 @@ export const Settings = () => {
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
 
-                    {/* SOCIAL NETWORKS */}
-                    <div className="bg-sporthub-card border border-sporthub-border rounded-3xl p-8 shadow-xl space-y-6 group/section">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <SOCIAL_SVGS.linkedin className="w-5 h-5 text-sporthub-neon" />
-                                <h3 className="text-xl font-bold text-white">Redes Sociales</h3>
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={() => setIsEditingSocials(!isEditingSocials)}
-                                className={`p-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isEditingSocials ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white'}`}
-                            >
-                                <Pencil className="w-4 h-4" />
-                                {isEditingSocials ? 'Editando...' : 'Editar'}
-                            </button>
-                        </div>
-                        <p className="text-sm text-sporthub-muted mb-6">Vincula tus perfiles externos para validar tu identidad profesional.</p>
-
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-gray-400 group-focus-within:text-[#333]' : 'text-gray-600'}`}>
-                                    <SOCIAL_SVGS.github className="w-5 h-5" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    placeholder="URL de Github (ej: https://github.com/...)"
-                                    value={github}
-                                    onChange={(e) => setGithub(e.target.value)}
-                                    disabled={!isEditingSocials}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-white' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                            <div className="relative">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-400 group-focus-within:text-[#0077b5]' : 'text-blue-400/50'}`}>
-                                    <SOCIAL_SVGS.linkedin className="w-5 h-5" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    placeholder="URL de LinkedIn"
-                                    value={linkedin}
-                                    onChange={(e) => setLinkedin(e.target.value)}
-                                    disabled={!isEditingSocials}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-blue-500' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                            <div className="relative">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-white group-focus-within:text-[#000000]' : 'text-white/50'}`}>
-                                    <SOCIAL_SVGS.twitter className="w-5 h-5" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    placeholder="URL de X (Twitter)"
-                                    value={twitter}
-                                    onChange={(e) => setTwitter(e.target.value)}
-                                    disabled={!isEditingSocials}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-white' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                            <div className="relative">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-pink-500 group-focus-within:text-[#e4405f]' : 'text-pink-500/50'}`}>
-                                    <SOCIAL_SVGS.instagram className="w-5 h-5" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    placeholder="URL de Instagram"
-                                    value={instagram}
-                                    onChange={(e) => setInstagram(e.target.value)}
-                                    disabled={!isEditingSocials}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-pink-500' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                            <div className="relative">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-600 group-focus-within:text-[#1877f2]' : 'text-blue-600/50'}`}>
-                                    <SOCIAL_SVGS.facebook className="w-5 h-5" />
-                                </div>
-                                <input 
-                                    type="text" 
-                                    placeholder="URL de Facebook"
-                                    value={facebook}
-                                    onChange={(e) => setFacebook(e.target.value)}
-                                    disabled={!isEditingSocials}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingSocials ? 'border-sporthub-border focus:border-blue-600' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none transition-all text-sm ${!isEditingSocials && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SAVE BUTTON */}
-                    <div className="flex items-center justify-end gap-4 sticky bottom-0 p-4 -mx-4 md:p-0 md:bg-transparent z-50">
-                        {success && (
-                            <div className="flex items-center gap-2 bg-sporthub-card/80 backdrop-blur-xl border border-sporthub-neon/30 text-sporthub-neon px-4 py-2 rounded-2xl shadow-[0_0_20px_rgba(163,230,53,0.15)] animate-in fade-in slide-in-from-right-4 duration-500 transition-all">
+                    {/* FEEDBACK SUCCESS */}
+                    {success && (
+                        <div className="flex items-center justify-center gap-2 p-4 animate-in fade-in zoom-in duration-300">
+                            <div className="bg-sporthub-neon/10 border border-sporthub-neon/30 text-sporthub-neon px-6 py-3 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(163,230,53,0.1)]">
                                 <CheckCircle2 className="w-5 h-5" />
-                                <span className="text-sm font-bold">Cambios guardados</span>
+                                <span className="text-sm font-bold uppercase tracking-wider">Cambios guardados con éxito</span>
                             </div>
-                        )}
-                        
-                        <button 
-                            type="submit"
-                            disabled={isLoading}
-                            className="bg-sporthub-neon text-black font-bold px-10 py-3.5 rounded-2xl flex items-center gap-2 hover:bg-lime-400 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] disabled:opacity-50 active:scale-95"
-                        >
-                            {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                            {isLoading ? "Guardando..." : "Guardar Cambios"}
-                        </button>
-                    </div>
+                        </div>
+                    )}
                 </form>
 
                 {/* DANGER ZONE: LOGOUT (Outside of form to avoid submission conflicts) */}
-                <div className="pt-12 pb-20">
+                <div className="pt-12 pb-20 lg:hidden">
                     <button 
                         type="button"
                         onClick={(e) => {
