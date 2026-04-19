@@ -21,7 +21,7 @@ export const Login = () => {
         
         try {
             const { data } = await api.post('/auth/token/obtain/', { email, password });
-            login(data.access);
+            await login(data.access);
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.detail || "Credenciales inválidas o error de conexión.");
