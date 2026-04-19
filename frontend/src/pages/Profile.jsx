@@ -226,8 +226,13 @@ export const Profile = () => {
                 api.get(analyticsPath).catch(() => ({ data: null }))
             ]);
             
+            const baseSkills = { Velocidad: 0, Táctica: 0, Resistencia: 0, Remate: 0, Control: 0, "Visión de Juego": 0 };
+            const initialSkills = profileRes.data.skills && Object.keys(profileRes.data.skills).length > 0 
+                ? profileRes.data.skills 
+                : baseSkills;
+
             setProfile(profileRes.data);
-            setEditedSkills(profileRes.data.skills || {});
+            setEditedSkills(initialSkills);
             setEditedAchievements(profileRes.data.achievements || []);
 
             if (analyticsRes.data) {
@@ -425,8 +430,8 @@ export const Profile = () => {
     const handleCloseDetail = useCallback(() => setSelectedPostId(null), []);
 
     const renderSkills = () => {
-        const defaultSkills = { Velocidad: 80, Táctica: 75, Resistencia: 85, Remate: 70, Control: 80, "Visión de Juego": 75 };
-        const activeSkills = profile.skills && Object.keys(profile.skills).length > 0 ? profile.skills : defaultSkills;
+        const baseSkills = { Velocidad: 0, Táctica: 0, Resistencia: 0, Remate: 0, Control: 0, "Visión de Juego": 0 };
+        const activeSkills = profile.skills && Object.keys(profile.skills).length > 0 ? profile.skills : baseSkills;
         
         if (isEditingSkills) {
             return (
@@ -740,7 +745,7 @@ export const Profile = () => {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-5 flex flex-col items-center justify-center">
                             <span className="text-2xl font-bold text-sporthub-neon mb-1">{profile.followers_count || "0"}</span>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Seguidores</span>
@@ -760,11 +765,11 @@ export const Profile = () => {
                     </div>
 
                     {/* Bio & Bio Content */}
-                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 mt-6"><h3 className="text-white font-bold mb-3">Biografía</h3><p className="text-gray-400 leading-relaxed text-sm">{profile.bio || "Deportista profesional apasionado por el rendimiento y el trabajo en equipo."}</p></div>
+                    <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6"><h3 className="text-white font-bold mb-3">Biografía</h3><p className="text-gray-400 leading-relaxed text-sm">{profile.bio || "Deportista profesional apasionado por el rendimiento y el trabajo en equipo."}</p></div>
 
                     {/* Pro Info for Recruiters */}
                     {profile.role === 'recruiter' && (
-                        <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 mt-6">
+                        <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
                             <h3 className="text-white font-bold mb-5 flex items-center gap-2"><Briefcase className="w-5 h-5 text-sporthub-cyan" /> Información Profesional</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-[#0B0F19] p-4 rounded-2xl border border-white/5 text-xs"><p className="text-gray-500 font-bold mb-1 uppercase tracking-widest">Empresa / Club</p><p className="text-white font-semibold">{profile.company || 'No especificado'}</p></div>
@@ -776,11 +781,11 @@ export const Profile = () => {
                     {/* Skills & Achievements for Athletes */}
                     {profile.role === 'athlete' && (
                         <>
-                            <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 mt-6">
+                            <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
                                 <div className="flex justify-between items-center mb-5"><h3 className="text-white font-bold">Habilidades</h3>{isOwner && !isEditingSkills && <button onClick={() => setIsEditingSkills(true)} className="text-[10px] text-sporthub-neon font-bold uppercase border border-sporthub-neon/30 px-3 py-1 rounded-full">Editar</button>}</div>
                                 {renderSkills()}
                             </div>
-                            <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 mt-6">
+                            <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6">
                                 <div className="flex justify-between items-center mb-4"><h3 className="text-white font-bold">Logros Destacados</h3>{isOwner && !isEditingAchievements && <button onClick={() => setIsEditingAchievements(true)} className="text-[10px] text-sporthub-cyan font-bold uppercase border border-sporthub-cyan/30 px-3 py-1 rounded-full">Editar</button>}</div>
                                 {renderAchievements()}
                             </div>
@@ -788,7 +793,7 @@ export const Profile = () => {
                     )}
 
                     {/* TABS & FEED */}
-                    <div className="flex flex-col mt-6">
+                    <div className="flex flex-col">
                         <div className="flex gap-8 border-b border-white/5 px-2 mb-6 overflow-x-auto">
                             {[{ name: 'Publicaciones', icon: Layout }, { name: 'Servicios', icon: Briefcase }, { name: 'Fotos', icon: ImageIcon }, { name: 'Videos', icon: Play }].map(tab => (
                                 <button key={tab.name} onClick={() => setActiveTab(tab.name)} className={`pb-3 text-sm font-semibold transition-all relative flex items-center gap-2 whitespace-nowrap ${activeTab === tab.name ? 'text-sporthub-neon' : 'text-gray-500 hover:text-gray-300'}`}>

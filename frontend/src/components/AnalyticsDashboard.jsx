@@ -61,24 +61,23 @@ const getSportColor = (sportName) => {
     return '#F59E0B';
 };
 
-const SkillBar = ({ skill, value, isNeon }) => (
-    <div className="mb-4">
-        <div className="flex justify-between text-[11px] mb-1.5">
-            <span className="text-white font-medium uppercase tracking-wider">{skill}</span>
-            <span className={isNeon ? "text-sporthub-neon font-bold" : "text-sporthub-cyan font-bold"}>{value}%</span>
+const SkillBar = ({ skill, value }) => {
+    const isNeon = skill.includes('Velocidad') || skill.includes('Control') || skill.includes('Resistencia');
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center px-0.5">
+                <span className="text-xs text-white font-medium">{skill}</span>
+                <span className={`text-[10px] font-bold ${isNeon ? 'text-sporthub-neon' : 'text-sporthub-cyan'}`}>{value}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div 
+                    className={`h-full rounded-full transition-all duration-1000 ${isNeon ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.3)]' : 'bg-sporthub-cyan shadow-[0_0_8px_rgba(34,211,238,0.3)]'}`}
+                    style={{ width: `${value}%` }}
+                />
+            </div>
         </div>
-        <div className="w-full bg-[#0B0F19] rounded-full h-1 relative overflow-hidden">
-            <div 
-                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${
-                    isNeon 
-                    ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.5)]' 
-                    : 'bg-sporthub-cyan shadow-[0_0_8px_rgba(6,182,212,0.5)]'
-                }`} 
-                style={{ width: `${value}%` }}
-            ></div>
-        </div>
-    </div>
-);
+    );
+};
 
 export const AnalyticsDashboard = () => {
     const { user: authUser, onlineUserIds, lastNotification, lastAnalyticsUpdate } = useAuth();
@@ -328,16 +327,16 @@ export const AnalyticsDashboard = () => {
                             </span>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 mt-4 min-h-[240px]">
-                            {Object.entries(authUser?.skills || {
-                                "Velocidad": 80, "Táctica": 75, "Resistencia": 85, 
-                                "Remate": 70, "Control": 80, "Visión": 75
-                            }).map(([skill, value], idx) => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            {Object.entries(
+                                authUser?.skills && Object.keys(authUser.skills).length > 0
+                                ? authUser.skills
+                                : { "Velocidad": 0, "Táctica": 0, "Resistencia": 0, "Remate": 0, "Control": 0, "Visión de Juego": 0 }
+                            ).map(([skill, value]) => (
                                 <SkillBar 
                                     key={skill} 
                                     skill={skill} 
                                     value={value} 
-                                    isNeon={idx % 2 === 0} 
                                 />
                             ))}
                         </div>
