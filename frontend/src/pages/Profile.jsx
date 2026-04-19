@@ -46,6 +46,28 @@ import AnalyticsPanel from '../components/AnalyticsPanel';
 
 const COLORS = ['#A3E635', '#06B6D4', '#c084fc', '#fbbf24', '#f87171', '#34d399'];
 
+const CompactUserRow = ({ user, onClick }) => (
+    <div 
+        onClick={onClick}
+        className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all cursor-pointer group border border-transparent hover:border-white/10"
+    >
+        <img 
+            src={getMediaUrl(user.avatar_url)} 
+            className="w-10 h-10 rounded-full object-cover border-2 border-sporthub-card" 
+            alt={user.name} 
+        />
+        <div className="flex-1 min-w-0">
+            <h4 className="text-white font-semibold text-sm truncate group-hover:text-sporthub-neon transition-colors">{user.name}</h4>
+            <p className="text-sporthub-muted text-[10px] truncate">
+                {user.sport || "Atleta"}{user.position ? ` - ${user.position}` : ` - ${user.role === 'recruiter' ? 'Reclutador' : 'Deportista'}`}
+            </p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <TrendingUp className="w-4 h-4 text-sporthub-neon" />
+        </div>
+    </div>
+);
+
 const SkillBar = ({ skill, value, isNeon }) => (
     <div className="mb-4">
         <div className="flex justify-between text-xs mb-1.5">
@@ -132,6 +154,35 @@ export const Profile = () => {
     const [shareProfileMessage, setShareProfileMessage] = useState('');
     const [hasAnimatedRing, setHasAnimatedRing] = useState(false);
     const followingLockRef = useRef(false); // Bloqueo para evitar colisiones durante Follow
+    
+    // Estados para Listas Expandibles
+    const [expandedList, setExpandedList] = useState(null); // 'followers' | 'following' | null
+    const [listData, setListData] = useState([]);
+    const [isFetchingList, setIsFetchingList] = useState(false);
+
+    const fetchListData = async (type) => {
+        if (!profile?.id) return;
+        setIsFetchingList(true);
+        try {
+            const endpoint = `/social/${type}/?user_id=${profile.id}`;
+            const { data } = await api.get(endpoint);
+            setListData(data);
+        } catch (err) {
+            console.error(`Error fetching ${type}:`, err);
+            setListData([]);
+        } finally {
+            setIsFetchingList(false);
+        }
+    };
+
+    const toggleList = (type) => {
+        if (expandedList === type) {
+            setExpandedList(null);
+        } else {
+            setExpandedList(type);
+            fetchListData(type);
+        }
+    };
 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
@@ -746,11 +797,17 @@ export const Profile = () => {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-5 flex flex-col items-center justify-center">
+                        <div 
+                            onClick={() => toggleList('followers')}
+                            className={`bg-sporthub-card rounded-3xl border p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${expandedList === 'followers' ? 'border-sporthub-neon scale-95' : 'border-sporthub-border hover:border-sporthub-neon/50 shadow-lg shadow-black/20'}`}
+                        >
                             <span className="text-2xl font-bold text-sporthub-neon mb-1">{profile.followers_count || "0"}</span>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Seguidores</span>
                         </div>
-                        <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-5 flex flex-col items-center justify-center">
+                        <div 
+                            onClick={() => toggleList('following')}
+                            className={`bg-sporthub-card rounded-3xl border p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${expandedList === 'following' ? 'border-sporthub-cyan scale-95' : 'border-sporthub-border hover:border-sporthub-cyan/50 shadow-lg shadow-black/20'}`}
+                        >
                             <span className="text-2xl font-bold text-sporthub-cyan mb-1">{profile.following_count || "0"}</span>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Siguiendo</span>
                         </div>
@@ -761,6 +818,50 @@ export const Profile = () => {
                         <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-5 flex flex-col items-center justify-center">
                             <div className="flex items-center gap-2 mb-1"><span className="text-2xl font-bold text-[#c084fc]">{profile.average_rating ? profile.average_rating.toFixed(1) : "0.0"}</span><Star className="w-4 h-4 text-[#c084fc] fill-[#c084fc]" /></div>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Rating</span>
+                        </div>
+                    </div>
+
+                    {/* Expandable User Lists (Followers/Following) */}
+                    <div 
+                        className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedList ? 'max-h-[500px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}
+                    >
+                        <div className="bg-sporthub-card/50 backdrop-blur-xl rounded-[2.5rem] border border-sporthub-border p-2 shadow-2xl overflow-hidden">
+                            <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full animate-pulse ${expandedList === 'followers' ? 'bg-sporthub-neon' : 'bg-sporthub-cyan'}`}></div>
+                                    {expandedList === 'followers' ? 'Explorando Seguidores' : 'Explorando Siguiendo'}
+                                </h3>
+                                <button 
+                                    onClick={() => setExpandedList(null)}
+                                    className="p-1 px-3 rounded-full bg-white/5 text-[10px] font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                            
+                            <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2 grid grid-cols-1 md:grid-cols-2 gap-1">
+                                {isFetchingList ? (
+                                    <div className="col-span-full py-12 flex flex-col items-center justify-center gap-3">
+                                        <Loader2 className="w-8 h-8 text-sporthub-neon animate-spin opacity-50" />
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Sincronizando comunidad...</span>
+                                    </div>
+                                ) : listData.length > 0 ? (
+                                    listData.map(u => (
+                                        <CompactUserRow 
+                                            key={u.id} 
+                                            user={u} 
+                                            onClick={() => {
+                                                navigate(`/profile?id=${u.id}`);
+                                                setExpandedList(null);
+                                            }}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-12 text-center">
+                                        <p className="text-gray-500 text-xs font-medium italic">No se encontraron deportistas en esta lista.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AnalyticsView, FollowView, LikeView, SendMessageView, InboxView, ConversationDetailView, FeedView, PostDetailView, PostLikesListView, ProfileView, CommentView, SearchView, NetworkSuggestionsView, SavePostView, ConnectionRequestView, AcceptConnectionView, EditMessageView, EditPostView, PendingConnectionsView, ConnectionsListView, UnreadCountView, NotificationListView, NotificationCountView, ClearChatView, DeleteChatView, MarkAsUnreadView, RatePostView, AdminUserManagementView
+from .views import AnalyticsView, FollowView, LikeView, SendMessageView, InboxView, ConversationDetailView, FeedView, PostDetailView, PostLikesListView, ProfileView, CommentView, SearchView, NetworkSuggestionsView, SavePostView, ConnectionRequestView, AcceptConnectionView, EditMessageView, EditPostView, PendingConnectionsView, ConnectionsListView, UnreadCountView, NotificationListView, NotificationCountView, ClearChatView, DeleteChatView, MarkAsUnreadView, RatePostView, AdminUserManagementView, UserFollowersListView, UserFollowingListView
 from .auth_views import CustomTokenObtainPairView, CustomTokenRefreshView, RegisterView
 from .upload_views import PostCreateView, MessageWithMediaView, CommentWithMediaView, PostShareView
 from .profile_views import ProfileUpdateView, AccountDeleteView
@@ -11,6 +11,8 @@ urlpatterns = [
     
     # Interacción Social
     path('social/follow/', FollowView.as_view(), name='follow'),
+    path('social/followers/', UserFollowersListView.as_view(), name='user-followers'),
+    path('social/following/', UserFollowingListView.as_view(), name='user-following'),
     path('social/like/', LikeView.as_view(), name='like'),
     path('social/notifications/', NotificationListView.as_view(), name='notifications-list'),
     path('social/notifications/count/', NotificationCountView.as_view(), name='notifications-count'),

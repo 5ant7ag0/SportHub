@@ -125,7 +125,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# para internacionalizacion
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
@@ -137,24 +137,24 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# para archivos estaticos como css, js, imagenes
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
+# llave primaria por defecto
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# MongoDB Configuration via MongoEngine
+# configracion de MongoDB via MongoEngine
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/SportHub')
-# We connect MongoEngine globally when settings are loaded
+# para que se conecte a la base de datos
 mongoengine.connect(host=MONGO_URI)
 
-# JWT Configuration for Long Dev Sessions (24h)
+# Configuración de JWT para sesiones de desarrollo largas (24 h)
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),

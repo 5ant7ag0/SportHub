@@ -384,6 +384,36 @@ class FollowView(APIView):
             "followers_count": len(target_user.followers)
         }, status=200)
 
+class UserFollowersListView(APIView):
+    authentication_classes = [MongoJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        target_id = request.query_params.get('user_id')
+        if not target_id:
+            raise ValidationError("user_id requerido")
+        try:
+            target_user = User.objects.get(id=ObjectId(target_id))
+            serializer = UserSerializer(target_user.followers, many=True, context={'request': request})
+            return Response(serializer.data, status=200)
+        except:
+            return Response([], status=200)
+
+class UserFollowingListView(APIView):
+    authentication_classes = [MongoJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        target_id = request.query_params.get('user_id')
+        if not target_id:
+            raise ValidationError("user_id requerido")
+        try:
+            target_user = User.objects.get(id=ObjectId(target_id))
+            serializer = UserSerializer(target_user.following, many=True, context={'request': request})
+            return Response(serializer.data, status=200)
+        except:
+            return Response([], status=200)
+
 class LikeView(APIView):
     authentication_classes = [MongoJWTAuthentication]
     permission_classes = [IsAuthenticated]
