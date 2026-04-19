@@ -73,7 +73,7 @@ export const Search = () => {
     const handleFollow = async (targetId) => {
         // Marcamos como pendiente para bloquear sobrescrituras del fetchResults
         pendingIdsRef.current.add(targetId);
-        
+
         // El estado visual lo maneja UserCard, nosotros solo protegemos el ID
         // Liberamos después de un tiempo prudencial para sincronizar con el server
         setTimeout(() => {
@@ -85,7 +85,7 @@ export const Search = () => {
         <main className="flex-1 p-4 md:p-8 bg-sporthub-bg pb-32">
             <div className="max-w-5xl mx-auto">
                 <div className="mb-8 px-2 md:px-0">
-                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight mb-2 uppercase">Buscador Universal</h2>
+                    <h2 className="text-3xl font-bold text-white mb-2">Buscar</h2>
                     <p className="text-sm text-sporthub-muted">Conecta con atletas, scouts y profesionales deportivos.</p>
                 </div>
 
@@ -152,7 +152,7 @@ export const Search = () => {
                         </div>
 
                         {(sport || role || city || position || query) && (
-                            <button 
+                            <button
                                 onClick={() => {
                                     setSport('');
                                     setRole('');
@@ -181,9 +181,9 @@ export const Search = () => {
                             </div>
                         )}
                         {results.map(user => (
-                            <UserCard 
-                                key={user.id} 
-                                user={user} 
+                            <UserCard
+                                key={user.id}
+                                user={user}
                                 onAction={() => handleFollow(user.id)}
                             />
                         ))}

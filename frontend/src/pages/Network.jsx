@@ -43,15 +43,15 @@ export const Network = () => {
     return (
         <main className="flex-1 bg-[#0B0F19] p-6 lg:p-8 pb-32">
             <div className="flex flex-col lg:flex-row gap-6 max-w-[1500px] mx-auto">
-                
+
                 {/* COLUMNA PRINCIPAL IZQUIERDA (Red Principal) */}
                 <div className="flex-1 flex flex-col gap-8">
-                    
+
                     {/* Header: Mi Red */}
                     <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-sporthub-neon/5 blur-[100px] rounded-full -mr-32 -mt-32"></div>
                         <div className="relative z-10">
-                            <h2 className="text-3xl font-black text-white tracking-tighter mb-2 italic uppercase">Mi Red Profesional</h2>
+                            <h2 className="text-3xl font-bold text-white mb-2">Mi Red Profesional </h2>
                             <p className="text-sm text-gray-500 font-medium">Gestiona tus seguidores y a quiénes sigues en tiempo real.</p>
                         </div>
                         <div className="flex items-center gap-3 relative z-10">
@@ -68,7 +68,7 @@ export const Network = () => {
 
                     {/* Selector de Pestañas */}
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('following')}
                             className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 border ${activeTab === 'following' ? 'bg-sporthub-neon text-black border-sporthub-neon shadow-[0_0_20px_rgba(163,230,53,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'}`}
                         >
@@ -77,7 +77,7 @@ export const Network = () => {
                                 {myConnections.following.length}
                             </span>
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('followers')}
                             className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 border ${activeTab === 'followers' ? 'bg-sporthub-neon text-black border-sporthub-neon shadow-[0_0_20px_rgba(163,230,53,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'}`}
                         >
@@ -98,8 +98,8 @@ export const Network = () => {
                                     </div>
                                     <h3 className="text-white font-bold text-lg mb-2 uppercase italic">Sin Conexiones</h3>
                                     <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                                        {activeTab === 'following' 
-                                            ? "Todavía no sigues a ningún atleta o profesional." 
+                                        {activeTab === 'following'
+                                            ? "Todavía no sigues a ningún atleta o profesional."
                                             : "Aún no tienes seguidores en tu perfil."}
                                     </p>
                                     {activeTab === 'following' && (
@@ -112,10 +112,10 @@ export const Network = () => {
                                 currentList.map(conn => (
                                     <div key={conn.id} className="bg-[#151b28] border border-[rgba(255,255,255,0.05)] rounded-2xl p-4 flex items-center gap-4 group hover:bg-[rgba(255,255,255,0.08)] hover:border-sporthub-neon/30 hover:-translate-y-1 transition-all duration-300">
                                         <Link to={`/profile?id=${conn.id}`} className="relative shrink-0">
-                                            <img 
-                                                src={getMediaUrl(conn.avatar_url)} 
-                                                className="w-16 h-16 rounded-full border-2 border-sporthub-border group-hover:border-sporthub-neon transition-colors object-cover shadow-xl" 
-                                                alt={conn.name} 
+                                            <img
+                                                src={getMediaUrl(conn.avatar_url)}
+                                                className="w-16 h-16 rounded-full border-2 border-sporthub-border group-hover:border-sporthub-neon transition-colors object-cover shadow-xl"
+                                                alt={conn.name}
                                                 onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                                             />
                                             <div className={`absolute bottom-0.5 right-0.5 w-4 h-4 ${conn.is_online ? 'bg-sporthub-neon shadow-[0_0_10px_rgba(163,230,53,0.8)]' : 'bg-gray-600'} rounded-full border-2 border-[#151b28]`}></div>
