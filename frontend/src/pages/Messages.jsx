@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { api } from '../api';
 import { Loader2, Send, Search as SearchIcon, Paperclip, X, ArrowLeft, MessageSquare, PlayCircle, Pencil, Check as SaveIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { getMediaUrl } from '../utils/media';
 import ChatOptionsMenu from '../components/ChatOptionsMenu';
@@ -9,6 +10,7 @@ import AnalyticsPanel from '../components/AnalyticsPanel';
 
 const Messages = () => {
     const { user: authUser, fetchUnreadCount, setUnreadCount, lastNotification, lastAnalyticsUpdate } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [inboxConfig, setInboxConfig] = useState([]);
@@ -135,7 +137,7 @@ const Messages = () => {
             setEditingMessageId(null);
         } catch (error) { 
             console.error("Error editando mensaje:", error);
-            alert("No se pudo editar el mensaje.");
+            showToast("No se pudo editar el mensaje", 'error');
         }
     };
 

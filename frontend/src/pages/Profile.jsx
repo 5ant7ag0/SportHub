@@ -43,6 +43,7 @@ import { PostCard, ShareConfirmModal, DeleteConfirmModal } from '../components/P
 import { PostDetailModal } from '../components/PostDetailModal';
 import { CreatePostBox } from '../components/CreatePostBox';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import { useToast } from '../context/ToastContext';
 
 const COLORS = ['#A3E635', '#06B6D4', '#c084fc', '#fbbf24', '#f87171', '#34d399'];
 
@@ -137,6 +138,7 @@ export const Profile = () => {
     const [isSharing, setIsSharing] = useState(false);
     const [postToDelete, setPostToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const { showToast } = useToast();
 
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('Publicaciones');
@@ -390,11 +392,12 @@ export const Profile = () => {
             await api.post('/posts/create/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('🎉 Perfil compartido exitosamente en tu Muro.');
+            
+            showToast('Publicado');
             setShareProfileModalOpen(false);
         } catch (e) {
             console.error(e);
-            alert('Error al compartir el perfil.');
+            showToast('Error al compartir el perfil', 'error');
         } finally {
             setIsSharingProfile(false);
         }
@@ -433,7 +436,7 @@ export const Profile = () => {
             }));
             setPostToDelete(null);
         } catch (e) {
-            alert("Error al eliminar.");
+            showToast("Error al eliminar", "error");
         } finally {
             setIsDeleting(false);
         }

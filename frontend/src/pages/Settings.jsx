@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { api } from '../api';
 import { Camera, Save, Loader2, CheckCircle2, User, MapPin, Trophy, Shield, Bell, X, Globe, Link, Share2, LogOut, ShieldCheck, Trash2, AlertTriangle, Pencil, Briefcase } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
@@ -48,6 +49,7 @@ const SPORTS_DATA = {
 
 export const Settings = () => {
     const { user, updateUser, logout } = useAuth();
+    const { showToast } = useToast();
     const [name, setName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [sport, setSport] = useState(user?.sport || '');
@@ -210,7 +212,7 @@ export const Settings = () => {
             await api.post('/settings/delete-account/', { password: deletePassword });
             logout();
         } catch (err) {
-            alert(err.response?.data?.error || "Error al eliminar la cuenta.");
+            showToast(err.response?.data?.error || "Error al eliminar la cuenta", "error");
         } finally {
             setIsDeleting(false);
             setShowDeleteModal(false);

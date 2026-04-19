@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area, ScatterChart, Scatter, ZAxis, Label } from 'recharts';
 import { TrendingUp, Users, Heart, MessageCircle, Loader2, ShieldCheck, ShieldAlert, Trash2, UserX, Search, CheckCircle2, UserCheck, X, MapPin, User, Shield, Activity, Calendar, Settings, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { api } from '../api';
 import { Link } from 'react-router-dom';
 import { getMediaUrl } from '../utils/media';
@@ -81,12 +82,11 @@ const SkillBar = ({ skill, value }) => {
 
 export const AnalyticsDashboard = () => {
     const { user: authUser, onlineUserIds, lastNotification, lastAnalyticsUpdate } = useAuth();
-
+    const { showToast } = useToast();
     const [stats, setStats] = useState(INITIAL_STATS);
     const [isLoading, setIsLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: null, actionType: '' });
 
     const fetchAnalytics = async (options = {}) => {
@@ -168,11 +168,6 @@ export const AnalyticsDashboard = () => {
             }
         }
     }, [lastNotification]);
-
-    const showToast = (message, type = 'success') => {
-        setToast({ show: true, message, type });
-        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
-    };
 
     const handleUserAction = (userId, action, userName) => {
         const config = {
@@ -700,13 +695,6 @@ export const AnalyticsDashboard = () => {
                 </div>
             )}
 
-            {toast.show && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast({ ...toast, show: false })}
-                />
-            )}
 
             {modal.show && (
                 <ConfirmationModal
@@ -1108,22 +1096,6 @@ const UserManagementTable = ({ users, onlineUserIds, onAction, searchQuery, onSe
     );
 };
 
-const Toast = ({ message, type, onClose }) => {
-    return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl border shadow-2xl ${type === 'success'
-                ? 'bg-[#151A23] border-sporthub-neon/30 text-sporthub-neon'
-                : 'bg-[#151A23] border-red-500/30 text-red-400'
-                }`}>
-                {type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                <p className="text-sm font-bold tracking-tight">{message}</p>
-                <button onClick={onClose} className="ml-2 p-1 hover:bg-white/5 rounded-full transition-colors">
-                    <X className="w-4 h-4 text-sporthub-muted" />
-                </button>
-            </div>
-        </div>
-    );
-};
 
 const ConfirmationModal = ({ title, message, onConfirm, onClose, actionType }) => {
     return (

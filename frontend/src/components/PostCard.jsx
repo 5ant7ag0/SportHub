@@ -3,6 +3,7 @@ import { api } from '../api';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Loader2, Heart, MessageCircle, Share2, Send, Bookmark, Paperclip, Edit2, Trash2, AlertTriangle, Play, Tag, DollarSign, Star, StarHalf, MapPin, Briefcase, UserPlus, UserMinus, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { getMediaUrl, isVideo } from '../utils/media';
 
 const SOCIAL_SVGS = {
@@ -143,6 +144,7 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, isDeleting }) =
  */
 export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, onUpdate }) => {
     const { user: authUser } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const [post, setPost] = useState(initialPost);
     const [commentText, setCommentText] = useState('');
@@ -325,7 +327,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
             setIsRatingModalOpen(false);
         } catch (error) {
             console.error("Error calificado servicio:", error);
-            alert(error.response?.data?.error || "Error al calificar");
+            showToast(error.response?.data?.error || "Error al calificar", 'error');
         } finally {
             setIsSubmittingRating(false);
         }
