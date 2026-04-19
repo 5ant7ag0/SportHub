@@ -39,9 +39,10 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // --- BLOQUE CRUCIAL: Inicialización (Evita la pantalla negra) ---
+    // --- BLOQUE CRUCIAL: Inicialización y Persistencia de Sesión ---
     useEffect(() => {
         const initAuth = async () => {
+            // Se intenta recuperar el token JWT del almacenamiento local del navegador (LocalStorage)
             const token = localStorage.getItem('access_token');
             const safetyTimeout = setTimeout(() => setLoading(false), 10000);
 
@@ -129,9 +130,11 @@ export const AuthProvider = ({ children }) => {
 
         ws.onmessage = (event) => {
             try {
+                // Se recibe el mensaje en formato JSON a través del WebSocket
                 const data = JSON.parse(event.data);
                 
-                // 1. Presencia
+                // --- MANEJO DE SEÑALES EN TIEMPO REAL ---
+                // 1. Presencia: Detecta si otros usuarios entran o salen (Online/Offline)
                 if (data.type === 'presence_update') {
                     const { user_id, is_online } = data.data;
                     setOnlineUserIds(prev => {

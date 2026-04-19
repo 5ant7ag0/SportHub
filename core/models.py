@@ -293,15 +293,17 @@ class AnalyticsEvent(Document):
     @classmethod
     def get_role_distribution(cls, profile_id=None):
         """
-        Calcula cuántas visitas provienen de cada rol.
-        Reparte las visitas antiguas (sin rol) 50/50 entre athlete y recruiter.
+        Calcula cuántas visitas provienen de cada rol (Atleta vs Reclutador).
+        Los datos se extraen de la colección 'analytics_event' de MongoDB.
         """
         pipeline = []
+        # Filtro opcional: Si hay un ID de perfil, filtramos solo las visitas a ese usuario específico
         if profile_id:
             if isinstance(profile_id, str):
                 profile_id = ObjectId(profile_id)
             pipeline.append({"$match": {"visited_profile_id": profile_id}})
             
+        # Agrupación: Clasificamos por el campo 'visitor_role' y sumamos las ocurrencias
         pipeline.append({"$group": {
             "_id": "$visitor_role",
             "count": {"$sum": 1}
@@ -347,8 +349,8 @@ class AnalyticsEvent(Document):
     @classmethod
     def get_visitor_age_stats(cls, profile_id=None):
         """
-        Calcula estadísticas descriptivas (Media, Min, Max) a nivel de clúster
-        usando Aggregation Pipelines. Si profile_id es None, calcula globales.
+        Calcula estadísticas descriptivas (Media, Mínimo y Máximo) de edad de los visitantes.
+        Utiliza el motor de agregación de MongoDB para procesar los datos directamente en el servidor de base de datos.
         """
         pipeline = []
         if profile_id:
@@ -356,6 +358,7 @@ class AnalyticsEvent(Document):
                 profile_id = ObjectId(profile_id)
             pipeline.append({"$match": {"visited_profile_id": profile_id}})
             
+        # Cálculo Estadístico: Extraemos la media ($avg), el mínimo ($min) y el máximo ($max) en una sola pasada.
         pipeline.append({"$group": {
             "_id": "$visited_profile_id" if profile_id else None,
             "average_age": {"$avg": "$visitor_age"},
@@ -373,8 +376,8 @@ class AnalyticsEvent(Document):
     @classmethod
     def get_demographic_percentages(cls, profile_id=None):
         """
-        Agrupa visitantes por rangos de edad e identifica porcentajes demográficos.
-        Si profile_id es None, calcula globales.
+        Genera una distribución de frecuencias por rangos de edad (Histograma).
+        Los datos provienen de AnalyticsEvent y se segmentan en 'cubetas' o buckets.
         """
         pipeline = []
         if profile_id:
@@ -382,6 +385,7 @@ class AnalyticsEvent(Document):
                 profile_id = ObjectId(profile_id)
             pipeline.append({"$match": {"visited_profile_id": profile_id}})
             
+        # Bucket: Agrupamos las edades en intervalos predefinidos para la visualización de barras en el frontend.
         pipeline.append({"$bucket": {
             "groupBy": "$visitor_age",
             "boundaries": [0, 18, 25, 35, 45, 60, 100],

@@ -17,13 +17,19 @@ class AnalyticsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """
+        Punto de entrada principal para el Dashboard de Analíticas.
+        Coordina la extracción de datos de múltiples colecciones (Eventos, Usuarios, Posts, Notificaciones).
+        """
         print("=== INICIANDO ANALYTICS VIEW ===")
         try:
+            # Obtención del usuario autenticado y su rol para determinar el nivel de acceso (Admin vs Usuario)
             user = User.objects.get(id=request.user.id)
             is_admin = getattr(user, 'role', '') == 'admin'
             print(f"Usuario: {user.email}, Admin: {is_admin}")
             
             # --- 1. TENDENCIAS (Seguro) ---
+            # Se extraen likes y comentarios de los últimos 7 días.
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=7)
             
@@ -287,6 +293,10 @@ class FollowView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+        Lógica de Seguimiento (Follow/Unfollow).
+        Utiliza actualizaciones atómicas en MongoDB para evitar condiciones de carrera.
+        """
         target_id = request.data.get('target_id')
         user = request.user
 
@@ -298,7 +308,7 @@ class FollowView(APIView):
         except (User.DoesNotExist, InvalidId):
             raise NotFound("Usuario a seguir no encontrado.")
 
-        # Comprobación atómica para evitar desincronización por estado en memoria (stale)
+        # Verificación directa en base de datos para asegurar el estado real del seguimiento
         is_following = User.objects(id=user.id, following=target_user.id).count() > 0
         
         from channels.layers import get_channel_layer
@@ -501,6 +511,10 @@ class SendMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+        Envío de mensajes privados en tiempo real.
+        Gestiona tanto texto plano como archivos multimedia enviados por el usuario.
+        """
         receiver_id = request.data.get('receiver_id')
         body = request.data.get('body', '')
         user = request.user
