@@ -421,7 +421,7 @@ const Messages = () => {
 
 
     return (
-        <div className="flex-1 flex overflow-hidden bg-[#0B0F19] p-4 lg:p-6 w-full h-full relative">
+        <div className="flex-1 flex overflow-hidden bg-[#0B0F19] p-4 pb-20 lg:p-6 w-full h-full relative">
             <div className="flex flex-col lg:flex-row gap-6 max-w-full w-full mx-auto h-full overflow-hidden relative items-stretch">
                 
                 {/* LISTA DE CHATS */}
@@ -493,7 +493,7 @@ const Messages = () => {
                     {activeChat ? (
                         <>
                             {/* CABECERA: Ajustada para ser el único elemento fijo en iOS */}
-                            <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0B0F19]/20 backdrop-blur-xl">
+                            <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0B0F19]/20 backdrop-blur-xl relative z-50">
                                 <div className="flex items-center gap-4">
                                     <button 
                                         onClick={() => { setViewMode('list'); navigate('/messages', { replace: true }); setActiveChat(null); }} 
@@ -654,7 +654,7 @@ const Messages = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            <div className="p-6 bg-[#0B0F19]/20 border-t border-white/5 relative">
+                            <div className="p-3 md:p-6 pb-4 md:pb-6 bg-[#0B0F19]/20 border-t border-white/5 relative">
                                 <form onSubmit={handleSend} className="flex gap-4 items-center">
                                     <button type="button" onClick={() => fileInputRef.current.click()} className="p-2 text-gray-500 hover:text-white transition-all">
                                         <Paperclip className="w-5 h-5" />

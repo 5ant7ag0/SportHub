@@ -9,7 +9,7 @@ import { formatAuthorMetadata } from './PostCard';
  * Reusable User Card component with the premium square design, 
  * integrated banner mask, and follow/message actions.
  */
-export const UserCard = ({ user: initialUser, className = "" }) => {
+export const UserCard = ({ user: initialUser, className = "", onAction = null }) => {
     const navigate = useNavigate();
     const [isFollowing, setIsFollowing] = useState(initialUser.is_following);
     const [isPending, setIsPending] = useState(false);
@@ -28,15 +28,13 @@ export const UserCard = ({ user: initialUser, className = "" }) => {
         setIsPending(true);
 
         try {
+            if (onAction) onAction();
             await api.post('/social/follow/', { target_id: initialUser.id });
         } catch (error) {
             console.error("Error al seguir:", error);
             setIsFollowing(previousState);
         } finally {
-            // Keep pending for a moment to prevent visual jumps during state updates
-            setTimeout(() => {
-                setIsPending(false);
-            }, 3000);
+            setIsPending(false);
         }
     };
 

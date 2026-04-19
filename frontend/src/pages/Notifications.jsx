@@ -28,7 +28,7 @@ export const Notifications = () => {
     }, []);
 
     const getIcon = (type) => {
-        switch (type) {
+        switch(type) {
             case 'like': return <Heart className="w-4 h-4 text-red-500 fill-current" />;
             case 'follow': return <UserPlus className="w-4 h-4 text-sporthub-cyan" />;
             case 'comment': return <MessageCircle className="w-4 h-4 text-sporthub-neon" />;
@@ -38,7 +38,7 @@ export const Notifications = () => {
     };
 
     const getActionText = (type) => {
-        switch (type) {
+        switch(type) {
             case 'like': return "le dio me gusta a tu publicación";
             case 'follow': return "comenzó a seguirte";
             case 'comment': return "comentó en tu post";
@@ -60,8 +60,8 @@ export const Notifications = () => {
             <div className="w-full max-w-2xl">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Actividad Reciente</h1>
-                        <p className="text-gray-500 text-sm">Lo que está pasando en tu perfil</p>
+                        <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">Actividad</h1>
+                        <p className="text-gray-500 text-sm">Lo que está pasando con tu perfil de atleta</p>
                     </div>
                     <div className="bg-sporthub-card border border-sporthub-border px-3 py-1 rounded-full text-[10px] text-sporthub-neon font-bold uppercase">
                         Reciente
@@ -81,15 +81,15 @@ export const Notifications = () => {
                 ) : (
                     <div className="flex flex-col gap-3">
                         {notifications.map((notif) => (
-                            <div
+                            <div 
                                 key={notif.id}
                                 className={`group flex items-center gap-4 p-4 rounded-2xl bg-sporthub-card border border-sporthub-border hover:bg-sporthub-card-hover transition-all duration-300 ${!notif.read ? 'border-l-4 border-l-sporthub-neon' : ''}`}
                             >
                                 <Link to={`/profile?id=${notif.actor.id}`} className="shrink-0 relative">
-                                    <img
-                                        src={getMediaUrl(notif.actor.avatar_url)}
-                                        className="w-12 h-12 rounded-full border border-[rgba(255,255,255,0.1)] object-cover bg-[#0B0F19]"
-                                        alt={notif.actor.name}
+                                    <img 
+                                        src={getMediaUrl(notif.actor.avatar_url)} 
+                                        className="w-12 h-12 rounded-full border border-[rgba(255,255,255,0.1)] object-cover bg-[#0B0F19]" 
+                                        alt={notif.actor.name} 
                                     />
                                     <div className="absolute -bottom-1 -right-1 bg-[#0B0F19] p-1 rounded-full border border-sporthub-border">
                                         {getIcon(notif.action_type)}
@@ -110,8 +110,8 @@ export const Notifications = () => {
                                 </div>
 
                                 {notif.post_id && (
-                                    <Link
-                                        to={`/feed?post_id=${notif.post_id}`}
+                                    <Link 
+                                        to={`/feed?post_id=${notif.post_id}`} 
                                         className="shrink-0 w-10 h-10 rounded-lg bg-[#0B0F19] flex items-center justify-center border border-sporthub-border text-gray-500 hover:text-sporthub-neon hover:border-sporthub-neon transition-all"
                                     >
                                         <ArrowRight className="w-4 h-4" />

@@ -70,14 +70,23 @@ export const Search = () => {
             if (!isSilent) setIsLoading(false);
         }
     };
-
+    const handleFollow = async (targetId) => {
+        // Marcamos como pendiente para bloquear sobrescrituras del fetchResults
+        pendingIdsRef.current.add(targetId);
+        
+        // El estado visual lo maneja UserCard, nosotros solo protegemos el ID
+        // Liberamos después de un tiempo prudencial para sincronizar con el server
+        setTimeout(() => {
+            pendingIdsRef.current.delete(targetId);
+        }, 1500);
+    };
 
     return (
         <main className="flex-1 p-4 md:p-8 bg-sporthub-bg pb-32">
             <div className="max-w-5xl mx-auto">
                 <div className="mb-8 px-2 md:px-0">
-                    <h1 className="text-3xl font-bold text-white mb-2">Buscar</h1>
-                    <p className="text-sm text-sporthub-muted">Encuentra jugadores y reclutadores.</p>
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight mb-2 uppercase">Buscador Universal</h2>
+                    <p className="text-sm text-sporthub-muted">Conecta con atletas, scouts y profesionales deportivos.</p>
                 </div>
 
                 {/* Filtros */}
@@ -141,6 +150,21 @@ export const Search = () => {
                                 className="bg-[#151b28] text-xs text-white pl-10 pr-4 py-3.5 rounded-xl border border-[rgba(255,255,255,0.05)] focus:border-sporthub-cyan outline-none w-full"
                             />
                         </div>
+
+                        {(sport || role || city || position || query) && (
+                            <button 
+                                onClick={() => {
+                                    setSport('');
+                                    setRole('');
+                                    setCity('');
+                                    setPosition('');
+                                    setQuery('');
+                                }}
+                                className="sm:col-span-full text-center text-[10px] text-sporthub-cyan font-bold uppercase tracking-wider hover:opacity-80 transition-opacity flex items-center justify-center gap-1 mt-1"
+                            >
+                                <X className="w-3 h-3" /> Limpiar Filtros
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -157,7 +181,11 @@ export const Search = () => {
                             </div>
                         )}
                         {results.map(user => (
-                            <UserCard key={user.id} user={user} />
+                            <UserCard 
+                                key={user.id} 
+                                user={user} 
+                                onAction={() => handleFollow(user.id)}
+                            />
                         ))}
                     </div>
                 )}
