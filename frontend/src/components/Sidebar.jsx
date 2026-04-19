@@ -50,13 +50,12 @@ export const Sidebar = () => {
   }, [lastNotification]);
 
   return (
-    <aside className="hidden lg:flex w-64 bg-sporthub-bg border-r border-sporthub-border h-screen flex-col pt-6 fixed left-0 top-0 z-40 shrink-0">
+    <aside className="hidden lg:flex w-72 bg-sporthub-bg h-screen flex-col pt-6 fixed left-0 top-0 z-40 shrink-0">
       <div className="px-6 mb-8 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-sporthub-neon tracking-tight">SportHub</h1>
-          <div className="flex items-center px-2 py-1 rounded-full bg-sporthub-card border border-sporthub-border">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></div>
-            <span className="text-[10px] text-gray-400 font-medium">En vivo</span>
+          <div className="flex items-center mt-1">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
           </div>
         </div>
         <p className="text-[10px] text-sporthub-muted">Red Profesional Deportiva</p>
@@ -106,22 +105,24 @@ export const Sidebar = () => {
       </div>
 
       <nav className="flex-1 px-4 overflow-y-auto custom-scrollbar">
-        <SidebarItem icon={Home} label="Feed" to="/feed" />
-        <SidebarItem icon={BarChart2} label="Analítica" to="/dashboard" />
-        <SidebarItem icon={User} label="Perfil" to="/profile" />
-        <SidebarItem icon={Search} label="Buscar" to="/search" />
-        <SidebarItem icon={Users} label="Red" to="/network" />
-        {/* 🟢 BadgeCount ahora viene directamente del Contexto */}
-        <SidebarItem icon={MessageSquare} label="Mensajes" to="/messages" badgeCount={unreadCount} />
-        <SidebarItem icon={Bookmark} label="Guardados" to="/saved" />
-        {/* 🟢 BadgeCount para Notificaciones Sociales */}
-        <SidebarItem icon={Bell} label="Notificaciones" to="/notifications" badgeCount={socialCount} />
-        <SidebarItem icon={Settings} label="Configuración" to="/settings" />
+        <div className="bg-sporthub-card border border-white/5 rounded-[32px] p-2 mb-6">
+          <SidebarItem icon={Home} label="Feed" to="/feed" />
+          <SidebarItem icon={BarChart2} label="Analítica" to="/dashboard" />
+          <SidebarItem icon={User} label="Perfil" to="/profile" />
+          <SidebarItem icon={Search} label="Buscar" to="/search" />
+          <SidebarItem icon={Users} label="Red" to="/network" />
+          {/* 🟢 BadgeCount ahora viene directamente del Contexto */}
+          <SidebarItem icon={MessageSquare} label="Mensajes" to="/messages" badgeCount={unreadCount} />
+          <SidebarItem icon={Bookmark} label="Guardados" to="/saved" />
+          {/* 🟢 BadgeCount para Notificaciones Sociales */}
+          <SidebarItem icon={Bell} label="Notificaciones" to="/notifications" badgeCount={socialCount} />
+          <SidebarItem icon={Settings} label="Configuración" to="/settings" />
+        </div>
 
-        <div className="mt-8">
-          <button onClick={logout} className="flex items-center w-full px-4 py-3 mb-2 rounded-xl transition-all duration-300 text-red-400 hover:bg-red-400/10 hover:text-red-300">
-            <LogOut className="w-5 h-5 mr-4" />
-            <span>Cerrar Sesión</span>
+        <div className="px-2">
+          <button onClick={logout} className="flex items-center w-full px-4 py-3 mb-2 rounded-xl transition-all duration-300 text-red-500/80 hover:bg-red-500/10 hover:text-red-500 group">
+            <LogOut className="w-5 h-5 mr-4 opacity-70 group-hover:opacity-100" />
+            <span className="font-medium">Cerrar Sesión</span>
           </button>
         </div>
       </nav>

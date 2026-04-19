@@ -30,7 +30,7 @@ const DashboardLayout = ({ children }) => {
       <div className="flex flex-col h-[100dvh] overflow-hidden bg-sporthub-bg font-outfit fixed inset-0 w-full">
         <div className="flex flex-1 overflow-hidden">
           <Sidebar aria-hidden={true} />
-          <main className="flex-1 flex flex-col h-full overflow-hidden w-full max-w-[100vw] lg:ml-64">
+          <main className="flex-1 flex flex-col h-full overflow-hidden w-full max-w-[100vw] lg:ml-72">
             {children}
           </main>
         </div>
@@ -46,7 +46,7 @@ const DashboardLayout = ({ children }) => {
       <div className="lg:flex">
         <Sidebar aria-hidden={false} />
         {/* En PC ml-64 (ancho sidebar), en móvil pt-24 (alto header) */}
-        <main className="flex-1 w-full max-w-[100vw] relative lg:ml-64 pt-24 lg:pt-0 pb-32 lg:pb-0 px-0 md:px-4">
+        <main className="flex-1 w-full max-w-[100vw] relative lg:ml-72 pt-24 lg:pt-0 pb-32 lg:pb-0 px-0 md:px-4">
           {children}
         </main>
       </div>
