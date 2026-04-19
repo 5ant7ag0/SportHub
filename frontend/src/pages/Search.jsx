@@ -52,9 +52,9 @@ export const Search = () => {
             if (role) params.append('role', role);
             if (city) params.append('city', city);
             if (position) params.append('position', position);
-            
+
             const { data } = await api.get(`/search/?${params.toString()}`);
-            
+
             setResults(prev => {
                 return data.map(newUser => {
                     if (pendingIdsRef.current.has(newUser.id)) {
@@ -76,8 +76,8 @@ export const Search = () => {
         <main className="flex-1 p-4 md:p-8 bg-sporthub-bg pb-32">
             <div className="max-w-5xl mx-auto">
                 <div className="mb-8 px-2 md:px-0">
-                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight mb-2 uppercase">Buscador Universal</h2>
-                    <p className="text-sm text-sporthub-muted">Conecta con atletas, scouts y profesionales deportivos.</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">Buscar</h1>
+                    <p className="text-sm text-sporthub-muted">Encuentra jugadores y reclutadores.</p>
                 </div>
 
                 {/* Filtros */}
@@ -85,7 +85,7 @@ export const Search = () => {
                     <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                         <div className="flex-1 bg-[#151b28] rounded-2xl flex items-center px-4 border border-[rgba(255,255,255,0.05)] focus-within:border-sporthub-cyan transition-colors">
                             <SearchIcon className="w-5 h-5 text-gray-500" />
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="Escribe un nombre..."
                                 value={query}
@@ -99,8 +99,8 @@ export const Search = () => {
                     </div>
 
                     <div className={`grid grid-cols-1 ${sport ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 sm:gap-4`}>
-                        <select 
-                            value={sport} 
+                        <select
+                            value={sport}
                             onChange={(e) => setSport(e.target.value)}
                             className="bg-[#151b28] text-xs text-white px-4 py-3.5 rounded-xl border border-[rgba(255,255,255,0.05)] focus:border-sporthub-cyan outline-none w-full appearance-none"
                         >
@@ -111,8 +111,8 @@ export const Search = () => {
                         </select>
 
                         {sport && (
-                            <select 
-                                value={position} 
+                            <select
+                                value={position}
                                 onChange={(e) => setPosition(e.target.value)}
                                 className="bg-[#151b28] text-xs text-white px-4 py-3.5 rounded-xl border border-[rgba(255,255,255,0.05)] focus:border-sporthub-cyan outline-none w-full appearance-none animate-in fade-in duration-300"
                             >
@@ -121,8 +121,8 @@ export const Search = () => {
                             </select>
                         )}
 
-                        <select 
-                            value={role} 
+                        <select
+                            value={role}
                             onChange={(e) => setRole(e.target.value)}
                             className="bg-[#151b28] text-xs text-white px-4 py-3.5 rounded-xl border border-[rgba(255,255,255,0.05)] focus:border-sporthub-cyan outline-none w-full appearance-none"
                         >
@@ -133,9 +133,9 @@ export const Search = () => {
 
                         <div className="relative">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-sporthub-muted" />
-                            <input 
-                                type="text" 
-                                placeholder="Ciudad..." 
+                            <input
+                                type="text"
+                                placeholder="Ciudad..."
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
                                 className="bg-[#151b28] text-xs text-white pl-10 pr-4 py-3.5 rounded-xl border border-[rgba(255,255,255,0.05)] focus:border-sporthub-cyan outline-none w-full"
