@@ -1,3 +1,6 @@
+// Obtiene datos de /api/feed/. Muestra publicaciones, servicios y notificaciones en tiempo real.
+// Utiliza WebSockets para recibir notificaciones en tiempo real.
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
@@ -240,56 +243,56 @@ export const Feed = () => {
 
                         <div className="flex flex-col gap-6">
 
-                        {posts.length === 0 && !isLoading ? (
-                            <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-[rgba(255,255,255,0.05)]">
-                                <AlertTriangle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                                <p className="text-gray-500 text-sm">No hay contenido disponible para este deporte.</p>
-                                <button
-                                    onClick={() => setActiveSport('')}
-                                    className="text-sporthub-cyan text-xs font-bold mt-2 hover:underline"
-                                >
-                                    Ver todas las publicaciones
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                {posts.map((post, index) => {
-                                    if (posts.length === index + 1) {
-                                        return (
-                                            <div ref={lastPostRef} key={post.id}>
+                            {posts.length === 0 && !isLoading ? (
+                                <div className="py-20 text-center bg-sporthub-card rounded-3xl border border-dashed border-[rgba(255,255,255,0.05)]">
+                                    <AlertTriangle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                                    <p className="text-gray-500 text-sm">No hay contenido disponible para este deporte.</p>
+                                    <button
+                                        onClick={() => setActiveSport('')}
+                                        className="text-sporthub-cyan text-xs font-bold mt-2 hover:underline"
+                                    >
+                                        Ver todas las publicaciones
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    {posts.map((post, index) => {
+                                        if (posts.length === index + 1) {
+                                            return (
+                                                <div ref={lastPostRef} key={post.id}>
+                                                    <PostCard
+                                                        post={post}
+                                                        onShare={handleOpenShare}
+                                                        onMediaClick={(id) => setSelectedPostId(id)}
+                                                        onDelete={(id) => setPostToDelete(id)}
+                                                        onUpdate={handleUpdatePost}
+                                                    />
+                                                </div>
+                                            );
+                                        } else {
+                                            return (
                                                 <PostCard
+                                                    key={post.id}
                                                     post={post}
                                                     onShare={handleOpenShare}
                                                     onMediaClick={(id) => setSelectedPostId(id)}
                                                     onDelete={(id) => setPostToDelete(id)}
                                                     onUpdate={handleUpdatePost}
                                                 />
-                                            </div>
-                                        );
-                                    } else {
-                                        return (
-                                            <PostCard
-                                                key={post.id}
-                                                post={post}
-                                                onShare={handleOpenShare}
-                                                onMediaClick={(id) => setSelectedPostId(id)}
-                                                onDelete={(id) => setPostToDelete(id)}
-                                                onUpdate={handleUpdatePost}
-                                            />
-                                        );
-                                    }
-                                })}
+                                            );
+                                        }
+                                    })}
 
-                                {isLoading && (
-                                    <div className="flex justify-center py-4">
-                                        <Loader2 className="w-6 h-6 animate-spin text-sporthub-neon" />
-                                    </div>
-                                )}
-                            </>
-                        )}
+                                    {isLoading && (
+                                        <div className="flex justify-center py-4">
+                                            <Loader2 className="w-6 h-6 animate-spin text-sporthub-neon" />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
                 {/* Columna Lateral - Sugerencias con scroll independiente */}
                 <aside className="hidden xl:flex xl:col-span-4 h-full overflow-y-auto no-scrollbar pb-20">

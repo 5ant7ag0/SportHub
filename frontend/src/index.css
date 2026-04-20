@@ -4,8 +4,10 @@
   --color-sporthub-bg: #0B0F19;
   --color-sporthub-card: #151A23;
   --color-sporthub-card-hover: #1E2532;
-  --color-sporthub-neon: #A3E635; /* lime-400 */
-  --color-sporthub-cyan: #22D3EE; /* cyan-400 */
+  --color-sporthub-neon: #A3E635;
+  /* lime-400 */
+  --color-sporthub-cyan: #22D3EE;
+  /* cyan-400 */
   --color-sporthub-cyan-dark: #0e7490;
   --color-sporthub-steel: #CBD5E1;
   --color-sporthub-muted: #64748B;
@@ -13,7 +15,8 @@
   --color-sporthub-text: #F8FAFC;
 }
 
-html, body {
+html,
+body {
   background-color: var(--color-sporthub-bg);
   color: var(--color-sporthub-text);
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

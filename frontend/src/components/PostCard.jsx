@@ -1,3 +1,7 @@
+// Muestra una publicación individual con detalles, acciones sociales y menús de edición/eliminación.
+// Utiliza WebSockets para recibir notificaciones en tiempo real.
+// Maneja la lógica de repostear, guardar, editar y eliminar publicaciones.
+
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
@@ -73,7 +77,7 @@ export const ShareConfirmModal = ({ isOpen, onClose, onConfirm, postAuthor, isLo
                 <p className="text-gray-400 text-center text-sm mb-6 px-2">
                     Esta publicación de <span className="text-sporthub-neon font-bold">{postAuthor}</span> aparecerá en tu muro para que toda tu red la vea.
                 </p>
-                
+
                 {error && (
                     <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
                         <p className="text-red-400 text-xs font-bold">{error}</p>
@@ -81,14 +85,14 @@ export const ShareConfirmModal = ({ isOpen, onClose, onConfirm, postAuthor, isLo
                 )}
 
                 <div className="flex flex-col gap-3">
-                    <button 
+                    <button
                         onClick={onConfirm}
                         disabled={isLoading}
                         className="w-full bg-sporthub-neon text-black font-black py-4 rounded-2xl hover:shadow-[0_0_20px_rgba(163,230,53,0.4)] active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar Repost"}
                     </button>
-                    <button 
+                    <button
                         onClick={onClose}
                         disabled={isLoading}
                         className="w-full bg-white/5 text-gray-400 font-bold py-4 rounded-2xl hover:bg-white/10 transition-colors uppercase tracking-widest text-xs disabled:opacity-30"
@@ -117,16 +121,16 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, isDeleting }) =
                 <p className="text-gray-400 text-center text-sm mb-8 px-2 font-medium">
                     Esta acción es <span className="text-red-400 font-bold underline">irreversible</span>. Al borrar este post original, desaparecerán todos los reposts realizados por otros usuarios.
                 </p>
-                
+
                 <div className="flex flex-col gap-3">
-                    <button 
+                    <button
                         onClick={onConfirm}
                         disabled={isDeleting}
                         className="w-full bg-red-600 text-white font-black py-4 rounded-2xl hover:bg-red-700 hover:shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar Eliminación"}
                     </button>
-                    <button 
+                    <button
                         onClick={onClose}
                         disabled={isDeleting}
                         className="w-full bg-white/5 text-gray-400 font-bold py-4 rounded-2xl hover:bg-white/10 transition-colors uppercase tracking-widest text-xs disabled:opacity-30"
@@ -183,9 +187,9 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
         if (!post.shared_profile || isFollowProcessing) return;
         setIsFollowProcessing(true);
         const previousState = post.shared_profile.is_following;
-        
-        const updatedProfile = { 
-            ...post.shared_profile, 
+
+        const updatedProfile = {
+            ...post.shared_profile,
             is_following: !previousState,
             followers_count: (post.shared_profile.followers_count || 0) + (previousState ? -1 : 1)
         };
@@ -195,7 +199,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
 
         try {
             await api.post('/social/follow/', { target_id: post.shared_profile.id });
-        } catch(e) {
+        } catch (e) {
             const revertedPost = { ...post, shared_profile: { ...post.shared_profile, is_following: previousState } };
             setPost(revertedPost);
             if (onUpdate) onUpdate(revertedPost);
@@ -251,7 +255,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
         e.preventDefault();
         const file = fileInputRef.current?.files[0];
         if (!commentText.trim() && !file) return;
-        
+
         setIsUploadingComment(true);
         try {
             let res;
@@ -260,7 +264,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                 formData.append('post_id', post.id);
                 formData.append('text', commentText || "📎 Multimedia adjunta");
                 formData.append('file', file);
-                
+
                 res = await api.post('/posts/comment/', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
@@ -280,7 +284,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
             };
             setPost(updated);
             if (onUpdate) onUpdate(updated);
-            
+
             setCommentText('');
             if (fileInputRef.current) fileInputRef.current.value = "";
         } catch (error) {
@@ -299,12 +303,12 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                 payload.service_price = editServicePrice;
             }
             await api.put(`/posts/edit/${post.id}/`, payload);
-            setPost(prev => ({ 
-                ...prev, 
-                content: editContent, 
+            setPost(prev => ({
+                ...prev,
+                content: editContent,
                 service_title: editServiceTitle,
                 service_price: editServicePrice,
-                is_edited: true 
+                is_edited: true
             }));
             setIsEditing(false);
         } catch (e) {
@@ -338,9 +342,9 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
     };
 
     return (
-        <div 
-            ref={postRef} 
-            id={`post-${post.id}`} 
+        <div
+            ref={postRef}
+            id={`post-${post.id}`}
             className={`bg-sporthub-card rounded-2xl border transition-all w-full max-w-full overflow-hidden shadow-lg ${post.post_type === 'service' ? 'border-sporthub-neon/40 shadow-[0_0_20px_rgba(163,230,53,0.1)]' : 'border-sporthub-border'}`}
         >
             {post.is_repost && (
@@ -355,10 +359,10 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
             <div className="p-4 flex items-center justify-between">
                 <Link to={`/profile?id=${post.author?.id}`} className="flex items-center gap-3 group/author">
                     <div className="relative">
-                        <img 
-                            src={getMediaUrl(post.author?.avatar_url)} 
-                            className="w-10 h-10 rounded-full border border-sporthub-border bg-[#0B0F19] object-cover transition-transform group-hover/author:scale-105" 
-                            alt={post.author?.name} 
+                        <img
+                            src={getMediaUrl(post.author?.avatar_url)}
+                            className="w-10 h-10 rounded-full border border-sporthub-border bg-[#0B0F19] object-cover transition-transform group-hover/author:scale-105"
+                            alt={post.author?.name}
                             onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                         />
                         {post.post_type === 'service' && (
@@ -382,15 +386,15 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                 </Link>
                 {authUser?.id === post.author?.id && !isEditing && (
                     <div className="flex items-center gap-1">
-                        <button 
-                            onClick={() => setIsEditing(true)} 
+                        <button
+                            onClick={() => setIsEditing(true)}
                             className="text-gray-500 hover:text-sporthub-neon p-2 transition-colors"
                             title="Editar"
                         >
                             <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
-                            onClick={() => onDelete(post.id)} 
+                        <button
+                            onClick={() => onDelete(post.id)}
                             className="text-gray-500 hover:text-red-500 p-2 transition-colors"
                             title="Eliminar"
                         >
@@ -407,7 +411,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2">
                                 <div className="relative">
                                     <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                                    <input 
+                                    <input
                                         type="text"
                                         value={editServiceTitle}
                                         onChange={e => setEditServiceTitle(e.target.value)}
@@ -417,7 +421,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                 </div>
                                 <div className="relative">
                                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                                    <input 
+                                    <input
                                         type="number"
                                         value={editServicePrice}
                                         onChange={e => setEditServicePrice(e.target.value)}
@@ -427,8 +431,8 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                 </div>
                             </div>
                         )}
-                        <textarea 
-                            value={editContent} onChange={e => setEditContent(e.target.value)} 
+                        <textarea
+                            value={editContent} onChange={e => setEditContent(e.target.value)}
                             className="w-full bg-[#0B0F19] text-sm text-white rounded-xl p-4 border border-white/10 focus:border-sporthub-cyan outline-none resize-none" rows={3}>
                         </textarea>
                         <div className="flex gap-2 justify-end">
@@ -444,7 +448,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                     <div className="flex-1">
                                         <h4 className="text-white font-black text-xl leading-tight uppercase tracking-tight">{post.service_title}</h4>
                                         <div className="flex items-center gap-3 mt-2">
-                                            <div 
+                                            <div
                                                 className={`flex items-center gap-1 ${(!post.user_has_rated && post.author.id !== authUser?.id) ? 'cursor-pointer group/rate' : ''}`}
                                                 onClick={() => {
                                                     if (!post.user_has_rated && post.author.id !== authUser?.id) {
@@ -457,12 +461,12 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                                         const rating = post.average_rating || 0;
                                                         const isFull = post.ratings_count > 0 && rating >= i + 1;
                                                         const isHalf = post.ratings_count > 0 && !isFull && rating >= i + 0.5;
-                                                        
+
                                                         return (
                                                             <div key={i} className={`relative ${(!post.user_has_rated && post.author.id !== authUser?.id) ? 'group-hover/rate:scale-110 transition-transform' : ''}`}>
                                                                 {/* Contorno base siempre visible */}
                                                                 <Star size={20} className="text-gray-600/50" />
-                                                                
+
                                                                 {/* Capa de color (Llena o Media) */}
                                                                 <div className="absolute inset-0 overflow-hidden">
                                                                     {isFull ? (
@@ -477,7 +481,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                                         );
                                                     })}
                                                 </div>
-                                                
+
                                                 {!post.user_has_rated && post.author.id !== authUser?.id && (
                                                     <span className="text-sporthub-cyan text-[10px] font-bold uppercase tracking-widest ml-1 animate-pulse">
                                                         Calificar
@@ -513,14 +517,14 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
 
                 {post.is_repost && post.original_post && (
                     <div className="border border-white/10 rounded-xl overflow-hidden bg-black/20 mb-2 transition-all hover:bg-black/40">
-                        <div 
+                        <div
                             onClick={() => navigate(`/profile?id=${post.original_post.author.id}`)}
                             className="p-3 flex items-center gap-3 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors"
                         >
-                            <img 
-                                src={getMediaUrl(post.original_post.author.avatar_url)} 
-                                className="w-6 h-6 rounded-full border border-white/10 object-cover" 
-                                alt={post.original_post.author.name} 
+                            <img
+                                src={getMediaUrl(post.original_post.author.avatar_url)}
+                                className="w-6 h-6 rounded-full border border-white/10 object-cover"
+                                alt={post.original_post.author.name}
                                 onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                             />
                             <div className="flex flex-col">
@@ -531,7 +535,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                         <div className="p-3">
                             <p className="text-xs text-gray-300 mb-3">{post.original_post.content}</p>
                             {post.original_post.media_url && post.original_post.media_url !== 'None' && post.original_post.media_url !== '' && (
-                                <div 
+                                <div
                                     onClick={(e) => { e.stopPropagation(); onMediaClick(post.original_post.id); }}
                                     className="rounded-lg overflow-hidden border border-white/5 max-h-[400px] cursor-pointer group/orig relative"
                                 >
@@ -557,24 +561,24 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
             {post.post_type === 'profile_share' && post.shared_profile && (
                 <div className="border border-sporthub-border rounded-3xl overflow-hidden bg-sporthub-card mx-4 mb-4 shadow-xl transition-all group/sharecard">
                     {/* BANNER REPLICA */}
-                    <div 
+                    <div
                         className="h-28 md:h-36 w-full relative cursor-pointer"
                         onClick={() => navigate(`/profile?id=${post.shared_profile.id}`)}
                     >
-                        <img 
-                            src={post.shared_profile.banner_url && post.shared_profile.banner_url !== 'None' ? getMediaUrl(post.shared_profile.banner_url) : "https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop"} 
-                            className="w-full h-full object-cover opacity-80 group-hover/sharecard:opacity-100 transition-opacity" 
+                        <img
+                            src={post.shared_profile.banner_url && post.shared_profile.banner_url !== 'None' ? getMediaUrl(post.shared_profile.banner_url) : "https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop"}
+                            className="w-full h-full object-cover opacity-80 group-hover/sharecard:opacity-100 transition-opacity"
                             alt="Banner"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-sporthub-card via-transparent to-transparent"></div>
                     </div>
-                    
+
                     <div className="px-4 md:px-5 pb-5 flex flex-col gap-4 relative -mt-8 md:-mt-10">
                         {/* Avatar & Role stacked */}
                         <div className="flex flex-row items-center gap-3">
                             <div className="flex flex-col items-center shrink-0 -mt-2">
-                                <div 
-                                    className="relative ring-4 ring-[#0B0F19] rounded-full cursor-pointer" 
+                                <div
+                                    className="relative ring-4 ring-[#0B0F19] rounded-full cursor-pointer"
                                     onClick={() => navigate(`/profile?id=${post.shared_profile.id}`)}
                                 >
                                     <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-sporthub-card overflow-hidden bg-[#0B0F19] shadow-2xl transition-transform hover:scale-105">
@@ -587,10 +591,10 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                     </p>
                                 </div>
                             </div>
-                            
+
                             {/* Identity Block */}
                             <div className="flex-1 flex flex-col items-start text-left pt-6">
-                                <h4 
+                                <h4
                                     className="text-xl md:text-2xl font-bold text-white tracking-tight leading-none cursor-pointer hover:text-sporthub-neon transition-colors"
                                     onClick={() => navigate(`/profile?id=${post.shared_profile.id}`)}
                                 >
@@ -598,19 +602,19 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                 </h4>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-2 overflow-hidden w-full">
                                     <div className="flex items-center gap-1 truncate w-full sm:w-auto">
-                                        <Briefcase className="w-3 h-3 text-sporthub-neon shrink-0" /> 
+                                        <Briefcase className="w-3 h-3 text-sporthub-neon shrink-0" />
                                         <span className="truncate">
                                             {formatAuthorMetadata(post.shared_profile)}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
-                                        <MapPin className="w-3 h-3 text-sporthub-cyan shrink-0" /> 
+                                        <MapPin className="w-3 h-3 text-sporthub-cyan shrink-0" />
                                         <span className="truncate">{post.shared_profile.city ? `${post.shared_profile.city}, ${post.shared_profile.country || ''}` : 'Ubicación global'}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Redes y Botones en Flexbox Bottom */}
                         <div className="flex flex-col xl:flex-row items-center xl:items-end justify-between gap-4 w-full border-t border-white/5 pt-4">
                             <div className="flex items-center justify-center xl:justify-start gap-4">
@@ -621,10 +625,10 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                 {post.shared_profile.social_links?.facebook && <a href={post.shared_profile.social_links.facebook} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-[#1877f2] transition-colors" title="Facebook"><SOCIAL_SVGS.facebook className="w-4 h-4 md:w-5 md:h-5" /></a>}
                                 {post.shared_profile.social_links?.portfolio && <a href={post.shared_profile.social_links.portfolio} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-sporthub-neon transition-colors" title="Portfolio"><Globe className="w-4 h-4 md:w-5 md:h-5" /></a>}
                             </div>
-                            
+
                             {authUser?.id !== post.shared_profile.id && (
                                 <div className="flex items-center justify-center xl:justify-end gap-2 w-full xl:w-auto">
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); handleFollowSharedProfile(); }}
                                         disabled={isFollowProcessing}
                                         className={`flex-1 xl:flex-none min-w-[110px] text-sm font-bold px-4 py-2.5 rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-lg ${post.shared_profile.is_following ? 'bg-white/5 text-white border border-white/10' : 'bg-sporthub-neon text-black hover:scale-105 shadow-sporthub-neon/10'} disabled:opacity-50`}
@@ -632,7 +636,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                         {post.shared_profile.is_following ? <UserMinus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                                         {post.shared_profile.is_following ? 'Siguiendo' : 'Seguir'}
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); navigate(`/messages?contactId=${post.shared_profile.id}`); }}
                                         className="flex-1 xl:flex-none min-w-[110px] bg-sporthub-cyan text-black text-sm font-bold px-4 py-2.5 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-sporthub-cyan/10"
                                     >
@@ -646,7 +650,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
             )}
 
             {post.media_url && post.media_url !== 'None' && post.media_url !== '' && (
-                <div 
+                <div
                     onClick={() => onMediaClick(post.id)}
                     className="w-full bg-[#0B0F19] border-y border-white/5 overflow-hidden cursor-pointer group/media relative min-h-[250px] flex items-center justify-center"
                 >
@@ -658,10 +662,10 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
 
                     {isVideo(post.media_url) ? (
                         <div className="relative group/vid w-full h-full z-10">
-                            <video 
-                                src={getMediaUrl(post.media_url)} 
-                                muted 
-                                loop 
+                            <video
+                                src={getMediaUrl(post.media_url)}
+                                muted
+                                loop
                                 autoPlay
                                 playsInline
                                 preload="auto"
@@ -677,12 +681,12 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                         </div>
                     ) : (
                         <div className="w-full flex items-center justify-center min-h-[200px] max-h-[600px] z-10">
-                            <img 
-                                src={getMediaUrl(post.media_url)} 
-                                className="w-full h-full object-contain transition-transform duration-700 group-hover/media:scale-[1.01]" 
-                                alt="Post" 
+                            <img
+                                src={getMediaUrl(post.media_url)}
+                                className="w-full h-full object-contain transition-transform duration-700 group-hover/media:scale-[1.01]"
+                                alt="Post"
                                 onLoad={() => setIsMediaLoading(false)}
-                                onError={(e) => { 
+                                onError={(e) => {
                                     e.target.src = "/test_media/sample_atleta.svg";
                                     setIsMediaLoading(false);
                                 }}
@@ -694,11 +698,11 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
 
             {post.post_type === 'service' && (
                 <div className="px-4 py-2">
-                    <button 
-                        onClick={(e) => { 
-                            e.stopPropagation(); 
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
                             const msg = encodeURIComponent(`Hola, me interesa tu servicio de ${post.service_title}`);
-                            navigate(`/messages?contactId=${post.author.id}&prefill=${msg}`); 
+                            navigate(`/messages?contactId=${post.author.id}&prefill=${msg}`);
                         }}
                         className="w-full bg-sporthub-neon text-black font-black py-4 rounded-xl text-xs uppercase tracking-[0.2em] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
@@ -708,7 +712,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
             )}
 
             <div className="p-4 flex gap-6">
-                <button 
+                <button
                     onClick={handleLike}
                     className={`flex items-center gap-2 group/like transition-all duration-300 p-2 rounded-xl ${post.is_liked_by_user ? 'bg-sporthub-neon/10 text-sporthub-neon' : 'hover:bg-sporthub-neon/10 text-sporthub-muted hover:text-sporthub-neon'}`}
                 >
@@ -720,27 +724,27 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                         {post.likes_count}
                     </span>
                 </button>
-                <button 
+                <button
                     onClick={() => setShowComments(!showComments)}
                     className="flex items-center gap-2 text-sporthub-muted hover:text-sporthub-cyan transition-colors"
                 >
-                    <MessageCircle className="w-5 h-5" /> 
+                    <MessageCircle className="w-5 h-5" />
                     <span className="text-xs font-bold">{post.comments_count || 0}</span>
                 </button>
                 <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-                    <button 
+                    <button
                         onClick={handleShare}
                         className="text-sporthub-muted hover:text-sporthub-neon transition-colors group/share flex items-center gap-2"
                     >
-                        <Share2 className="w-5 h-5 group-hover/share:scale-110 transition-transform" /> 
+                        <Share2 className="w-5 h-5 group-hover/share:scale-110 transition-transform" />
                         <span className="text-xs font-bold">{post.shares_count || 0}</span>
                     </button>
-                    <button 
+                    <button
                         onClick={handleSave}
                         className={`transition-all duration-300 p-1.5 rounded-lg ${post.is_saved_by_user ? 'text-sporthub-steel bg-white/5 drop-shadow-[0_0_10px_rgba(203,213,225,0.4)]' : 'text-sporthub-muted hover:text-white hover:bg-white/5'}`}
                         title={post.is_saved_by_user ? "Quitar de guardados" : "Guardar publicación"}
                     >
-                        <Bookmark className={`w-5 h-5 transition-transform active:scale-75 ${post.is_saved_by_user ? 'fill-sporthub-steel' : ''}`} /> 
+                        <Bookmark className={`w-5 h-5 transition-transform active:scale-75 ${post.is_saved_by_user ? 'fill-sporthub-steel' : ''}`} />
                     </button>
                 </div>
             </div>
@@ -753,15 +757,15 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                             <div key={idx} className="flex gap-3 text-sm bg-sporthub-card p-3 rounded-2xl flex-col hover:bg-white/[0.02] transition-all group/comm">
                                 <div className="flex gap-3">
                                     <Link to={`/profile/${comment.author.id}`} className="shrink-0">
-                                        <img 
-                                            src={getMediaUrl(comment.author.avatar_url)} 
-                                            className="w-8 h-8 rounded-full object-cover border border-white/10 group-hover/comm:border-sporthub-cyan transition-all" 
-                                            alt={comment.author.name} 
+                                        <img
+                                            src={getMediaUrl(comment.author.avatar_url)}
+                                            className="w-8 h-8 rounded-full object-cover border border-white/10 group-hover/comm:border-sporthub-cyan transition-all"
+                                            alt={comment.author.name}
                                         />
                                     </Link>
                                     <div className="flex flex-col flex-1">
-                                        <Link 
-                                            to={`/profile/${comment.author.id}`} 
+                                        <Link
+                                            to={`/profile/${comment.author.id}`}
                                             className="font-black text-white hover:text-sporthub-cyan transition-colors text-[10px] uppercase tracking-tighter"
                                         >
                                             {comment.author.name}
@@ -781,8 +785,8 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                 <Paperclip className="w-4 h-4" />
                             </button>
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" />
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={commentText}
                                 onChange={(e) => setCommentText(e.target.value)}
                                 placeholder={isUploadingComment ? "Subiendo..." : "Escribe tu observación..."}
@@ -805,7 +809,7 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2 text-center text-pretty leading-tight">¿Cómo calificarías este servicio?</h3>
                         <p className="text-gray-400 text-[10px] mb-8 text-center uppercase tracking-tighter">Tu valoración ayuda a otros deportistas a elegir a los mejores profesionales.</p>
-                        
+
                         <div className="flex justify-center gap-3 mb-8">
                             {[1, 2, 3, 4, 5].map((score) => (
                                 <button
@@ -816,15 +820,15 @@ export const PostCard = ({ post: initialPost, onShare, onMediaClick, onDelete, o
                                     disabled={isSubmittingRating}
                                     className="transition-transform active:scale-90 hover:scale-125 disabled:opacity-50"
                                 >
-                                    <Star 
-                                        size={20} 
-                                        className={`${(hoverRating || 0) >= score ? 'fill-[#facc15] text-[#facc15]' : 'text-gray-600'} transition-colors`} 
+                                    <Star
+                                        size={20}
+                                        className={`${(hoverRating || 0) >= score ? 'fill-[#facc15] text-[#facc15]' : 'text-gray-600'} transition-colors`}
                                     />
                                 </button>
                             ))}
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => setIsRatingModalOpen(false)}
                             className="w-full py-2 text-gray-500 font-bold hover:text-white transition-colors text-[10px] uppercase tracking-widest"
                         >

@@ -1,3 +1,5 @@
+# Se encarga de autenticar al usuario
+
 from datetime import datetime
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed

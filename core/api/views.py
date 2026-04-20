@@ -1,3 +1,6 @@
+# Gestiona la lógica de negocio (likes, follows, mensajes).
+# Para el dashboard de analíticas / Graficos de estadisticas
+# Se usa Recharts en el frontend para graficar (convierte numeros en graficos)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +15,7 @@ from datetime import datetime, timedelta
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+# Para el dashboard de analíticas / Graficos de estadisticas
 class AnalyticsView(APIView):
     authentication_classes = [MongoJWTAuthentication]
     permission_classes = [IsAuthenticated]

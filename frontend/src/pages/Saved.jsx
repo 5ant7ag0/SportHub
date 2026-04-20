@@ -108,10 +108,10 @@ export const Saved = () => {
     return (
         <div className="p-0 bg-sporthub-bg h-[calc(100vh-6rem)] lg:h-screen overflow-hidden">
             <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 h-full items-start overflow-hidden px-4 md:px-0">
-                
+
                 {/* Columna Principal */}
                 <div className="xl:col-span-8 flex flex-col h-full overflow-y-auto no-scrollbar pt-6 pb-20">
-                    
+
                     {/* Header de Sección */}
                     <div className="flex items-center gap-4 mb-8 bg-sporthub-card/50 p-6 rounded-3xl border border-white/5 backdrop-blur-md">
                         <div className="w-12 h-12 bg-sporthub-steel/10 rounded-2xl flex items-center justify-center border border-sporthub-steel/20 shadow-lg">
@@ -131,7 +131,7 @@ export const Saved = () => {
                                 </div>
                                 <h3 className="text-white font-black text-xl mb-2 uppercase tracking-tight">Nada guardado aún</h3>
                                 <p className="text-gray-500 text-sm mb-8 max-w-xs mx-auto">Cuando encuentres algo que te inspire, guárdalo para verlo aquí más tarde.</p>
-                                <button 
+                                <button
                                     onClick={() => navigate('/feed')}
                                     className="bg-sporthub-neon text-black font-black px-8 py-3 rounded-2xl text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(163,230,53,0.3)] transition-all active:scale-95"
                                 >
@@ -141,13 +141,13 @@ export const Saved = () => {
                         ) : (
                             <>
                                 {posts.map((post, index) => (
-                                    <div 
-                                        key={post.id} 
+                                    <div
+                                        key={post.id}
                                         ref={index === posts.length - 1 ? lastPostRef : null}
                                         className="animate-in fade-in slide-in-from-bottom-4 duration-500"
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
-                                        <PostCard 
+                                        <PostCard
                                             post={post}
                                             onShare={handleOpenShare}
                                             onMediaClick={(id) => setSelectedPostId(id)}
@@ -156,7 +156,7 @@ export const Saved = () => {
                                         />
                                     </div>
                                 ))}
-                                
+
                                 {isLoading && (
                                     <div className="flex justify-center py-10">
                                         <Loader2 className="w-8 h-8 animate-spin text-sporthub-neon" />
@@ -176,7 +176,7 @@ export const Saved = () => {
             </div>
 
             {/* Modales */}
-            <ShareConfirmModal 
+            <ShareConfirmModal
                 isOpen={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
                 onConfirm={handleConfirmShare}
@@ -185,13 +185,13 @@ export const Saved = () => {
                 error={shareError}
             />
 
-            <PostDetailModal 
+            <PostDetailModal
                 postId={selectedPostId}
                 onClose={handleCloseModal}
                 onUpdatePost={handleUpdatePost}
             />
 
-            <DeleteConfirmModal 
+            <DeleteConfirmModal
                 isOpen={!!postToDelete}
                 onClose={() => setPostToDelete(null)}
                 onConfirm={handleDeletePost}

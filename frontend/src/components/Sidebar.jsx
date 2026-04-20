@@ -1,3 +1,7 @@
+// Se encarga de la navegación y de mostrar el perfil del usuario
+// Sincronizar posts usando la notificación central del Context
+// Detectar si estamos en un perfil aje
+
 import React, { useEffect } from 'react';
 import { Home, Search, Users, MessageSquare, BarChart2, User, Bookmark, Bell, LogOut, Settings } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -29,17 +33,17 @@ const SidebarItem = ({ icon: Icon, label, to, badgeCount, isActive: customIsActi
 );
 
 export const Sidebar = () => {
-    const location = useLocation();
-    const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
-    // 🟢 Obtenemos lastNotification para reaccionar a nuevos posts
-    const { user, logout, unreadCount, socialCount, setUser, lastNotification } = useAuth();
+  const location = useLocation();
+  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
+  // 🟢 Obtenemos lastNotification para reaccionar a nuevos posts
+  const { user, logout, unreadCount, socialCount, setUser, lastNotification } = useAuth();
 
-    // 🔍 Detectar si estamos en un perfil ajeno
-    const query = new URLSearchParams(location.search);
-    const targetId = query.get('id');
-    const myId = user ? (typeof user.id === 'object' ? user.id.$oid : String(user.id)) : null;
-    const isExternalProfile = location.pathname === '/profile' && targetId && targetId !== myId;
-    const isMyProfile = location.pathname === '/profile' && (!targetId || targetId === myId);
+  // 🔍 Detectar si estamos en un perfil ajeno
+  const query = new URLSearchParams(location.search);
+  const targetId = query.get('id');
+  const myId = user ? (typeof user.id === 'object' ? user.id.$oid : String(user.id)) : null;
+  const isExternalProfile = location.pathname === '/profile' && targetId && targetId !== myId;
+  const isMyProfile = location.pathname === '/profile' && (!targetId || targetId === myId);
 
   // 🟢 Sincronizar posts usando la notificación central del Contexto
   useEffect(() => {
@@ -75,9 +79,9 @@ export const Sidebar = () => {
         <div className="flex flex-col items-center text-center p-4 bg-sporthub-card rounded-2xl border border-sporthub-border">
           <div className="flex flex-col items-center mb-3">
             <div className="relative p-1">
-              <img 
-                src={getMediaUrl(user?.avatar_url)} 
-                className="w-16 h-16 rounded-full border-2 border-sporthub-border shadow-lg" 
+              <img
+                src={getMediaUrl(user?.avatar_url)}
+                className="w-16 h-16 rounded-full border-2 border-sporthub-border shadow-lg"
                 onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                 alt="Profile"
               />
@@ -91,7 +95,7 @@ export const Sidebar = () => {
           </div>
           <h3 className="text-sm font-semibold text-white mb-1">{user?.name || "Cargando..."}</h3>
           <p className="text-[10px] text-sporthub-muted mb-4 truncate max-w-[150px]">
-            {user?.role === 'athlete' 
+            {user?.role === 'athlete'
               ? (user?.sport ? `${user.sport}${user.position ? ` - ${user.position}` : ''}` : user?.email)
               : (user?.company || user?.job_title ? `${user?.company || ''}${user?.company && user?.job_title ? ' - ' : ''}${user?.job_title || ''}` : user?.email)
             }
@@ -127,11 +131,11 @@ export const Sidebar = () => {
           {/* 🟢 BadgeCount para Notificaciones Sociales */}
           <SidebarItem icon={Bell} label="Notificaciones" to="/notifications" badgeCount={socialCount} />
           <SidebarItem icon={Settings} label="Configuración" to="/settings" />
-          
+
           <div className="h-px bg-white/5 my-2 mx-4" />
-          
-          <button 
-            onClick={() => setShowLogoutConfirm(true)} 
+
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
             className="flex items-center w-full px-4 py-2 mb-1 rounded-xl transition-all duration-300 text-red-500/70 hover:bg-red-500/10 hover:text-red-500 group"
           >
             <LogOut className="w-5 h-5 mr-4 opacity-70 group-hover:opacity-100" />
@@ -140,7 +144,7 @@ export const Sidebar = () => {
         </div>
       </nav>
 
-      <LogoutConfirmModal 
+      <LogoutConfirmModal
         isOpen={showLogoutConfirm}
         onConfirm={logout}
         onCancel={() => setShowLogoutConfirm(false)}

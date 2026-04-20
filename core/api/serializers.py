@@ -1,3 +1,6 @@
+# Se encarga de serializar los datos
+# Serializer: Convierte objetos de Python a JSON
+
 from rest_framework import serializers
 from core.models import Post, User
 

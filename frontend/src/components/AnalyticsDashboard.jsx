@@ -1,3 +1,7 @@
+// Muestra estadísticas del sistema en tiempo real.
+// Obtiene datos de /api/analytics/summary/. 
+// Actualiza automáticamente cuando hay nuevas notificaciones o actualizaciones de analítica.
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, AreaChart, Area, ScatterChart, Scatter, ZAxis, Label } from 'recharts';
 import { TrendingUp, Users, Heart, MessageCircle, Loader2, ShieldCheck, ShieldAlert, Trash2, UserX, Search, CheckCircle2, UserCheck, X, MapPin, User, Shield, Activity, Calendar, Settings, Mail } from 'lucide-react';
@@ -71,7 +75,7 @@ const SkillBar = ({ skill, value }) => {
                 <span className={`text-[10px] font-bold ${isNeon ? 'text-sporthub-neon' : 'text-sporthub-cyan'}`}>{value}%</span>
             </div>
             <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div 
+                <div
                     className={`h-full rounded-full transition-all duration-1000 ${isNeon ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.3)]' : 'bg-sporthub-cyan shadow-[0_0_8px_rgba(34,211,238,0.3)]'}`}
                     style={{ width: `${value}%` }}
                 />
@@ -321,17 +325,17 @@ export const AnalyticsDashboard = () => {
                                 Perfil Atleta
                             </span>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             {Object.entries(
                                 authUser?.skills && Object.keys(authUser.skills).length > 0
-                                ? authUser.skills
-                                : { "Velocidad": 0, "Táctica": 0, "Resistencia": 0, "Remate": 0, "Control": 0, "Visión de Juego": 0 }
+                                    ? authUser.skills
+                                    : { "Velocidad": 0, "Táctica": 0, "Resistencia": 0, "Remate": 0, "Control": 0, "Visión de Juego": 0 }
                             ).map(([skill, value]) => (
-                                <SkillBar 
-                                    key={skill} 
-                                    skill={skill} 
-                                    value={value} 
+                                <SkillBar
+                                    key={skill}
+                                    skill={skill}
+                                    value={value}
                                 />
                             ))}
                         </div>
@@ -492,7 +496,7 @@ export const AnalyticsDashboard = () => {
             </div>
 
             <div className="flex flex-col gap-6">
-                
+
                 {/* 1. DISTRIBUCIÓN POR DEPORTE (Siempre visible arriba) */}
                 <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 shadow-xl flex flex-col items-center">
                     <div className="flex justify-between items-start w-full mb-4">
@@ -600,7 +604,7 @@ export const AnalyticsDashboard = () => {
                                 <span className="text-[8px] text-gray-500 uppercase font-black tracking-widest">Visitas</span>
                             </div>
                         </div>
-                        
+
                         <div className="w-full bg-white/5 rounded-2xl p-4 mt-4 text-center border border-white/5">
                             <p className="text-[10px] text-gray-400 leading-tight">Te faltan <span className="text-sporthub-neon font-bold">{4000 - (stats.total_visits || 0)}</span> visitas para alcanzar el siguiente nivel de perfil verificado.</p>
                         </div>

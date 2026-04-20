@@ -1,3 +1,5 @@
+// Se encarga de mostrar las notificaciones del usuario
+
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';

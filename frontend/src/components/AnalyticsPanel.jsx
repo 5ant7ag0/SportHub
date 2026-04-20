@@ -1,3 +1,6 @@
+// Componente que muestra las estadísticas de la plataforma
+// Se encarga de mostrar las estadísticas de la plataforma
+// Utiliza gráficos de Recharts para mostrar las estadísticas
 import React, { useMemo } from 'react';
 import { Activity, Heart, Users, TrendingUp, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -21,11 +24,11 @@ const getSportColor = (sportName) => {
     return '#F59E0B';
 };
 
-const AnalyticsPanel = ({ 
+const AnalyticsPanel = ({
     analytics
 }) => {
     const stats = analytics || {};
-    
+
     // 1. DATA PROCESSING FOR SPORT DONUT
     const sportsDonut = useMemo(() => {
         if (!stats.stats_por_deporte) return [];
@@ -55,7 +58,7 @@ const AnalyticsPanel = ({
 
     return (
         <div className="hidden xl:flex w-[350px] flex-col gap-6 shrink-0 h-full overflow-y-auto custom-scrollbar pb-4 pr-1">
-            
+
             {/* WIDGET 1: DISTRIBUCIÓN POR DEPORTE */}
             <div className="bg-sporthub-card rounded-3xl border border-sporthub-border p-6 shadow-xl flex flex-col items-center">
                 <div className="flex justify-between items-start w-full mb-4">
@@ -163,7 +166,7 @@ const AnalyticsPanel = ({
                             <span className="text-[8px] text-gray-500 uppercase font-bold tracking-widest">Visitas</span>
                         </div>
                     </div>
-                    
+
                     <div className="w-full bg-white/5 rounded-2xl p-3 mt-4 text-center">
                         <p className="text-[9px] text-gray-400 leading-tight">Te faltan <span className="text-sporthub-neon font-bold">{4000 - (stats.total_visits || 0)}</span> visitas para alcanzar el siguiente nivel de perfil verificado.</p>
                     </div>

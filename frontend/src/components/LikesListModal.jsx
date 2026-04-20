@@ -68,7 +68,7 @@ export const LikesListModal = ({ postId, onClose }) => {
         <div className="fixed inset-0 z-[350] flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
             {/* Backdrop propio para el sub-modal */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            
+
             <div className="relative w-full max-w-sm bg-[#121212] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
                 {/* Header */}
                 <div className="p-5 border-b border-white/5 flex items-center justify-between bg-[#181818]">
@@ -92,8 +92,8 @@ export const LikesListModal = ({ postId, onClose }) => {
                                     onClick={() => handleUserClick(user.id)}
                                     className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-all group text-left"
                                 >
-                                    <img 
-                                        src={getMediaUrl(user.avatar_url)} 
+                                    <img
+                                        src={getMediaUrl(user.avatar_url)}
                                         className="w-10 h-10 rounded-full object-cover border border-white/10 group-hover:border-sporthub-neon/50 transition-colors"
                                         alt={user.name}
                                         onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
@@ -110,11 +110,10 @@ export const LikesListModal = ({ postId, onClose }) => {
                                         <button
                                             onClick={(e) => handleToggleFollow(e, user.id)}
                                             disabled={isProcessing === user.id}
-                                            className={`py-1 px-3 text-[10px] font-black uppercase tracking-widest rounded-full transition-all border shrink-0 ${
-                                                user.is_following
+                                            className={`py-1 px-3 text-[10px] font-black uppercase tracking-widest rounded-full transition-all border shrink-0 ${user.is_following
                                                     ? 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                                                     : 'bg-sporthub-neon text-black border-sporthub-neon hover:shadow-[0_0_10px_rgba(163,230,53,0.4)] active:scale-95'
-                                            }`}
+                                                }`}
                                         >
                                             <span className="flex items-center gap-1 pointer-events-none">
                                                 {user.is_following && <Check className="w-3 h-3 animate-in zoom-in duration-300" />}

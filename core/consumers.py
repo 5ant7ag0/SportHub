@@ -1,3 +1,5 @@
+# Se encarga de notificar en tiempo real al usuario
+
 import json
 import jwt
 from urllib.parse import parse_qs

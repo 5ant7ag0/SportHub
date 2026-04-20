@@ -8,7 +8,7 @@ export const MobileHeader = () => {
     const { socialCount, user } = useAuth();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
-    
+
     const isFeed = location.pathname === '/feed';
     const activeFilter = searchParams.get('post_type') || '';
     const avatarUrl = getMediaUrl(user?.avatar_url);
@@ -27,16 +27,16 @@ export const MobileHeader = () => {
         <header className="lg:hidden flex items-center justify-between px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-sporthub-bg border-b border-sporthub-border fixed top-0 left-0 right-0 w-full z-50">
             <div className="flex items-center gap-3">
                 <span className="text-xl font-black text-sporthub-neon tracking-tighter uppercase italic">SportHub</span>
-                
+
                 {isFeed && (
                     <div className="flex items-center bg-[#0B0F19] p-0.5 rounded-[10px] border border-white/10 shadow-inner scale-[0.85] origin-left">
-                        <button 
+                        <button
                             onClick={() => handleFilterChange('')}
                             className={`px-3 py-1 rounded-[8px] text-[9px] font-bold uppercase tracking-widest transition-all ${!activeFilter ? 'bg-sporthub-neon text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
                         >
                             Todos
                         </button>
-                        <button 
+                        <button
                             onClick={() => handleFilterChange('service')}
                             className={`px-3 py-1 rounded-[8px] text-[9px] font-bold uppercase tracking-widest transition-all ${activeFilter === 'service' ? 'bg-sporthub-neon text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
                         >
@@ -45,7 +45,7 @@ export const MobileHeader = () => {
                     </div>
                 )}
             </div>
-            
+
             <div className="flex items-center gap-3">
                 <Link to="/notifications" className="relative p-2 text-gray-400 hover:text-white transition-colors">
                     <Bell className="w-6 h-6" />
@@ -55,13 +55,13 @@ export const MobileHeader = () => {
                         </span>
                     )}
                 </Link>
-                
+
                 <Link to="/profile" className="ml-1">
                     <div className="w-9 h-9 rounded-full border-2 border-[rgba(163,230,53,0.3)] p-0.5 overflow-hidden active:scale-95 transition-transform">
-                        <img 
-                            src={avatarUrl} 
-                            className="w-full h-full rounded-full object-cover" 
-                            alt="Mi Perfil" 
+                        <img
+                            src={avatarUrl}
+                            className="w-full h-full rounded-full object-cover"
+                            alt="Mi Perfil"
                         />
                     </div>
                 </Link>

@@ -1,3 +1,5 @@
+// Se encarga de mostrar las conexiones del usuario
+
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Loader2, Users, Check, X, MessageSquare, TrendingUp, UserPlus } from 'lucide-react';

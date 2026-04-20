@@ -1,3 +1,6 @@
+# Define las rutas de la API
+# Las APIS son endpoints que permiten la comunicación entre el frontend y el backend
+
 from django.urls import path
 from .views import AnalyticsView, FollowView, LikeView, SendMessageView, InboxView, ConversationDetailView, FeedView, PostDetailView, PostLikesListView, ProfileView, CommentView, SearchView, NetworkSuggestionsView, SavePostView, SavedPostsListView, ConnectionRequestView, AcceptConnectionView, EditMessageView, EditPostView, PendingConnectionsView, ConnectionsListView, UnreadCountView, NotificationListView, NotificationCountView, ClearChatView, DeleteChatView, MarkAsUnreadView, RatePostView, AdminUserManagementView, UserFollowersListView, UserFollowingListView
 from .auth_views import CustomTokenObtainPairView, CustomTokenRefreshView, RegisterView

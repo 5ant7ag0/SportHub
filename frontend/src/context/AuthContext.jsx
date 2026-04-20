@@ -1,3 +1,8 @@
+// Manejo de la sesión del usuario
+// Se encarga de la autenticación, registro y manejo de la sesión del usuario
+// Gestiona la persistencia del Token JWT 
+// y la conexión a WebSockets para recibir alertas en vivo.
+
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { api } from '../api';
@@ -67,6 +72,8 @@ export const AuthProvider = ({ children }) => {
         initAuth();
     }, []);
 
+    // Función para iniciar sesión y guardar el token en localStorage y decodificarlo 
+    // para obtener la información del usuario
     const login = async (token) => {
         localStorage.setItem('access_token', token);
         const decoded = jwtDecode(token);
@@ -99,7 +106,7 @@ export const AuthProvider = ({ children }) => {
         } catch (e) { console.error("Error social:", e); }
     };
 
-    // 🟢 LATIDO GLOBAL (HEARTBEAT)
+    // LATIDO GLOBAL (HEARTBEAT)
     useEffect(() => {
         if (!user?.id) return;
         const heartbeat = setInterval(async () => {
@@ -132,7 +139,7 @@ export const AuthProvider = ({ children }) => {
             try {
                 // Se recibe el mensaje en formato JSON a través del WebSocket
                 const data = JSON.parse(event.data);
-                
+
                 // --- MANEJO DE SEÑALES EN TIEMPO REAL ---
                 // 1. Presencia: Detecta si otros usuarios entran o salen (Online/Offline)
                 if (data.type === 'presence_update') {
@@ -163,6 +170,7 @@ export const AuthProvider = ({ children }) => {
                         if (data.data.followers_count !== undefined) updateUser({ followers_count: data.data.followers_count });
                         if (data.data.following_count !== undefined) updateUser({ following_count: data.data.following_count });
                     }
+                    // Se actualiza el contador de mensajes no leídos
                     if (data.data?.type === 'message') fetchUnreadCount();
                     fetchSocialCount();
                 }
@@ -170,7 +178,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         return () => { ws.close(); socketRef.current = null; };
-    }, [user?.id, updateUser]); 
+    }, [user?.id, updateUser]);
 
     return (
         <AuthContext.Provider value={{

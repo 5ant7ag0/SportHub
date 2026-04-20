@@ -1,3 +1,4 @@
+# Maneja la subida de archivos
 import os
 import cloudinary
 import cloudinary.uploader
@@ -144,6 +145,7 @@ class MessageWithMediaView(APIView):
                 except Exception as e:
                     return Response({'error': str(e)}, status=500)
 
+        # Enviar mensaje y guardar en la base de datos mogoDB
         msg = Message(
             sender=request.user,
             receiver=receiver,

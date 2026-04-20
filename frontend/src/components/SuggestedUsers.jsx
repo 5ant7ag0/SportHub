@@ -13,7 +13,7 @@ export const SuggestedUsers = () => {
             const { data } = await api.get('/network/suggestions/');
             // We take fewer suggestions for the sidebar to keep it clean, 
             // the endpoint returns 9 by default.
-            setSuggestions(data.slice(0, 5)); 
+            setSuggestions(data.slice(0, 5));
         } catch (error) {
             console.error("Error fetching suggestions:", error);
         } finally {
@@ -32,7 +32,7 @@ export const SuggestedUsers = () => {
                     <Users className="w-5 h-5 text-sporthub-neon" />
                     <h3 className="text-white font-black uppercase tracking-tighter text-lg">Sugerencias</h3>
                 </div>
-                <button 
+                <button
                     onClick={fetchSuggestions}
                     disabled={isLoading}
                     className="p-2 text-gray-500 hover:text-sporthub-neon transition-colors disabled:opacity-30"
@@ -54,16 +54,16 @@ export const SuggestedUsers = () => {
                         </p>
                     ) : (
                         suggestions.map(user => (
-                            <UserCard 
-                                key={user.id} 
-                                user={user} 
+                            <UserCard
+                                key={user.id}
+                                user={user}
                                 className="!max-h-[320px]" // Slightly smaller for sidebar
                             />
                         ))
                     )}
                 </div>
             )}
-            
+
             <footer className="mt-4 px-4 py-6 border-t border-white/5">
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest text-center">
                     © 2024 SportHub • Red Profesional

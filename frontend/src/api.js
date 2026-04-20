@@ -1,3 +1,6 @@
+// Maneja las peticiones HTTP a la API de Django.
+// Utiliza la libreria axios para hacer las peticiones.
+// Utiliza el proxy de Vite en desarrollo o directamente la URL relativa para que la IP del origen de la red sea válida (evitando CORS complex setup)
 import axios from 'axios';
 
 // Usamos el proxy de Vite en desarrollo o directamente la URL relativa para que la IP del origen de la red sea válida (evitando CORS complex setup)
@@ -22,7 +25,7 @@ api.interceptors.request.use(
         const token = localStorage.getItem('access_token');
         // Usamos nuestro Bearer JWT que interactúa nativamente con MongoEngine
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token}`; //Para que el backend sepa que el usuario está autenticado mediante el token JWT
         }
         return config;
     },

@@ -1,3 +1,4 @@
+# Script para crear usuarios y posts de prueba
 import os
 import sys
 import cloudinary.uploader

@@ -59,7 +59,7 @@ const DashboardLayout = ({ children }) => {
 
 function AppContent() {
   const { loading, user } = useAuth();
-  
+
   // DESBLOQUEADOR UNIVERSAL: Limpia bloqueos de scroll residuales (modales, etc) al cambiar de página
   useEffect(() => {
     // Aseguramos que al navegar, el body recupere su flujo a menos que se fuerce lo contrario
@@ -81,27 +81,27 @@ function AppContent() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
-          <Route 
-            path="/" 
-            element={loading ? null : (user ? <Navigate to="/feed" replace /> : <Landing />)} 
+          <Route
+            path="/"
+            element={loading ? null : (user ? <Navigate to="/feed" replace /> : <Landing />)}
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
           {/* Protected Routes */}
-          <Route 
-            path="/dashboard" 
-            element={<ProtectedRoute><DashboardLayout><AnalyticsDashboard /></DashboardLayout></ProtectedRoute>} 
+          <Route
+            path="/dashboard"
+            element={<ProtectedRoute><DashboardLayout><AnalyticsDashboard /></DashboardLayout></ProtectedRoute>}
           />
-          <Route 
-            path="/feed" 
-            element={<ProtectedRoute><DashboardLayout><Feed /></DashboardLayout></ProtectedRoute>} 
+          <Route
+            path="/feed"
+            element={<ProtectedRoute><DashboardLayout><Feed /></DashboardLayout></ProtectedRoute>}
           />
-          <Route 
-            path="/profile" 
-            element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>} 
+          <Route
+            path="/profile"
+            element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>}
           />
-          
+
           <Route path="/search" element={<ProtectedRoute><DashboardLayout><Search /></DashboardLayout></ProtectedRoute>} />
           <Route path="/network" element={<ProtectedRoute><DashboardLayout><Network /></DashboardLayout></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />

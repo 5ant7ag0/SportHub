@@ -21,9 +21,9 @@ export const ToastProvider = ({ children }) => {
         <ToastContext.Provider value={{ showToast, hideToast }}>
             {children}
             {toast.show && (
-                <Toast 
-                    message={toast.message} 
-                    type={toast.type} 
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
                     onClose={hideToast}
                 />
             )}

@@ -1,3 +1,6 @@
+# BDD No Relacional - Proyecto Final
+# METODO PARA REGISTRAR UN LIKE, SEGUIMIENTO, COMENTARIO O REPOST
+# AGREGACIONES E INDICES PARA OPTIMIZAR CONSULTAS / PIPELINES
 from mongoengine import (
     Document, EmbeddedDocument, StringField, EmailField, IntField,
     ListField, ReferenceField, EmbeddedDocumentField, BooleanField, 
@@ -87,7 +90,8 @@ class User(Document):
     @property
     def is_authenticated(self):
         return True
-
+    
+    # Métricas de Usuarios 
     @classmethod
     def get_sport_distribution(cls):
         """
@@ -101,6 +105,7 @@ class User(Document):
         ]
         return list(cls.objects.aggregate(pipeline))
 
+    # Métricas para calcular la distribución de usuarios por ciudad
     @classmethod
     def get_city_distribution(cls):
         """
@@ -114,6 +119,7 @@ class User(Document):
         ]
         return list(cls.objects.aggregate(pipeline))
 
+    # Métricas para calcular el crecimiento de usuarios en la plataforma
     @classmethod
     def get_user_growth_stats(cls):
         """
@@ -128,6 +134,7 @@ class User(Document):
         ]
         return list(cls.objects.aggregate(pipeline))
 
+    # Métricas para calcular el estado de concurrencia de los usuarios
     @classmethod
     def get_connection_metrics(cls):
         """
@@ -150,6 +157,7 @@ class User(Document):
             "offline": res["offline"][0]["count"] if res["offline"] else 0
         }
 
+    # Métricas para calcular la correlación entre talento y publicaciones   
     @classmethod
     def get_talent_correlation_stats(cls):
         """
@@ -193,6 +201,7 @@ class User(Document):
             print(f"Error Agregación Talento: {e}")
             return []
 
+    # indices para mejorar las consultas de edad y deporte
     meta = {
         'indexes': ['birth_date', 'sport']
     }
@@ -227,6 +236,7 @@ class Post(Document):
     
     timestamp = DateTimeField(default=datetime.utcnow)
 
+    # indices para mejorar las consultas de edad y deporte
     meta = {
         'indexes': ['author', 'timestamp']
     }
@@ -240,6 +250,7 @@ class Message(Document):
     unread_by = ListField(ReferenceField('User'), default=list)
     timestamp = DateTimeField(default=datetime.utcnow)
 
+    # indices para consultas de mensajes
     meta = {
         'strict': False,
         'indexes': [
@@ -254,12 +265,14 @@ class Rating(Document):
     score = IntField(min_value=1, max_value=5, required=True)
     timestamp = DateTimeField(default=datetime.utcnow)
 
+    # indices para consultas de los posts
     meta = {
         'indexes': [
             {'fields': ['user', 'post'], 'unique': True}
         ]
     }
 
+#METODO PARA REGISTRAR UN LIKE, SEGUIMIENTO, COMENTARIO O REPOST
 class Notification(Document):
     CHOICES = ('like', 'follow', 'comment', 'repost')
     
@@ -273,7 +286,7 @@ class Notification(Document):
     meta = {
         'indexes': ['recipient', '-timestamp']
     }
-
+    #METODO PARA VISITAS
 class AnalyticsEvent(Document):
     visited_profile_id = ReferenceField('User', required=True)
     visitor_age = IntField(required=True)
@@ -284,12 +297,14 @@ class AnalyticsEvent(Document):
         'indexes': ['visited_profile_id', 'timestamp']
     }
 
+    #METODO PARA REGISTRAR UNA VISITA
     @classmethod
     def register_visit(cls, visited_id, visitor_age, visitor_role='athlete'):
         event = cls(visited_profile_id=visited_id, visitor_age=visitor_age, visitor_role=visitor_role)
         event.save()
         return event
 
+    #AGREGACIONES PARA ESTADISTICA Distribución de edades
     @classmethod
     def get_role_distribution(cls, profile_id=None):
         """
@@ -346,6 +361,7 @@ class AnalyticsEvent(Document):
         except Exception:
             return []
 
+    #AGREGACIONES PARA ESTADISTICA Promedio de edad, Minimo y Maximo
     @classmethod
     def get_visitor_age_stats(cls, profile_id=None):
         """
@@ -373,6 +389,7 @@ class AnalyticsEvent(Document):
         except Exception:
             return None
 
+    #AGREGACIONES PARA ESTADISTICA Distribución de edades
     @classmethod
     def get_demographic_percentages(cls, profile_id=None):
         """

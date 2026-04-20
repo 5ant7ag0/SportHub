@@ -46,13 +46,13 @@ export const UserCard = ({ user: initialUser, className = "", onAction = null })
     const hasBanner = initialUser.banner_url && initialUser.banner_url !== 'None' && initialUser.banner_url !== '';
 
     return (
-        <div 
+        <div
             onClick={() => navigate(`/profile?id=${initialUser.id}`)}
             className={`bg-sporthub-card border border-sporthub-border rounded-[2.5rem] overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] group cursor-pointer aspect-square max-h-[380px] relative ${className}`}
         >
             {/* Fondo de Banner con Máscara de Degradado */}
             <div className="absolute inset-0 h-full w-full pointer-events-none overflow-hidden">
-                <div 
+                <div
                     className="w-full h-full relative"
                     style={{
                         maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)',
@@ -60,10 +60,10 @@ export const UserCard = ({ user: initialUser, className = "", onAction = null })
                     }}
                 >
                     {hasBanner ? (
-                        <img 
-                            src={getMediaUrl(initialUser.banner_url)} 
-                            className="w-full h-full object-cover opacity-60 transition-opacity duration-700 group-hover:opacity-80" 
-                            alt="" 
+                        <img
+                            src={getMediaUrl(initialUser.banner_url)}
+                            className="w-full h-full object-cover opacity-60 transition-opacity duration-700 group-hover:opacity-80"
+                            alt=""
                         />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#1a2235] to-sporthub-card opacity-30"></div>
@@ -75,10 +75,10 @@ export const UserCard = ({ user: initialUser, className = "", onAction = null })
                 {/* Avatar con Badge superpuesto */}
                 <div className="relative mb-3 flex flex-col items-center pt-1">
                     <div className="p-1 rounded-full bg-sporthub-card/20 backdrop-blur-xl ring-2 ring-white/5 shadow-2xl">
-                        <img 
-                            src={getMediaUrl(initialUser.avatar_url)} 
-                            className="w-24 h-24 rounded-full object-cover border-4 border-sporthub-card shadow-2xl transition-transform duration-500 group-hover:scale-105" 
-                            alt={initialUser.name} 
+                        <img
+                            src={getMediaUrl(initialUser.avatar_url)}
+                            className="w-24 h-24 rounded-full object-cover border-4 border-sporthub-card shadow-2xl transition-transform duration-500 group-hover:scale-105"
+                            alt={initialUser.name}
                             onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }}
                         />
                     </div>
@@ -107,7 +107,7 @@ export const UserCard = ({ user: initialUser, className = "", onAction = null })
 
                 {/* Botones */}
                 <div className="w-full flex gap-2 mt-auto">
-                    <button 
+                    <button
                         onClick={handleFollow}
                         className={`flex-1 py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 transition-all active:scale-95 border font-black text-xs uppercase tracking-widest ${isFollowing ? 'bg-white/5 border-white/10 text-white' : 'bg-sporthub-neon border-sporthub-neon text-black hover:shadow-[0_0_20px_rgba(163,230,53,0.3)]'}`}
                     >
@@ -115,7 +115,7 @@ export const UserCard = ({ user: initialUser, className = "", onAction = null })
                         {isFollowing ? 'Siguiendo' : 'Seguir'}
                     </button>
 
-                    <button 
+                    <button
                         onClick={handleMessage}
                         className="w-12 bg-white/5 border border-white/10 rounded-[1.25rem] flex items-center justify-center hover:bg-sporthub-cyan hover:text-black hover:border-sporthub-cyan transition-all active:scale-95 group/msg"
                     >

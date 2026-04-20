@@ -1,3 +1,6 @@
+# API para el manejo de autenticación y registro
+# Maneja el inicio de sesión, registro y refresh de tokens.
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
@@ -21,7 +24,7 @@ def generate_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
-
+# Clase para obtener tokens de acceso (Inicio de sesion) y refresh
 class CustomTokenObtainPairView(APIView):
     def post(self, request):
         email = request.data.get('email')
@@ -40,6 +43,7 @@ class CustomTokenObtainPairView(APIView):
         tokens = generate_tokens_for_user(user)
         return Response(tokens)
 
+# Clase para refrescar el token de acceso
 class CustomTokenRefreshView(APIView):
     def post(self, request):
         refresh_token = request.data.get('refresh')
@@ -54,6 +58,7 @@ class CustomTokenRefreshView(APIView):
         except TokenError:
             raise AuthenticationFailed("Refresh token inválido o expirado.")
 
+# Clase para registrar un nuevo usuario
 class RegisterView(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     
@@ -119,7 +124,7 @@ class RegisterView(APIView):
         )
         user.save()
         
-        # 🌐 SIGNAL REAL-TIME: Notificar cambio en analítica global (Nueva incorporación)
+        #  SIGNAL REAL-TIME: Notificar cambio en analítica global (Nueva incorporación)
         try:
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync

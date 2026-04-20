@@ -1,3 +1,4 @@
+// Obtiene datos de /api/profile/. Organiza las pestañas de publicaciones, fotos y los posts guardados.
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api';
 import { Loader2, Camera, MapPin, Calendar, CheckCircle2, TrendingUp, Trophy, Medal, Star, Goal, UserPlus, UserMinus, MessageSquare, Heart, Bookmark, Play, Image as ImageIcon, Layout, Briefcase, Building2, Link, Globe, X, Share2, Map } from 'lucide-react';
@@ -48,14 +49,14 @@ import { useToast } from '../context/ToastContext';
 const COLORS = ['#A3E635', '#06B6D4', '#c084fc', '#fbbf24', '#f87171', '#34d399'];
 
 const CompactUserRow = ({ user, onClick }) => (
-    <div 
+    <div
         onClick={onClick}
         className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all cursor-pointer group border border-transparent hover:border-white/10"
     >
-        <img 
-            src={getMediaUrl(user.avatar_url)} 
-            className="w-10 h-10 rounded-full object-cover border-2 border-sporthub-card" 
-            alt={user.name} 
+        <img
+            src={getMediaUrl(user.avatar_url)}
+            className="w-10 h-10 rounded-full object-cover border-2 border-sporthub-card"
+            alt={user.name}
         />
         <div className="flex-1 min-w-0">
             <h4 className="text-white font-semibold text-sm truncate group-hover:text-sporthub-neon transition-colors">{user.name}</h4>
@@ -76,15 +77,15 @@ const SkillBar = ({ skill, value, isNeon }) => (
             <span className={isNeon ? "text-sporthub-neon" : "text-sporthub-cyan"}>{value}%</span>
         </div>
         <div className="w-full bg-[#151b28] rounded-full h-1.5 relative overflow-hidden">
-            <div 
-                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${isNeon ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.5)]' : 'bg-sporthub-cyan shadow-[0_0_8px_rgba(6,182,212,0.5)]'}`} 
+            <div
+                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${isNeon ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.5)]' : 'bg-sporthub-cyan shadow-[0_0_8px_rgba(6,182,212,0.5)]'}`}
                 style={{ width: `${value}%` }}
             ></div>
         </div>
     </div>
 );
 
-const PostThumbnail = ({ post, idx, onClick = () => {} }) => {
+const PostThumbnail = ({ post, idx, onClick = () => { } }) => {
     const [hasError, setHasError] = useState(false);
     const isVid = isVideo(post?.media_url);
     const imageUrl = (post?.media_url && post.media_url !== 'None') ? getMediaUrl(post.media_url) : null;
@@ -101,7 +102,7 @@ const PostThumbnail = ({ post, idx, onClick = () => {} }) => {
     }
 
     return (
-        <div 
+        <div
             onClick={() => onClick(post.id)}
             className="aspect-square bg-gray-900 rounded-2xl overflow-hidden border border-sporthub-border group cursor-pointer relative"
         >
@@ -160,7 +161,7 @@ export const Profile = () => {
     // Estados para Guardados en Perfil
     const [savedPosts, setSavedPosts] = useState([]);
     const [isLoadingSaved, setIsLoadingSaved] = useState(false);
-    
+
     // Estados para Listas Expandibles
     const [expandedList, setExpandedList] = useState(null); // 'followers' | 'following' | null
     const [listData, setListData] = useState([]);
@@ -266,7 +267,7 @@ export const Profile = () => {
         setSelectedBannerFile(null);
         if (bannerInputRef.current) bannerInputRef.current.value = "";
     };
-    
+
     const targetId = searchParams.get('id');
     const isOwner = !targetId || targetId === authUser?.id;
 
@@ -282,10 +283,10 @@ export const Profile = () => {
                 api.get(path),
                 api.get(analyticsPath).catch(() => ({ data: null }))
             ]);
-            
+
             const baseSkills = { Velocidad: 0, Táctica: 0, Resistencia: 0, Remate: 0, Control: 0, "Visión de Juego": 0 };
-            const initialSkills = profileRes.data.skills && Object.keys(profileRes.data.skills).length > 0 
-                ? profileRes.data.skills 
+            const initialSkills = profileRes.data.skills && Object.keys(profileRes.data.skills).length > 0
+                ? profileRes.data.skills
                 : baseSkills;
 
             setProfile(profileRes.data);
@@ -347,27 +348,27 @@ export const Profile = () => {
 
     const handleFollow = async () => {
         if (!profile) return;
-        
+
         const originallyFollowing = profile.is_following;
         const originalFollowersCount = profile.followers_count;
-        
+
         // 1. Acción Instantánea (UI Optimista)
         setProfile(prev => ({
             ...prev,
             is_following: !originallyFollowing,
             followers_count: (prev.followers_count || 0) + (originallyFollowing ? -1 : 1)
         }));
-        
+
         updateUser({
             following_count: (authUser.following_count || 0) + (originallyFollowing ? -1 : 1)
         });
 
         // 2. Bloqueo de Estado
         followingLockRef.current = true;
-        
+
         try {
             const { data } = await api.post('/social/follow/', { target_id: profile.id });
-            
+
             // 3. Sincronización con la "Fuente de la Verdad" del Servidor
             setProfile(prev => ({
                 ...prev,
@@ -413,11 +414,11 @@ export const Profile = () => {
             formData.append('content', shareProfileMessage || `¡Les recomiendo echar un vistazo al perfil de ${profile.name}!`);
             formData.append('post_type', 'profile_share');
             formData.append('shared_profile_id', profile.id);
-            
+
             await api.post('/posts/create/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            
+
             showToast('Publicado');
             setShareProfileModalOpen(false);
         } catch (e) {
@@ -442,7 +443,7 @@ export const Profile = () => {
             await api.post('/posts/share/', { post_id: sharingPost.id });
             setIsShareModalOpen(false);
             setSharingPost(null);
-            window.location.reload(); 
+            window.location.reload();
         } catch (e) {
             setShareError("No se pudo compartir.");
         } finally {
@@ -502,7 +503,7 @@ export const Profile = () => {
             if (!prev) return prev;
             const oldPost = (prev.posts || []).find(p => p.id === updatedPost.id);
             const likeDiff = (updatedPost.likes_count || 0) - (oldPost?.likes_count || 0);
-            
+
             // Sincronización proactiva de estadísticas de cabecera
             return {
                 ...prev,
@@ -518,15 +519,15 @@ export const Profile = () => {
     const renderSkills = () => {
         const baseSkills = { Velocidad: 0, Táctica: 0, Resistencia: 0, Remate: 0, Control: 0, "Visión de Juego": 0 };
         const activeSkills = profile.skills && Object.keys(profile.skills).length > 0 ? profile.skills : baseSkills;
-        
+
         if (isEditingSkills) {
             return (
                 <div className="flex flex-col gap-4 w-full">
                     {Object.entries(editedSkills).map(([k, v]) => (
                         <div key={k} className="flex items-center gap-4">
                             <span className="text-xs text-white w-24 truncate">{k}</span>
-                            <input 
-                                type="range" min="0" max="100" value={v} 
+                            <input
+                                type="range" min="0" max="100" value={v}
                                 onChange={(e) => setEditedSkills(prev => ({ ...prev, [k]: parseInt(e.target.value) }))}
                                 className="flex-1 h-1 bg-gray-700 rounded-lg appearance-none accent-sporthub-neon"
                             />
@@ -534,7 +535,7 @@ export const Profile = () => {
                         </div>
                     ))}
                     <button onClick={handleSaveSkills} disabled={isSaving} className="mt-2 bg-sporthub-neon text-black text-[10px] font-bold py-2 rounded-lg hover:bg-lime-400 transition-all flex items-center justify-center gap-2">
-                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin"/> : <CheckCircle2 className="w-3 h-3"/>} Guardar
+                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />} Guardar
                     </button>
                 </div>
             )
@@ -584,7 +585,7 @@ export const Profile = () => {
                     ))}
                     <button onClick={() => setEditedAchievements(prev => [...prev, "Nuevo Logro"])} className="text-[10px] text-sporthub-cyan font-bold">+ Añadir</button>
                     <button onClick={handleSaveAchievements} disabled={isSaving} className="bg-sporthub-cyan text-black text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-2">
-                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin"/> : <CheckCircle2 className="w-3 h-3"/>} Guardar
+                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />} Guardar
                     </button>
                 </div>
             )
@@ -626,15 +627,15 @@ export const Profile = () => {
         <div className="flex items-center gap-3">
             {isOwner ? (
                 <>
-                    <button 
-                        onClick={() => navigate('/settings')} 
+                    <button
+                        onClick={() => navigate('/settings')}
                         className="flex-none bg-sporthub-neon text-black text-sm font-bold px-8 md:px-10 py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-sporthub-neon/10"
                     >
-                        <Layout className="w-5 h-5" /> 
+                        <Layout className="w-5 h-5" />
                         <span className="tracking-tight">Editar Perfil</span>
                     </button>
-                    <button 
-                        onClick={() => {}} 
+                    <button
+                        onClick={() => { }}
                         className="bg-white/5 text-white p-3 rounded-2xl border border-white/10 hover:bg-white/10 hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
                     >
                         <Share2 className="w-5 h-5" />
@@ -642,22 +643,22 @@ export const Profile = () => {
                 </>
             ) : (
                 <>
-                    <button 
-                        onClick={handleFollow} 
+                    <button
+                        onClick={handleFollow}
                         className={`flex-none min-w-[110px] text-sm font-bold px-5 py-3 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg ${profile.is_following ? 'bg-white/5 text-white border border-white/10' : 'bg-sporthub-neon text-black hover:scale-105 shadow-sporthub-neon/10'}`}
                     >
                         {profile.is_following ? <UserMinus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                         {profile.is_following ? 'Siguiendo' : 'Seguir'}
                     </button>
-                    <button 
-                        onClick={handleMessage} 
+                    <button
+                        onClick={handleMessage}
                         className="flex-none min-w-[110px] bg-sporthub-cyan text-black text-sm font-bold px-5 py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sporthub-cyan/10"
                     >
-                        <MessageSquare className="w-4 h-4" /> 
+                        <MessageSquare className="w-4 h-4" />
                         Mensaje
                     </button>
-                    <button 
-                        onClick={handleOpenShareProfile} 
+                    <button
+                        onClick={handleOpenShareProfile}
                         disabled={isSharingProfile}
                         className="bg-white/5 text-white p-3 rounded-2xl border border-white/10 hover:bg-white/10 hover:scale-105 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 group/share"
                         title="Compartir perfil en el Muro"
@@ -675,21 +676,21 @@ export const Profile = () => {
                 <div className="flex-1 flex flex-col gap-6 w-full min-w-0">
                     {/* HEADER CARD */}
                     <div className="bg-sporthub-card rounded-3xl border border-sporthub-border overflow-hidden w-full">
-                        <div 
+                        <div
                             className={`h-48 md:h-60 w-full relative group ${isOwner && !previewBanner ? 'cursor-pointer' : ''}`}
-                            onClick={() => { if(isOwner && !isUploadingBanner && !previewBanner) bannerInputRef.current?.click(); }}
+                            onClick={() => { if (isOwner && !isUploadingBanner && !previewBanner) bannerInputRef.current?.click(); }}
                         >
-                            <img 
-                                src={previewBanner || (profile.banner_url && profile.banner_url !== 'None' ? getMediaUrl(profile.banner_url) : "https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop")} 
-                                className={`w-full h-full object-cover transition-all ${isUploadingBanner ? 'opacity-30 grayscale' : 'opacity-60'}`} 
+                            <img
+                                src={previewBanner || (profile.banner_url && profile.banner_url !== 'None' ? getMediaUrl(profile.banner_url) : "https://images.unsplash.com/photo-1518605368461-1ee7e5302a4e?q=80&w=1200&fit=crop")}
+                                className={`w-full h-full object-cover transition-all ${isUploadingBanner ? 'opacity-30 grayscale' : 'opacity-60'}`}
                                 alt="Banner"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-sporthub-card via-transparent to-transparent"></div>
-                            
+
                             {isOwner && (
                                 <>
                                     <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerChange} />
-                                    
+
                                     {!previewBanner && !isUploadingBanner && (
                                         <div className="absolute top-4 right-4 bg-black/40 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md border border-white/10 z-20">
                                             <Camera className="w-5 h-5 text-white" />
@@ -701,17 +702,17 @@ export const Profile = () => {
                                             <Loader2 className="w-10 h-10 text-sporthub-neon animate-spin" />
                                         </div>
                                     )}
-                                    
+
                                     {previewBanner && !isUploadingBanner && (
                                         <div className="absolute top-4 right-4 flex items-center gap-3 z-30">
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); handleCancelBanner(); }}
                                                 className="bg-red-600 hover:bg-red-500 text-white p-2.5 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95"
                                                 title="Cancelar"
                                             >
                                                 <X className="w-5 h-5" />
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); handleSaveBanner(); }}
                                                 className="bg-green-500 hover:bg-green-400 text-white p-2.5 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-transform hover:scale-110 active:scale-95"
                                                 title="Guardar Banner"
@@ -723,15 +724,15 @@ export const Profile = () => {
                                 </>
                             )}
                         </div>
-                        
+
                         <div className="px-5 md:px-8 pb-8 flex flex-col gap-6 relative -mt-12 md:-mt-16">
                             {/* TOP LAYER: Identity Row */}
                             <div className="flex flex-row items-center gap-4 md:gap-7 w-full md:w-auto">
                                 {/* Avatar and Role Label - STACKED with subtle overlap */}
                                 <div className="flex flex-col items-center gap-0 shrink-0 -mt-4 md:-mt-10 relative">
-                                    <div 
-                                        className={`relative group ${isOwner && !previewAvatar ? 'cursor-pointer' : ''} ring-4 ring-[#0B0F19] rounded-full`} 
-                                        onClick={() => { if(isOwner && !isUploadingAvatar && !previewAvatar) avatarInputRef.current?.click(); }}
+                                    <div
+                                        className={`relative group ${isOwner && !previewAvatar ? 'cursor-pointer' : ''} ring-4 ring-[#0B0F19] rounded-full`}
+                                        onClick={() => { if (isOwner && !isUploadingAvatar && !previewAvatar) avatarInputRef.current?.click(); }}
                                     >
                                         <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-sporthub-card overflow-hidden bg-[#0B0F19] shadow-2xl transition-all ${isUploadingAvatar ? 'opacity-50 grayscale' : (isOwner ? 'group-hover:ring-4 group-hover:ring-sporthub-neon/30' : '')}`}>
                                             <img src={previewAvatar || getMediaUrl(profile.avatar_url)} className="w-full h-full object-cover" onError={(e) => { e.target.src = "/test_media/sample_atleta.svg" }} alt="Avatar" />
@@ -740,7 +741,7 @@ export const Profile = () => {
                                         {isOwner && (
                                             <>
                                                 <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                                                
+
                                                 {!previewAvatar && !isUploadingAvatar && (
                                                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm">
                                                         <Camera className="w-8 h-8 text-white/90" />
@@ -752,17 +753,17 @@ export const Profile = () => {
                                                         <Loader2 className="w-10 h-10 text-sporthub-neon animate-spin" />
                                                     </div>
                                                 )}
-                                                
+
                                                 {previewAvatar && !isUploadingAvatar && (
                                                     <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); handleCancelAvatar(); }}
                                                             className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95"
                                                             title="Cancelar"
                                                         >
                                                             <X className="w-5 h-5" />
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); handleSaveAvatar(); }}
                                                             className="bg-green-500 hover:bg-green-400 text-white p-2 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-transform hover:scale-110 active:scale-95"
                                                             title="Guardar Foto"
@@ -790,19 +791,19 @@ export const Profile = () => {
                                     <h1 className="text-2xl md:text-5xl font-bold text-white tracking-tight truncate">
                                         {profile.name}
                                     </h1>
-                                    
+
                                     {/* Metadata */}
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-start gap-2 sm:gap-4 md:gap-5 text-[10px] text-gray-500 uppercase font-bold tracking-widest">
                                         {(profile?.sport || profile?.company || profile?.job_title) && (
                                             <div className="flex items-center gap-1.5 break-words">
-                                                <Briefcase className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-neon" /> 
+                                                <Briefcase className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-neon" />
                                                 <span className="truncate">
                                                     {formatAuthorMetadata(profile)}
                                                 </span>
                                             </div>
                                         )}
                                         <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-cyan" /> 
+                                            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-sporthub-cyan" />
                                             <span className="truncate">{profile.city || 'Quito'}</span>
                                         </div>
                                     </div>
@@ -829,14 +830,14 @@ export const Profile = () => {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div 
+                        <div
                             onClick={() => toggleList('followers')}
                             className={`bg-sporthub-card rounded-3xl border p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${expandedList === 'followers' ? 'border-sporthub-neon scale-95' : 'border-sporthub-border hover:border-sporthub-neon/50 shadow-lg shadow-black/20'}`}
                         >
                             <span className="text-2xl font-bold text-sporthub-neon mb-1">{profile.followers_count || "0"}</span>
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Seguidores</span>
                         </div>
-                        <div 
+                        <div
                             onClick={() => toggleList('following')}
                             className={`bg-sporthub-card rounded-3xl border p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${expandedList === 'following' ? 'border-sporthub-cyan scale-95' : 'border-sporthub-border hover:border-sporthub-cyan/50 shadow-lg shadow-black/20'}`}
                         >
@@ -854,7 +855,7 @@ export const Profile = () => {
                     </div>
 
                     {/* Expandable User Lists (Followers/Following) */}
-                    <div 
+                    <div
                         className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedList ? 'max-h-[500px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}
                     >
                         <div className="bg-sporthub-card/50 backdrop-blur-xl rounded-[2.5rem] border border-sporthub-border p-2 shadow-2xl overflow-hidden">
@@ -863,14 +864,14 @@ export const Profile = () => {
                                     <div className={`w-2 h-2 rounded-full animate-pulse ${expandedList === 'followers' ? 'bg-sporthub-neon' : 'bg-sporthub-cyan'}`}></div>
                                     {expandedList === 'followers' ? 'Explorando Seguidores' : 'Explorando Siguiendo'}
                                 </h3>
-                                <button 
+                                <button
                                     onClick={() => setExpandedList(null)}
                                     className="p-1 px-3 rounded-full bg-white/5 text-[10px] font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
                                 >
                                     Cerrar
                                 </button>
                             </div>
-                            
+
                             <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2 grid grid-cols-1 md:grid-cols-2 gap-1">
                                 {isFetchingList ? (
                                     <div className="col-span-full py-12 flex flex-col items-center justify-center gap-3">
@@ -879,9 +880,9 @@ export const Profile = () => {
                                     </div>
                                 ) : listData.length > 0 ? (
                                     listData.map(u => (
-                                        <CompactUserRow 
-                                            key={u.id} 
-                                            user={u} 
+                                        <CompactUserRow
+                                            key={u.id}
+                                            user={u}
                                             onClick={() => {
                                                 navigate(`/profile?id=${u.id}`);
                                                 setExpandedList(null);
@@ -929,9 +930,9 @@ export const Profile = () => {
                     <div className="flex flex-col">
                         <div className="flex gap-8 border-b border-white/5 px-2 mb-6 overflow-x-auto no-scrollbar scroll-smooth">
                             {[
-                                { name: 'Publicaciones', icon: Layout }, 
-                                { name: 'Servicios', icon: Briefcase }, 
-                                { name: 'Fotos', icon: ImageIcon }, 
+                                { name: 'Publicaciones', icon: Layout },
+                                { name: 'Servicios', icon: Briefcase },
+                                { name: 'Fotos', icon: ImageIcon },
                                 { name: 'Videos', icon: Play },
                                 ...(isOwner ? [{ name: 'Guardados', icon: Bookmark }] : [])
                             ].map(tab => (
@@ -978,10 +979,10 @@ export const Profile = () => {
             </div> {/* Fin de Max-W Container */}
 
             {/* Modals - Dentro del Root div */}
-            <PostDetailModal 
-                postId={selectedPostId} 
-                onClose={handleCloseDetail} 
-                onUpdatePost={handleUpdatePost} 
+            <PostDetailModal
+                postId={selectedPostId}
+                onClose={handleCloseDetail}
+                onUpdatePost={handleUpdatePost}
             />
             <ShareConfirmModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} onConfirm={handleConfirmShare} postAuthor={sharingPost?.author?.name} isLoading={isSharing} error={shareError} />
             <DeleteConfirmModal isOpen={!!postToDelete} onClose={() => setPostToDelete(null)} onConfirm={handleDeletePost} isDeleting={isDeleting} />
@@ -998,7 +999,7 @@ export const Profile = () => {
                         <p className="text-gray-400 text-center text-sm mb-6 px-2">
                             Escribe una observación para tu Muro de Feed.
                         </p>
-                        
+
                         <textarea
                             value={shareProfileMessage}
                             onChange={(e) => setShareProfileMessage(e.target.value)}
@@ -1008,14 +1009,14 @@ export const Profile = () => {
                         />
 
                         <div className="flex flex-col gap-3">
-                            <button 
+                            <button
                                 onClick={handleConfirmShareProfile}
                                 disabled={isSharingProfile}
                                 className="w-full bg-sporthub-neon text-black font-black py-4 rounded-2xl hover:shadow-[0_0_20px_rgba(163,230,53,0.4)] active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {isSharingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publicar y Compartir"}
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setShareProfileModalOpen(false)}
                                 disabled={isSharingProfile}
                                 className="w-full bg-white/5 text-gray-400 font-bold py-4 rounded-2xl hover:bg-white/10 transition-colors uppercase tracking-widest text-xs disabled:opacity-30"

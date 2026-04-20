@@ -1,3 +1,5 @@
+// Se encarga de mostrar la configuración del usuario
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -7,7 +9,7 @@ import { getMediaUrl } from '../utils/media';
 import { LogoutConfirmModal } from '../components/LogoutConfirmModal';
 
 const SOCIAL_SVGS = {
-// ... (rest of social svgs)
+    // ... (rest of social svgs)
     github: (props) => (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
             <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.28 1.15-.28 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
@@ -62,7 +64,7 @@ export const Settings = () => {
     const [notificationsEnabled, setNotificationsEnabled] = useState(user?.notifications_enabled || false);
     const [isEditingBasic, setIsEditingBasic] = useState(false);
     const [isEditingSocials, setIsEditingSocials] = useState(false);
-    
+
     // Redes Sociales
     const [github, setGithub] = useState(user?.social_links?.github || '');
     const [linkedin, setLinkedin] = useState(user?.social_links?.linkedin || '');
@@ -138,7 +140,7 @@ export const Settings = () => {
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
-        
+
         // Validaciones de seguridad previas
         if ((newEmail || newPassword) && !currentPassword) {
             setSecurityError("Confirmar identidad es obligatorio para cambiar el correo o la contraseña.");
@@ -165,7 +167,7 @@ export const Settings = () => {
         formData.append('birth_date', birthDate);
         formData.append('is_private', isPrivate);
         formData.append('notifications_enabled', notificationsEnabled);
-        
+
         // Datos de Seguridad
         if (newEmail) formData.append('new_email', newEmail);
         if (newPassword) formData.append('new_password', newPassword);
@@ -184,7 +186,7 @@ export const Settings = () => {
         try {
             const { data } = await api.post('/settings/update/', formData);
             updateUser(data.user);
-            
+
             setSuccess(true);
             setIsEditingBasic(false);
             setIsEditingSocials(false);
@@ -194,7 +196,7 @@ export const Settings = () => {
             setConfirmPassword('');
             setNewEmail('');
             setSecurityError('');
-            
+
             setTimeout(() => setSuccess(false), 3000);
         } catch (err) {
             console.error("Error updating profile:", err);
@@ -233,157 +235,157 @@ export const Settings = () => {
                         <div className="space-y-8">
                             {/* BASIC INFO */}
                             <div className="bg-sporthub-card border border-white/5 rounded-3xl p-6 lg:p-7 shadow-xl space-y-4 relative group/section">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <User className="w-5 h-5 text-sporthub-cyan" />
-                                <h3 className="text-xl font-bold text-white">Información Básica</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {!isEditingBasic ? (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setIsEditingBasic(true)}
-                                        className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                        Editar
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                                        <button 
-                                            type="button"
-                                            onClick={handleCancelBasic}
-                                            className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button 
-                                            type="submit"
-                                            disabled={isLoading || !hasChangesBasic}
-                                            className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesBasic ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
-                                        >
-                                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                            {hasChangesBasic ? 'Guardar' : 'Editando...'}
-                                        </button>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <User className="w-5 h-5 text-sporthub-cyan" />
+                                        <h3 className="text-xl font-bold text-white">Información Básica</h3>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                    <div className="flex items-center gap-2">
+                                        {!isEditingBasic ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsEditingBasic(true)}
+                                                className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                                Editar
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelBasic}
+                                                    className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isLoading || !hasChangesBasic}
+                                                    className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesBasic ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
+                                                >
+                                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                    {hasChangesBasic ? 'Guardar' : 'Editando...'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Nombre Completo</label>
-                                <input 
-                                    type="text" 
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    disabled={!isEditingBasic}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Fecha de nacimiento</label>
-                                <input 
-                                    type="date" 
-                                    value={birthDate}
-                                    onChange={(e) => setBirthDate(e.target.value)}
-                                    disabled={!isEditingBasic}
-                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Biografía Profesional</label>
-                            <textarea 
-                                rows="2"
-                                value={bio}
-                                onChange={(e) => setBio(e.target.value)}
-                                disabled={!isEditingBasic}
-                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all resize-none text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                placeholder="Trayectoria y objetivos..."
-                            ></textarea>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {user?.role === 'athlete' ? (
-                                <>
-                                    <div className="relative">
-                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Deporte Principal</label>
-                                        <select 
-                                            value={sport}
-                                            onChange={(e) => setSport(e.target.value)}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Nombre Completo</label>
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
                                             disabled={!isEditingBasic}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all appearance-none text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                        >
-                                            <option value="">Seleccionar deporte</option>
-                                            {Object.keys(SPORTS_DATA).map(s => (
-                                                <option key={s} value={s}>{s}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="relative">
-                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Posición / Especialidad</label>
-                                        <select 
-                                            value={position}
-                                            onChange={(e) => setPosition(e.target.value)}
-                                            disabled={!isEditingBasic || !sport}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all appearance-none text-sm ${(!isEditingBasic || !sport) && 'opacity-80 cursor-default'}`}
-                                        >
-                                            <option value="">Seleccionar posición</option>
-                                            {sport && SPORTS_DATA[sport].map(p => (
-                                                <option key={p} value={p}>{p}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="relative">
-                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Empresa / Club</label>
-                                        <div className="absolute left-4 top-8 pointer-events-none">
-                                            <Briefcase className="w-4 h-4 text-sporthub-muted" />
-                                        </div>
-                                        <input 
-                                            type="text" 
-                                            value={company}
-                                            onChange={(e) => setCompany(e.target.value)}
-                                            disabled={!isEditingBasic}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                            placeholder="Ej. Independiente del Valle"
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                         />
                                     </div>
-                                    <div className="relative">
-                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Cargo Actual</label>
-                                        <div className="absolute left-4 top-8 pointer-events-none">
-                                            <Shield className="w-4 h-4 text-sporthub-muted" />
-                                        </div>
-                                        <input 
-                                            type="text" 
-                                            value={jobTitle}
-                                            onChange={(e) => setJobTitle(e.target.value)}
+                                    <div>
+                                        <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Fecha de nacimiento</label>
+                                        <input
+                                            type="date"
+                                            value={birthDate}
+                                            onChange={(e) => setBirthDate(e.target.value)}
                                             disabled={!isEditingBasic}
-                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                                            placeholder="Ej. Entrenador Principal"
+                                            className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
                                         />
                                     </div>
-                                </>
-                            )}
-                        </div>
+                                </div>
 
-                        <div className="relative">
-                            <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Ciudad / Ubicación</label>
-                            <div className="absolute left-4 top-8 pointer-events-none">
-                                <MapPin className="w-4 h-4 text-sporthub-muted" />
-                            </div>
-                            <input 
-                                type="text" 
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                disabled={!isEditingBasic}
-                                className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
-                            />
-                        </div>
+                                <div>
+                                    <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Biografía Profesional</label>
+                                    <textarea
+                                        rows="2"
+                                        value={bio}
+                                        onChange={(e) => setBio(e.target.value)}
+                                        disabled={!isEditingBasic}
+                                        className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all resize-none text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                        placeholder="Trayectoria y objetivos..."
+                                    ></textarea>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {user?.role === 'athlete' ? (
+                                        <>
+                                            <div className="relative">
+                                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Deporte Principal</label>
+                                                <select
+                                                    value={sport}
+                                                    onChange={(e) => setSport(e.target.value)}
+                                                    disabled={!isEditingBasic}
+                                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all appearance-none text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                                >
+                                                    <option value="">Seleccionar deporte</option>
+                                                    {Object.keys(SPORTS_DATA).map(s => (
+                                                        <option key={s} value={s}>{s}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="relative">
+                                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Posición / Especialidad</label>
+                                                <select
+                                                    value={position}
+                                                    onChange={(e) => setPosition(e.target.value)}
+                                                    disabled={!isEditingBasic || !sport}
+                                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all appearance-none text-sm ${(!isEditingBasic || !sport) && 'opacity-80 cursor-default'}`}
+                                                >
+                                                    <option value="">Seleccionar posición</option>
+                                                    {sport && SPORTS_DATA[sport].map(p => (
+                                                        <option key={p} value={p}>{p}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="relative">
+                                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Empresa / Club</label>
+                                                <div className="absolute left-4 top-8 pointer-events-none">
+                                                    <Briefcase className="w-4 h-4 text-sporthub-muted" />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={company}
+                                                    onChange={(e) => setCompany(e.target.value)}
+                                                    disabled={!isEditingBasic}
+                                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                                    placeholder="Ej. Independiente del Valle"
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Cargo Actual</label>
+                                                <div className="absolute left-4 top-8 pointer-events-none">
+                                                    <Shield className="w-4 h-4 text-sporthub-muted" />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={jobTitle}
+                                                    onChange={(e) => setJobTitle(e.target.value)}
+                                                    disabled={!isEditingBasic}
+                                                    className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                                    placeholder="Ej. Entrenador Principal"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="relative">
+                                    <label className="block text-white font-bold text-xs mb-1.5 opacity-70">Ciudad / Ubicación</label>
+                                    <div className="absolute left-4 top-8 pointer-events-none">
+                                        <MapPin className="w-4 h-4 text-sporthub-muted" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        disabled={!isEditingBasic}
+                                        className={`w-full bg-[#0B0F19] border ${isEditingBasic ? 'border-sporthub-neon/50 focus:border-sporthub-neon' : 'border-transparent'} text-white rounded-xl pl-12 pr-4 py-2.5 focus:outline-none transition-all text-sm ${!isEditingBasic && 'opacity-80 cursor-default'}`}
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -398,7 +400,7 @@ export const Settings = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {!isEditingSocials ? (
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setIsEditingSocials(true)}
                                                 className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
@@ -408,14 +410,14 @@ export const Settings = () => {
                                             </button>
                                         ) : (
                                             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={handleCancelSocials}
                                                     className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
                                                 >
                                                     Cancelar
                                                 </button>
-                                                <button 
+                                                <button
                                                     type="submit"
                                                     disabled={isLoading || !hasChangesSocials}
                                                     className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesSocials ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
@@ -434,8 +436,8 @@ export const Settings = () => {
                                         <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-gray-400 group-focus-within:text-[#333]' : 'text-gray-600'}`}>
                                             <SOCIAL_SVGS.github className="w-5 h-5" />
                                         </div>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="URL de Github (ej: https://github.com/...)"
                                             value={github}
                                             onChange={(e) => setGithub(e.target.value)}
@@ -447,8 +449,8 @@ export const Settings = () => {
                                         <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-400 group-focus-within:text-[#0077b5]' : 'text-blue-400/50'}`}>
                                             <SOCIAL_SVGS.linkedin className="w-5 h-5" />
                                         </div>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="URL de LinkedIn"
                                             value={linkedin}
                                             onChange={(e) => setLinkedin(e.target.value)}
@@ -460,8 +462,8 @@ export const Settings = () => {
                                         <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-white group-focus-within:text-[#000000]' : 'text-white/50'}`}>
                                             <SOCIAL_SVGS.twitter className="w-5 h-5" />
                                         </div>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="URL de X (Twitter)"
                                             value={twitter}
                                             onChange={(e) => setTwitter(e.target.value)}
@@ -473,8 +475,8 @@ export const Settings = () => {
                                         <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-pink-500 group-focus-within:text-[#e4405f]' : 'text-pink-500/50'}`}>
                                             <SOCIAL_SVGS.instagram className="w-5 h-5" />
                                         </div>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="URL de Instagram"
                                             value={instagram}
                                             onChange={(e) => setInstagram(e.target.value)}
@@ -486,8 +488,8 @@ export const Settings = () => {
                                         <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isEditingSocials ? 'text-blue-600 group-focus-within:text-[#1877f2]' : 'text-blue-600/50'}`}>
                                             <SOCIAL_SVGS.facebook className="w-5 h-5" />
                                         </div>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="URL de Facebook"
                                             value={facebook}
                                             onChange={(e) => setFacebook(e.target.value)}
@@ -503,119 +505,119 @@ export const Settings = () => {
                         <div className="lg:col-span-2">
                             {/* PRIVACY & NOTIFICATIONS */}
                             <div className="bg-sporthub-card border border-white/5 rounded-3xl p-6 lg:p-7 shadow-xl space-y-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <Shield className="w-5 h-5 text-sporthub-neon" />
-                                <h3 className="text-xl font-bold text-white">Privacidad y Seguridad</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {!showSecurity ? (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setShowSecurity(true)}
-                                        className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                        Editar
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                                        <button 
-                                            type="button"
-                                            onClick={handleCancelSecurity}
-                                            className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button 
-                                            type="submit"
-                                            disabled={isLoading || !hasChangesSecurity}
-                                            className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesSecurity ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
-                                        >
-                                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                            {hasChangesSecurity ? 'Guardar' : 'Ajustando...'}
-                                        </button>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <Shield className="w-5 h-5 text-sporthub-neon" />
+                                        <h3 className="text-xl font-bold text-white">Privacidad y Seguridad</h3>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {!showSecurity ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowSecurity(true)}
+                                                className="p-2 px-4 rounded-xl bg-white/5 text-sporthub-muted hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                                Editar
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelSecurity}
+                                                    className="p-2 px-4 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold uppercase tracking-wider"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isLoading || !hasChangesSecurity}
+                                                    className={`p-2 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${hasChangesSecurity ? 'bg-sporthub-neon text-black shadow-lg shadow-sporthub-neon/20' : 'bg-white/5 text-sporthub-muted opacity-50 cursor-default'}`}
+                                                >
+                                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                    {hasChangesSecurity ? 'Guardar' : 'Ajustando...'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className="text-sm text-sporthub-muted mb-6">Gestiona la seguridad de tu cuenta y la visibilidad de tu perfil profesional.</p>
+
+                                {/* SECURITY FIELDS (Progressive Disclosure) */}
+                                {showSecurity && (
+                                    <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-top-4 duration-300">
+
+                                        {/* BLOQUE 1: CONFIRMAR IDENTIDAD (LLAVE MAESTRA) */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-white font-bold text-sm">Confirmar Identidad</h4>
+                                            <input
+                                                type="password"
+                                                placeholder="Confirmar Identidad (Contraseña Actual)"
+                                                value={currentPassword}
+                                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                                className={`w-full bg-[#0B0F19] border ${securityError && !currentPassword ? 'border-red-500' : 'border-sporthub-neon/30'} text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm`}
+                                            />
+                                            {securityError && (
+                                                <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-[11px] rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
+                                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                                    {securityError}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* BLOQUE 2: ACTUALIZAR CORREO */}
+                                        <div className="space-y-4 pt-4 border-t border-sporthub-border/20">
+                                            <h4 className="text-white font-bold text-sm">Actualizar Correo</h4>
+                                            <div className="bg-[#0B0F19] p-4 rounded-xl border border-sporthub-border/50">
+                                                <p className="text-[10px] uppercase tracking-wider text-sporthub-muted mb-1">Correo Actual</p>
+                                                <p className="text-white font-medium">{user?.email}</p>
+                                            </div>
+                                            <input
+                                                type="email"
+                                                placeholder="Nuevo Correo Electrónico"
+                                                value={newEmail}
+                                                onChange={(e) => setNewEmail(e.target.value)}
+                                                className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm"
+                                            />
+                                        </div>
+
+                                        {/* BLOQUE 3: CAMBIAR CONTRASEÑA */}
+                                        <div className="space-y-4 pt-4 border-t border-sporthub-border/20">
+                                            <h4 className="text-white font-bold text-sm">Cambiar Contraseña</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <input
+                                                    type="password"
+                                                    placeholder="Nueva Contraseña"
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm"
+                                                />
+                                                <input
+                                                    type="password"
+                                                    placeholder="Confirmar Nueva Contraseña"
+                                                    value={confirmPassword}
+                                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                                    className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Danger Zone (Inside Security) */}
+                                        <div className="pt-8 mt-4 border-t border-red-500/20">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDeleteModal(true)}
+                                                className="text-[10px] font-bold text-red-500/60 hover:text-red-500 uppercase tracking-widest flex items-center gap-2 transition-colors mx-auto"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                                Eliminar cuenta permanentemente
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <p className="text-sm text-sporthub-muted mb-6">Gestiona la seguridad de tu cuenta y la visibilidad de tu perfil profesional.</p>
-
-                        {/* SECURITY FIELDS (Progressive Disclosure) */}
-                        {showSecurity && (
-                            <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                                
-                                {/* BLOQUE 1: CONFIRMAR IDENTIDAD (LLAVE MAESTRA) */}
-                                <div className="space-y-4">
-                                    <h4 className="text-white font-bold text-sm">Confirmar Identidad</h4>
-                                    <input 
-                                        type="password" 
-                                        placeholder="Confirmar Identidad (Contraseña Actual)"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        className={`w-full bg-[#0B0F19] border ${securityError && !currentPassword ? 'border-red-500' : 'border-sporthub-neon/30'} text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm`}
-                                    />
-                                    {securityError && (
-                                        <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-[11px] rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
-                                            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                                            {securityError}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* BLOQUE 2: ACTUALIZAR CORREO */}
-                                <div className="space-y-4 pt-4 border-t border-sporthub-border/20">
-                                    <h4 className="text-white font-bold text-sm">Actualizar Correo</h4>
-                                    <div className="bg-[#0B0F19] p-4 rounded-xl border border-sporthub-border/50">
-                                        <p className="text-[10px] uppercase tracking-wider text-sporthub-muted mb-1">Correo Actual</p>
-                                        <p className="text-white font-medium">{user?.email}</p>
-                                    </div>
-                                    <input 
-                                        type="email" 
-                                        placeholder="Nuevo Correo Electrónico"
-                                        value={newEmail}
-                                        onChange={(e) => setNewEmail(e.target.value)}
-                                        className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm"
-                                    />
-                                </div>
-
-                                {/* BLOQUE 3: CAMBIAR CONTRASEÑA */}
-                                <div className="space-y-4 pt-4 border-t border-sporthub-border/20">
-                                    <h4 className="text-white font-bold text-sm">Cambiar Contraseña</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <input 
-                                            type="password" 
-                                            placeholder="Nueva Contraseña"
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm"
-                                        />
-                                        <input 
-                                            type="password" 
-                                            placeholder="Confirmar Nueva Contraseña"
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="w-full bg-[#0B0F19] border border-sporthub-border text-white rounded-xl px-4 py-3 focus:border-sporthub-neon focus:outline-none transition-colors text-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Danger Zone (Inside Security) */}
-                                <div className="pt-8 mt-4 border-t border-red-500/20">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setShowDeleteModal(true)}
-                                        className="text-[10px] font-bold text-red-500/60 hover:text-red-500 uppercase tracking-widest flex items-center gap-2 transition-colors mx-auto"
-                                    >
-                                        <Trash2 className="w-3 h-3" />
-                                        Eliminar cuenta permanentemente
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                     </div>
-                </div>
-            </div>
 
                     {/* FEEDBACK SUCCESS */}
                     {success && (
@@ -630,7 +632,7 @@ export const Settings = () => {
 
                 {/* DANGER ZONE: LOGOUT (Outside of form to avoid submission conflicts) */}
                 <div className="pt-12 pb-20 lg:hidden">
-                    <button 
+                    <button
                         type="button"
                         onClick={(e) => {
                             e.preventDefault();
@@ -645,7 +647,7 @@ export const Settings = () => {
                 </div>
             </div>
 
-            <LogoutConfirmModal 
+            <LogoutConfirmModal
                 isOpen={showLogoutConfirm}
                 onConfirm={logout}
                 onCancel={() => setShowLogoutConfirm(false)}
@@ -666,8 +668,8 @@ export const Settings = () => {
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-xs font-bold text-red-500 uppercase tracking-widest mb-2">Confirma con tu contraseña</label>
-                                <input 
-                                    type="password" 
+                                <input
+                                    type="password"
                                     placeholder="Contraseña Actual"
                                     value={deletePassword}
                                     onChange={(e) => setDeletePassword(e.target.value)}
@@ -676,7 +678,7 @@ export const Settings = () => {
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <button 
+                                <button
                                     type="button"
                                     disabled={isDeleting || !deletePassword}
                                     onClick={handleDeleteAccount}
@@ -684,7 +686,7 @@ export const Settings = () => {
                                 >
                                     {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : "ELIMINAR DEFINITIVAMENTE"}
                                 </button>
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setShowDeleteModal(false)}
                                     className="w-full bg-transparent text-sporthub-muted font-bold py-3 hover:text-white transition-colors"

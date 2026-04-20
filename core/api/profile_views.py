@@ -1,3 +1,5 @@
+# Se encarga de actualizar el perfil del usuario
+
 import cloudinary.uploader
 import json
 import os

@@ -1,3 +1,5 @@
+// Componente que muestra los mensajes de la plataforma
+
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { api } from '../api';
 import { Loader2, Send, Search as SearchIcon, Paperclip, X, ArrowLeft, MessageSquare, PlayCircle, Pencil, Check as SaveIcon } from 'lucide-react';
@@ -15,7 +17,7 @@ const Messages = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [inboxConfig, setInboxConfig] = useState([]);
-    
+
     // Lógica para pre-llenar mensaje desde URL (Marketplace)
     useEffect(() => {
         const prefillMsg = searchParams.get('prefill');
@@ -35,7 +37,7 @@ const Messages = () => {
         activeChatRef.current = activeChat;
     }, [activeChat]);
 
-    const [viewMode, setViewMode] = useState('list'); 
+    const [viewMode, setViewMode] = useState('list');
     const [pendingFile, setPendingFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [analytics, setAnalytics] = useState(null);
@@ -60,19 +62,19 @@ const Messages = () => {
     const fetchInitialData = async (isPolling = false) => {
         try {
             if (!isPolling && (!inboxConfig || inboxConfig.length === 0)) setIsLoading(true);
-            
+
             // Sincronizar analítica siempre (ligero y necesario para tiempo real)
             const analyticsRes = await api.get('/analytics/summary/').catch(() => ({ data: null }));
             if (analyticsRes?.data) setAnalytics(analyticsRes.data);
 
             const { data: conversations } = await api.get('/messages/inbox/');
-            
+
             const fullList = (conversations || []).map(c => {
                 const contactId = String(c.contact.id);
                 // Si el chat está en proceso de sincronización, preservamos su estado local
                 const isSyncing = syncingChats.has(contactId);
                 const existingChat = inboxConfig.find(item => String(item.contactId) === contactId);
-                
+
                 return {
                     id: contactId,
                     contactId: contactId,
@@ -81,7 +83,7 @@ const Messages = () => {
                     avatar: getMediaUrl(c.contact.avatar_url),
                     unread: isSyncing && existingChat ? existingChat.unread : ((activeChat && String(activeChat.contactId) === contactId) ? 0 : (c.unread_count || 0)),
                     is_online: c.contact.is_online,
-                    time: c.last_message ? new Date(c.last_message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Ahora",
+                    time: c.last_message ? new Date(c.last_message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Ahora",
                     lastMessage: c.last_message ? (c.last_message.content || c.last_message.body) : "Sin mensajes",
                     messages: []
                 };
@@ -136,7 +138,7 @@ const Messages = () => {
             await api.put(`/messages/edit/${msgId}/`, { body: editBuffer });
             setMessages(prev => prev.map(m => m.id === msgId ? { ...m, body: editBuffer, is_edited: true } : m));
             setEditingMessageId(null);
-        } catch (error) { 
+        } catch (error) {
             console.error("Error editando mensaje:", error);
             showToast("No se pudo editar el mensaje", 'error');
         }
@@ -145,7 +147,7 @@ const Messages = () => {
     const markConversationAsRead = async (contactId) => {
         if (!contactId) return;
         const cidStr = String(contactId);
-        
+
         // 1. ACTUALIZACIÓN OPTIMISTA (Interfaz Instantánea)
         // Buscamos en el inboxConfig actual si este chat tiene pendientes
         let hadUnread = false;
@@ -174,7 +176,7 @@ const Messages = () => {
 
     const handleSelectChat = async (chat) => {
         navigate(`/messages?contactId=${chat.contactId}`, { replace: true });
-        setActiveChat({ ...chat, unread: 0 }); 
+        setActiveChat({ ...chat, unread: 0 });
         setViewMode('chat');
 
         // RESET DE CONTROL DE SCROLL
@@ -216,14 +218,14 @@ const Messages = () => {
         setBody('');
         setPendingFile(null);
         setPreviewUrl(null);
-        
+
         // FORZAR SCROLL AL ENVIAR (Interacción proactiva)
         isManualScroll.current = false;
         setShouldScrollToBottom(true);
         requestAnimationFrame(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         });
-        
+
         try {
             if (currentFile) {
                 const formData = new FormData();
@@ -248,10 +250,10 @@ const Messages = () => {
 
     const handleMarkAsUnread = async (contactId) => {
         const cidStr = String(contactId);
-        
+
         // ACTIVAR LOCK Y ACTUALIZACIÓN OPTIMISTA
         setSyncingChats(prev => new Set(prev).add(cidStr));
-        setInboxConfig(prev => prev.map(c => 
+        setInboxConfig(prev => prev.map(c =>
             String(c.contactId) === cidStr ? { ...c, unread: (c.unread || 0) + 1 } : c
         ));
 
@@ -259,7 +261,7 @@ const Messages = () => {
             await api.post(`/messages/mark-unread/${cidStr}/`);
             fetchUnreadCount();
             setActiveDropdownId(null);
-        } catch (error) { 
+        } catch (error) {
             console.error("Error al marcar como no leído:", error);
             fetchInitialData(true);
         } finally {
@@ -320,11 +322,11 @@ const Messages = () => {
 
     // Manejadores para detectar interacción táctil y evitar saltos de scroll inercial
     const handleTouchStart = () => { isUserScrolling.current = true; };
-    const handleTouchEnd = () => { 
-        setTimeout(() => { 
-            isUserScrolling.current = false; 
+    const handleTouchEnd = () => {
+        setTimeout(() => {
+            isUserScrolling.current = false;
             handleScroll(); // Recalcular después del gesto
-        }, 500); 
+        }, 500);
     };
 
     useEffect(() => {
@@ -338,10 +340,10 @@ const Messages = () => {
         // Caso 1: Actualización de Presencia (Online/Offline)
         if (lastNotification.eventType === 'presence_update') {
             const { user_id, is_online } = lastNotification;
-            setInboxConfig(prev => prev.map(chat => 
+            setInboxConfig(prev => prev.map(chat =>
                 String(chat.contactId) === String(user_id) ? { ...chat, is_online } : chat
             ));
-            
+
             // Si el chat activo es el que cambió de estado, lo actualizamos también
             if (activeChatRef.current && String(activeChatRef.current.contactId) === String(user_id)) {
                 setActiveChat(prev => prev ? { ...prev, is_online } : null);
@@ -359,13 +361,13 @@ const Messages = () => {
                 const senderId = String(lastNotification.message?.sender_id);
                 if (activeChatRef.current.contactId === senderId) {
                     api.get(`/messages/conversation/${activeChatRef.current.contactId}/`)
-                    .then(res => setMessages(res.data || []))
-                    .catch(e => console.error("Error trayendo nuevos msgs:", e));
+                        .then(res => setMessages(res.data || []))
+                        .catch(e => console.error("Error trayendo nuevos msgs:", e));
                 }
             }
         }
     }, [lastNotification]);
-    
+
     // 📡 ACTUALIZACIÓN DE ANALÍTICA EN TIEMPO REAL
     useEffect(() => {
         if (lastAnalyticsUpdate) {
@@ -426,16 +428,16 @@ const Messages = () => {
     return (
         <div className="flex-1 flex overflow-hidden bg-[#0B0F19] p-4 pb-20 lg:p-6 w-full h-full relative">
             <div className="flex flex-col lg:flex-row gap-6 max-w-full w-full mx-auto h-full overflow-hidden relative items-stretch">
-                
+
                 {/* LISTA DE CHATS */}
                 <div className={`${viewMode === 'chat' ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 xl:w-[350px] bg-sporthub-card rounded-[32px] border border-white/5 flex-col shrink-0 overflow-hidden shadow-xl h-full`}>
                     <div className="p-6 pb-2">
                         <div className="bg-[#0B0F19] rounded-2xl flex items-center px-4 py-3 border border-white/5 shadow-inner mb-2">
                             <SearchIcon className="w-4 h-4 text-gray-600 mr-2" />
-                            <input 
-                                type="text" 
-                                placeholder="Buscar conversación..." 
-                                className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-gray-600" 
+                            <input
+                                type="text"
+                                placeholder="Buscar conversación..."
+                                className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-gray-600"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -443,43 +445,43 @@ const Messages = () => {
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-2 pb-6">
                         {(() => {
-                            const filteredInbox = (inboxConfig || []).filter(chat => 
+                            const filteredInbox = (inboxConfig || []).filter(chat =>
                                 chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 chat.sport.toLowerCase().includes(searchTerm.toLowerCase())
                             );
 
                             return filteredInbox.length > 0 ? filteredInbox.map(chat => (
                                 <button key={chat.contactId} onClick={() => handleSelectChat(chat)} className={`w-full flex items-center gap-4 p-4 rounded-[24px] transition-all group relative ${activeChat?.contactId === chat.contactId ? 'bg-sporthub-neon/10' : 'hover:bg-white/5'}`}>
-                                <div className="relative shrink-0">
-                                    <img src={chat.avatar} className="w-12 h-12 rounded-full border-2 border-transparent group-hover:border-sporthub-neon/30 object-cover bg-sporthub-card transition-all" alt="" />
-                                    <div className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 ${chat.is_online ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.6)]' : 'bg-gray-600'} rounded-full border-2 border-[#151b28]`}></div>
-                                </div>
-                                <div className="flex-1 text-left overflow-hidden">
-                                    <div className="flex justify-between items-start mb-0.5">
-                                        <h3 className="text-sm font-bold truncate text-white">{chat.name}</h3>
-                                        <span className="text-[10px] text-gray-500">{chat.time}</span>
+                                    <div className="relative shrink-0">
+                                        <img src={chat.avatar} className="w-12 h-12 rounded-full border-2 border-transparent group-hover:border-sporthub-neon/30 object-cover bg-sporthub-card transition-all" alt="" />
+                                        <div className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 ${chat.is_online ? 'bg-sporthub-neon shadow-[0_0_8px_rgba(163,230,53,0.6)]' : 'bg-gray-600'} rounded-full border-2 border-[#151b28]`}></div>
                                     </div>
-                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5 opacity-60">{chat.sport}</p>
-                                    <p className="text-xs truncate text-gray-500 group-hover:text-gray-300 transition-colors leading-tight">{chat.lastMessage}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-2 shrink-0">
-                                    {chat.unread > 0 && (
-                                        <div className="bg-sporthub-neon text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in shadow-[0_4px_12px_rgba(163,230,53,0.4)]">
-                                            {chat.unread}
+                                    <div className="flex-1 text-left overflow-hidden">
+                                        <div className="flex justify-between items-start mb-0.5">
+                                            <h3 className="text-sm font-bold truncate text-white">{chat.name}</h3>
+                                            <span className="text-[10px] text-gray-500">{chat.time}</span>
                                         </div>
-                                    )}
-                                    <div className="lg:opacity-0 lg:group-hover:opacity-100 opacity-100 transition-opacity">
-                                        <ChatOptionsMenu 
-                                            chat={chat} 
-                                            isOpen={activeDropdownId === chat.contactId} 
-                                            onToggle={() => setActiveDropdownId(activeDropdownId === chat.contactId ? null : chat.contactId)} 
-                                            onMarkAsUnread={handleMarkAsUnread} 
-                                            onClearChat={() => setConfirmModal({ show: true, type: 'clear', contact: chat })} 
-                                            onDeleteChat={() => setConfirmModal({ show: true, type: 'delete', contact: chat })} 
-                                        />
+                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5 opacity-60">{chat.sport}</p>
+                                        <p className="text-xs truncate text-gray-500 group-hover:text-gray-300 transition-colors leading-tight">{chat.lastMessage}</p>
                                     </div>
-                                </div>
-                            </button>
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                        {chat.unread > 0 && (
+                                            <div className="bg-sporthub-neon text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in shadow-[0_4px_12px_rgba(163,230,53,0.4)]">
+                                                {chat.unread}
+                                            </div>
+                                        )}
+                                        <div className="lg:opacity-0 lg:group-hover:opacity-100 opacity-100 transition-opacity">
+                                            <ChatOptionsMenu
+                                                chat={chat}
+                                                isOpen={activeDropdownId === chat.contactId}
+                                                onToggle={() => setActiveDropdownId(activeDropdownId === chat.contactId ? null : chat.contactId)}
+                                                onMarkAsUnread={handleMarkAsUnread}
+                                                onClearChat={() => setConfirmModal({ show: true, type: 'clear', contact: chat })}
+                                                onDeleteChat={() => setConfirmModal({ show: true, type: 'delete', contact: chat })}
+                                            />
+                                        </div>
+                                    </div>
+                                </button>
                             )) : (
                                 <div className="p-8 text-center">
                                     <p className="text-gray-600 text-xs">
@@ -498,8 +500,8 @@ const Messages = () => {
                             {/* CABECERA: Ajustada para ser el único elemento fijo en iOS */}
                             <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0B0F19]/20 backdrop-blur-xl relative z-50">
                                 <div className="flex items-center gap-4">
-                                    <button 
-                                        onClick={() => { setViewMode('list'); navigate('/messages', { replace: true }); setActiveChat(null); }} 
+                                    <button
+                                        onClick={() => { setViewMode('list'); navigate('/messages', { replace: true }); setActiveChat(null); }}
                                         className="lg:hidden text-gray-400 p-2 hover:text-white transition-colors bg-white/5 rounded-full"
                                     >
                                         <ArrowLeft className="w-5 h-5" />
@@ -531,8 +533,8 @@ const Messages = () => {
                                 </div>
                             </div>
 
-                            <div 
-                                ref={scrollRef} 
+                            <div
+                                ref={scrollRef}
                                 onScroll={handleScroll}
                                 onTouchStart={handleTouchStart}
                                 onTouchEnd={handleTouchEnd}
@@ -553,13 +555,13 @@ const Messages = () => {
 
                                                         if (isVideo) {
                                                             return (
-                                                                <div 
+                                                                <div
                                                                     className="relative cursor-pointer group/video max-w-[300px] bg-black rounded-xl overflow-hidden border border-white/10 min-h-[200px] flex items-center justify-center"
                                                                     onClick={() => setFullscreenMedia(msg.media_url)}
                                                                 >
-                                                                    <video 
-                                                                        src={`${getMediaUrl(msg.media_url)}#t=0.001`} 
-                                                                        className="w-full h-auto rounded-xl shadow-inner object-cover" 
+                                                                    <video
+                                                                        src={`${getMediaUrl(msg.media_url)}#t=0.001`}
+                                                                        className="w-full h-auto rounded-xl shadow-inner object-cover"
                                                                         preload="metadata"
                                                                         playsInline
                                                                         muted
@@ -574,11 +576,11 @@ const Messages = () => {
                                                         if (isImage) {
                                                             return (
                                                                 <div className="min-h-[200px] bg-black/10 rounded-xl flex items-center justify-center">
-                                                                    <img 
-                                                                        src={getMediaUrl(msg.media_url)} 
-                                                                        className="w-full h-auto max-h-64 object-contain cursor-pointer transition-transform group-hover/media:scale-[1.02]" 
-                                                                        onClick={() => setFullscreenMedia(msg.media_url)} 
-                                                                        alt="" 
+                                                                    <img
+                                                                        src={getMediaUrl(msg.media_url)}
+                                                                        className="w-full h-auto max-h-64 object-contain cursor-pointer transition-transform group-hover/media:scale-[1.02]"
+                                                                        onClick={() => setFullscreenMedia(msg.media_url)}
+                                                                        alt=""
                                                                     />
                                                                 </div>
                                                             );
@@ -614,8 +616,8 @@ const Messages = () => {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div 
-                                                    className="cursor-pointer group" 
+                                                <div
+                                                    className="cursor-pointer group"
                                                     onClick={(e) => {
                                                         if (msg.isMe) {
                                                             e.stopPropagation();
@@ -625,7 +627,7 @@ const Messages = () => {
                                                 >
                                                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.body}</p>
                                                     {msg.isMe && (
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleStartEdit(msg);
@@ -640,10 +642,10 @@ const Messages = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            
+
                                             <div className="mt-2 flex justify-end items-center gap-1.5 opacity-80">
                                                 <span className={`text-[9px] ${msg.isMe ? 'text-black/70' : 'text-gray-500'}`}>
-                                                    {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                                 {msg.isMe && (
                                                     <div className="flex items-center text-black/70">
@@ -668,7 +670,7 @@ const Messages = () => {
                                             setPreviewUrl(URL.createObjectURL(e.target.files[0]));
                                         }
                                     }} className="hidden" />
-                                    
+
                                     <div className="flex-1 relative">
                                         {pendingFile && (
                                             <div className="absolute bottom-full left-0 mb-4 bg-sporthub-card p-2 rounded-2xl border border-sporthub-neon/20 flex items-center gap-3 animate-in fade-in zoom-in shadow-2xl">
@@ -676,16 +678,16 @@ const Messages = () => {
                                                 <button type="button" onClick={() => { setPendingFile(null); setPreviewUrl(null); }} className="text-red-400 bg-red-400/10 p-1 rounded-full"><X className="w-4 h-4" /></button>
                                             </div>
                                         )}
-                                        <input 
-                                            type="text" 
-                                            value={body} 
-                                            onChange={e => setBody(e.target.value)} 
-                                            placeholder="Escribe un mensaje..." 
-                                            className="w-full bg-[#151b28] border border-white/5 rounded-[20px] text-white px-5 py-4 text-sm focus:outline-none focus:border-sporthub-neon/30 transition-all placeholder:text-gray-600 shadow-inner" 
-                                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} 
+                                        <input
+                                            type="text"
+                                            value={body}
+                                            onChange={e => setBody(e.target.value)}
+                                            placeholder="Escribe un mensaje..."
+                                            className="w-full bg-[#151b28] border border-white/5 rounded-[20px] text-white px-5 py-4 text-sm focus:outline-none focus:border-sporthub-neon/30 transition-all placeholder:text-gray-600 shadow-inner"
+                                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                         />
                                     </div>
-                                    
+
                                     <button type="submit" disabled={isUploading} className="bg-sporthub-neon w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_4px_20px_rgba(163,230,53,0.4)] disabled:opacity-50">
                                         <Send className="w-5 h-5 text-black" />
                                     </button>
@@ -713,24 +715,24 @@ const Messages = () => {
                     {(() => {
                         const url = fullscreenMedia.toLowerCase();
                         const isVideo = url.endsWith('.mp4') || url.endsWith('.mov') || url.endsWith('.webm') || url.endsWith('.m4v');
-                        
+
                         if (isVideo) {
                             return (
-                                <video 
-                                    src={getMediaUrl(fullscreenMedia)} 
-                                    className="max-h-full max-w-full rounded-2xl shadow-2xl animate-in zoom-in" 
-                                    controls 
-                                    autoPlay 
+                                <video
+                                    src={getMediaUrl(fullscreenMedia)}
+                                    className="max-h-full max-w-full rounded-2xl shadow-2xl animate-in zoom-in"
+                                    controls
+                                    autoPlay
                                     onClick={(e) => e.stopPropagation()}
                                 />
                             );
                         }
-                        
+
                         return (
-                            <img 
-                                src={getMediaUrl(fullscreenMedia)} 
-                                className="max-h-full max-w-full rounded-2xl shadow-2xl animate-in zoom-in" 
-                                alt="" 
+                            <img
+                                src={getMediaUrl(fullscreenMedia)}
+                                className="max-h-full max-w-full rounded-2xl shadow-2xl animate-in zoom-in"
+                                alt=""
                             />
                         );
                     })()}
