@@ -115,7 +115,8 @@ class AnalyticsView(APIView):
 
                 try:
                     stats = AnalyticsEvent.get_visitor_age_stats(None) or {}
-                    percentages = AnalyticsEvent.get_demographic_percentages(None) or []
+                    # Para el ADMIN, usamos la demografía real de USUARIOS registrados
+                    percentages = User.get_age_segmentation() or []
                     
                     pipeline_engagement = [
                         {"$project": {"likes_count": {"$size": {"$ifNull": ["$likes", []]}}, "comments_count": {"$size": {"$ifNull": ["$comments", []]}}}},
@@ -242,8 +243,8 @@ class AnalyticsView(APIView):
                     current_user_reloaded = User.objects.get(id=user.id)
                     nuevos_hoy = len(current_user_reloaded.followers)
                     
-                    is_recruiter = getattr(user, 'role', '') == 'recruiter'
-                    demo_target_id = None if is_recruiter else target_profile_id
+                    # REVERTIDO: Reclutadores vuelven a ver solo su propia audiencia (Personal)
+                    demo_target_id = target_profile_id
                     
                     stats = AnalyticsEvent.get_visitor_age_stats(demo_target_id) or {}
                     percentages = AnalyticsEvent.get_demographic_percentages(demo_target_id) or []

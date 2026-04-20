@@ -201,6 +201,52 @@ class User(Document):
             print(f"Error Agregación Talento: {e}")
             return []
 
+    @classmethod
+    def get_age_segmentation(cls):
+        """
+        Calcula la distribución de edad de TODOS los usuarios registrados.
+        Utiliza birth_date para determinar la edad actual y segmentarla en rangos.
+        """
+        now = datetime.utcnow()
+        pipeline = [
+            # Filtramos usuarios que tengan fecha de nacimiento
+            {"$match": {"birth_date": {"$exists": True, "$ne": None}}},
+            # Calculamos la edad (año actual - año nacimiento)
+            {"$project": {
+                "age": {
+                    "$subtract": [
+                        {"$year": now},
+                        {"$year": "$birth_date"}
+                    ]
+                }
+            }},
+            # Segmentamos en los mismos rangos que usa el dashboard
+            {"$bucket": {
+                "groupBy": "$age",
+                "boundaries": [0, 18, 25, 35, 45, 60, 100],
+                "default": "Other",
+                "output": {
+                    "count": {"$sum": 1}
+                }
+            }}
+        ]
+        
+        try:
+            results = list(cls.objects.aggregate(pipeline))
+            total_users = cls.objects(birth_date__exists=True).count()
+            
+            formatted_results = []
+            for r in results:
+                formatted_results.append({
+                    "age_group_start": r["_id"],
+                    "percentage": round((r["count"] / total_users) * 100, 2) if total_users > 0 else 0,
+                    "count": r["count"]
+                })
+            return formatted_results
+        except Exception as e:
+            print(f"Error Agregación Edad Usuarios: {e}")
+            return []
+
     # indices para mejorar las consultas de edad y deporte
     meta = {
         'indexes': ['birth_date', 'sport']
