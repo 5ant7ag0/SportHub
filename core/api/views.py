@@ -242,8 +242,11 @@ class AnalyticsView(APIView):
                     current_user_reloaded = User.objects.get(id=user.id)
                     nuevos_hoy = len(current_user_reloaded.followers)
                     
-                    stats = AnalyticsEvent.get_visitor_age_stats(target_profile_id) or {}
-                    percentages = AnalyticsEvent.get_demographic_percentages(target_profile_id) or []
+                    is_recruiter = getattr(user, 'role', '') == 'recruiter'
+                    demo_target_id = None if is_recruiter else target_profile_id
+                    
+                    stats = AnalyticsEvent.get_visitor_age_stats(demo_target_id) or {}
+                    percentages = AnalyticsEvent.get_demographic_percentages(demo_target_id) or []
                     
                     pipeline_personal = [
                         {"$match": {"author": user.id}},
